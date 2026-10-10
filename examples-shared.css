@@ -1,0 +1,95 @@
+/* Page chrome for the playground / example pages only — not part of the component. */
+:root {
+  color-scheme: light;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: #334155;
+  background: #f1f5f9;
+}
+
+body {
+  margin: 0;
+}
+
+.demo-header {
+  padding: 24px 32px 8px;
+}
+
+.demo-header h1 {
+  margin: 0 0 8px;
+  font-size: 24px;
+}
+
+.demo-nav {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.demo-main {
+  display: grid;
+  gap: 16px;
+  padding: 16px 32px 48px;
+  max-width: 1100px;
+}
+
+.demo-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+
+.demo-card h2 {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+
+.demo-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.demo-card label {
+  margin-inline-end: 16px;
+}
+
+button {
+  font: inherit;
+  padding: 6px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #f8fafc;
+}
+
+kbd {
+  font: 12px ui-monospace, monospace;
+  padding: 1px 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.demo-log {
+  min-height: 120px;
+  max-height: 260px;
+  overflow: auto;
+  margin: 0;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+pre.demo-code {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  overflow: auto;
+}

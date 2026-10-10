@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>web-command-palette — playground</title>
+  <link rel="stylesheet" href="./examples-shared.css">
+</head>
+<body>
+  <header class="demo-header">
+    <h1>&lt;web-command-palette&gt;</h1>
+    <p>Press <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>, or <kbd>g</kbd> then <kbd>d</kbd> / <kbd>a</kbd> / <kbd>g</kbd> / <kbd>t</kbd> / <kbd>r</kbd>.</p>
+    <nav class="demo-nav">
+      <a href="./examples-basic.html">Basic</a>
+      <a href="./examples-commands-steps.html">Commands &amp; steps</a>
+      <a href="./examples-async-search.html">Async search</a>
+      <a href="./examples-theming.html">Theming</a>
+    </nav>
+  </header>
+
+  <main class="demo-main">
+    <section class="demo-card">
+      <h2>Try it</h2>
+      <div class="demo-buttons">
+        <button type="button" data-open="">Open</button>
+        <button type="button" data-open="/">/ commands</button>
+        <button type="button" data-open="/deploy ">/deploy</button>
+        <button type="button" data-open=":">: contexts</button>
+        <button type="button" data-open=":products ">:products</button>
+        <button type="button" data-open="mac">“mac” (global)</button>
+      </div>
+      <label>Display
+        <select id="display"><option>inline</option><option>tokens</option></select>
+      </label>
+      <label>Size
+        <select id="size"><option value="">default</option><option>sm</option><option>lg</option><option>xl</option></select>
+      </label>
+    </section>
+
+    <section class="demo-card">
+      <h2>Event log</h2>
+      <pre id="log" class="demo-log"></pre>
+    </section>
+  </main>
+
+  <web-command-palette id="palette"></web-command-palette>
+
+  <script type="module">
+    import './src/index.ts';
+    import { commands, contexts, searchCallback, stepOptionsCallback } from './examples-data.js';
+
+    const palette = document.getElementById('palette');
+    palette.commands = commands;
+    palette.contexts = contexts;
+    palette.searchCallback = searchCallback;
+    palette.stepOptionsCallback = stepOptionsCallback;
+
+    const log = document.getElementById('log');
+    for (const name of ['cp-open', 'cp-close', 'cp-select', 'cp-complete', 'cp-command', 'cp-ready']) {
+      palette.addEventListener(name, (e) => {
+        log.textContent = `${name} ${JSON.stringify(e.detail)}\n` + log.textContent;
+      });
+    }
+
+    document.querySelectorAll('[data-open]').forEach((btn) =>
+      btn.addEventListener('click', () => palette.openWith(btn.dataset.open)));
+    document.getElementById('display').addEventListener('change', (e) => { palette.display = e.target.value; });
+    document.getElementById('size').addEventListener('change', (e) => { palette.size = e.target.value || null; });
+  </script>
+</body>
+</html>
