@@ -1,0 +1,16 @@
+// <web-command-palette> shadow-root stylesheet.
+//
+// The palette CSS is pure-admin-core's OWN partial, compiled here — never copied
+// (IMPLEMENTATION_PLAN §11). When core's palette SCSS changes, a rebuild re-pulls
+// it. `scripts/shadow-css.mjs` (a PostCSS step in vite.config.ts) then adapts the
+// compiled output to the shadow root: core's theme defaults become `var()`
+// fallbacks (so a host theme on `:root` still wins) and `rem` is rebased on the
+// shared `--base-rem` knob.
+
+// Palette + the two shared primitives it renders (result badges, the loader spinner).
+@use '../../node_modules/@keenmate/pure-admin-core/src/scss/core-components/command-palette';
+@use '../../node_modules/@keenmate/pure-admin-core/src/scss/core-components/badges/badge-base';
+@use '../../node_modules/@keenmate/pure-admin-core/src/scss/core-components/loaders';
+
+// Shadow-root base: what pure-admin's global reset would otherwise provide.
+@use 'shadow-base';

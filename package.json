@@ -1,0 +1,102 @@
+{
+  "name": "@keenmate/web-commandpalette",
+  "version": "0.1.0-dev",
+  "description": "Framework-agnostic command-palette web component — modes, multi-step commands, scoped + global search, keyboard nav; configured via properties, events, and async callbacks.",
+  "type": "module",
+  "main": "./dist/web-commandpalette.umd.js",
+  "module": "./dist/web-commandpalette.js",
+  "types": "./dist/index.d.ts",
+  "style": "./dist/style.css",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/web-commandpalette.js",
+      "require": "./dist/web-commandpalette.umd.js",
+      "default": "./dist/web-commandpalette.js"
+    },
+    "./style.css": "./dist/style.css",
+    "./dist/*": "./dist/*",
+    "./package.json": "./package.json",
+    "./manifest": "./component-variables.manifest.json",
+    "./component-variables.manifest.json": "./component-variables.manifest.json"
+  },
+  "customElements": "custom-elements.json",
+  "web-types": "web-types.json",
+  "sideEffects": [
+    "./dist/web-commandpalette.js",
+    "./dist/web-commandpalette.umd.js",
+    "*.css"
+  ],
+  "files": [
+    "dist",
+    "src/css",
+    "docs/usage.md",
+    "docs/theming.md",
+    "docs/examples.md",
+    "docs/accessibility.md",
+    "component-variables.manifest.json",
+    "custom-elements.json",
+    "web-types.json",
+    "vscode.html-custom-data.json",
+    "vscode.css-custom-data.json"
+  ],
+  "scripts": {
+    "dev": "vite --port 12300",
+    "check:vars": "node scripts/check-variable-manifest.mjs",
+    "check:vars:strict": "node scripts/check-variable-manifest.mjs --strict",
+    "analyze": "cem analyze",
+    "build": "npm run clean:dist && npm run check:vars:strict && npm run analyze && vite build",
+    "build:types": "tsc",
+    "clean": "rimraf dist --glob \"*.tgz\"",
+    "clean:dist": "rimraf dist",
+    "preview": "vite preview",
+    "package": "npm run build && npm pack",
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:install": "playwright install chromium"
+  },
+  "keywords": [
+    "command-palette",
+    "command-menu",
+    "spotlight",
+    "cmdk",
+    "search",
+    "web-component",
+    "web-components",
+    "custom-element",
+    "keenmate"
+  ],
+  "author": "Keenmate s.r.o.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/keenmate/web-commandpalette.git"
+  },
+  "homepage": "https://github.com/keenmate/web-commandpalette",
+  "bugs": {
+    "url": "https://github.com/keenmate/web-commandpalette/issues"
+  },
+  "peerDependencies": {
+    "@keenmate/web-components-core": "^1.0.0-rc11"
+  },
+  "devDependencies": {
+    "@custom-elements-manifest/analyzer": "^0.11.0",
+    "@keenmate/pure-admin-core": "3.3.0-rc06",
+    "@keenmate/web-components-core": "1.0.0-rc11",
+    "@playwright/test": "^1.60.0",
+    "custom-element-jet-brains-integration": "^1.7.0",
+    "custom-element-vs-code-integration": "^1.5.0",
+    "happy-dom": "^15.11.7",
+    "postcss": "^8.5.29",
+    "rimraf": "^5.0.5",
+    "sass": "^1.80.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.8",
+    "vite-plugin-dts": "^4.5.4",
+    "vitest": "^2.1.9"
+  }
+}

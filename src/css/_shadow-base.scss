@@ -1,0 +1,52 @@
+// Bits a pure-admin page gets from its global stylesheet, which never reaches
+// inside a shadow root. Keep this tiny — anything palette-specific belongs in core.
+
+:host {
+  display: contents;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+// The masked-icon primitive (core `_icons.scss`), trimmed to the one glyph the
+// palette renders (the ✕ on token badges and the fullscreen close button).
+// --pa-icon-x resolves to core's default glyph via the injected var() fallback.
+.pa-icon {
+  display: inline-block;
+  inline-size: var(--pa-icon-size, 1em);
+  block-size: var(--pa-icon-size, 1em);
+  flex-shrink: 0;
+  background-color: currentColor;
+  -webkit-mask: var(--pa-icon-src, none) no-repeat center / contain;
+          mask: var(--pa-icon-src, none) no-repeat center / contain;
+}
+
+.pa-icon--x {
+  --pa-icon-src: var(--pa-icon-x);
+}
+
+// Inline SVG icons handed in as data (IMPLEMENTATION_PLAN §12).
+.pa-command-palette__item-icon svg {
+  inline-size: 1em;
+  block-size: 1em;
+}
+
+// Visually-hidden live region for screen-reader announcements.
+.cp-sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

@@ -1,0 +1,247 @@
+{
+  "$schema": "https://raw.githubusercontent.com/keenmate/schemas/main/component-variables.schema.json",
+  "component": "@keenmate/web-commandpalette",
+  "prefix": "pa-command-palette",
+  "note": "The palette CSS is pure-admin-core's own partial. Its variables are read (not declared) inside the shadow root, with core's defaults injected as var() fallbacks — set any of them on :root (or an ancestor) to theme the component.",
+  "baseVariables": [
+    {
+      "name": "base-accent-color",
+      "required": true,
+      "usage": "Accent: active row tint, focus ring, highlight, primary badge, spinner"
+    },
+    {
+      "name": "base-border-color",
+      "required": false,
+      "usage": "Dividers (search row, footer, sections) and keycap borders"
+    },
+    {
+      "name": "base-border-radius-md",
+      "required": false,
+      "usage": "Container corner radius (unitless multiplier of the rem unit)"
+    },
+    {
+      "name": "base-border-radius-sm",
+      "required": false,
+      "usage": "Row / keycap / badge corner radius (unitless multiplier of the rem unit)"
+    },
+    {
+      "name": "base-color-1",
+      "required": false,
+      "usage": "Palette colour 1 (pa-badge--color-1)"
+    },
+    {
+      "name": "base-color-1-text",
+      "required": false,
+      "usage": "Text on palette colour 1"
+    },
+    {
+      "name": "base-color-2",
+      "required": false,
+      "usage": "Palette colour 2 (pa-badge--color-2)"
+    },
+    {
+      "name": "base-color-2-text",
+      "required": false,
+      "usage": "Text on palette colour 2"
+    },
+    {
+      "name": "base-color-3",
+      "required": false,
+      "usage": "Palette colour 3 (pa-badge--color-3)"
+    },
+    {
+      "name": "base-color-3-text",
+      "required": false,
+      "usage": "Text on palette colour 3"
+    },
+    {
+      "name": "base-color-4",
+      "required": false,
+      "usage": "Palette colour 4 (pa-badge--color-4)"
+    },
+    {
+      "name": "base-color-4-text",
+      "required": false,
+      "usage": "Text on palette colour 4"
+    },
+    {
+      "name": "base-color-5",
+      "required": false,
+      "usage": "Palette colour 5 (pa-badge--color-5)"
+    },
+    {
+      "name": "base-color-5-text",
+      "required": false,
+      "usage": "Text on palette colour 5"
+    },
+    {
+      "name": "base-color-6",
+      "required": false,
+      "usage": "Palette colour 6 (pa-badge--color-6)"
+    },
+    {
+      "name": "base-color-6-text",
+      "required": false,
+      "usage": "Text on palette colour 6"
+    },
+    {
+      "name": "base-color-7",
+      "required": false,
+      "usage": "Palette colour 7 (pa-badge--color-7)"
+    },
+    {
+      "name": "base-color-7-text",
+      "required": false,
+      "usage": "Text on palette colour 7"
+    },
+    {
+      "name": "base-color-8",
+      "required": false,
+      "usage": "Palette colour 8 (pa-badge--color-8)"
+    },
+    {
+      "name": "base-color-8-text",
+      "required": false,
+      "usage": "Text on palette colour 8"
+    },
+    {
+      "name": "base-color-9",
+      "required": false,
+      "usage": "Palette colour 9 (pa-badge--color-9)"
+    },
+    {
+      "name": "base-color-9-text",
+      "required": false,
+      "usage": "Text on palette colour 9"
+    },
+    {
+      "name": "base-icon-close",
+      "required": false,
+      "usage": "Close (✕) glyph mask URL — token remove + fullscreen close"
+    },
+    {
+      "name": "base-icon-search",
+      "required": false,
+      "usage": "Search glyph mask URL (navbar-search pill rules shipped with the partial)"
+    },
+    {
+      "name": "base-input-bg",
+      "required": false,
+      "usage": "Search input background"
+    },
+    {
+      "name": "base-input-color",
+      "required": false,
+      "usage": "Search input text colour"
+    },
+    {
+      "name": "base-main-bg",
+      "required": true,
+      "usage": "Dialog surface background"
+    },
+    {
+      "name": "base-page-bg",
+      "required": false,
+      "usage": "Light badge/button surface"
+    },
+    {
+      "name": "base-rem",
+      "required": false,
+      "usage": "Size unit for every rem-based dimension (default 10px; pure-admin hosts set 1rem)"
+    },
+    {
+      "name": "base-subtle-bg",
+      "required": false,
+      "usage": "Keycap background"
+    },
+    {
+      "name": "base-text-color-1",
+      "required": true,
+      "usage": "Primary text (titles, input, keycaps)"
+    },
+    {
+      "name": "base-text-color-2",
+      "required": false,
+      "usage": "Secondary text (meta lines, hints, headings)"
+    },
+    {
+      "name": "base-text-color-on-accent",
+      "required": false,
+      "usage": "Text on accent (primary badge)"
+    },
+    {
+      "name": "base-text-on-danger",
+      "required": false,
+      "usage": "Text on danger badge"
+    },
+    {
+      "name": "base-text-on-info",
+      "required": false,
+      "usage": "Text on info badge"
+    },
+    {
+      "name": "base-text-on-success",
+      "required": false,
+      "usage": "Text on success badge"
+    },
+    {
+      "name": "base-text-on-warning",
+      "required": false,
+      "usage": "Text on warning badge"
+    }
+  ],
+  "componentVariables": [
+    {
+      "name": "pa-command-palette-width",
+      "usage": "Dialog max width (presets: size=\"sm|lg|xl\")"
+    },
+    {
+      "name": "pa-command-palette-offset-top",
+      "usage": "Distance of the floating dialog from the top of the viewport"
+    },
+    {
+      "name": "pa-command-palette-results-max-height",
+      "usage": "Max height of the results list before it scrolls"
+    },
+    {
+      "name": "pa-command-palette-backdrop-bg",
+      "usage": "Backdrop colour"
+    },
+    {
+      "name": "pa-command-palette-backdrop-filter",
+      "usage": "Backdrop filter (default blur(4px); set none to disable)"
+    },
+    {
+      "name": "pa-command-palette-item-hover-bg",
+      "usage": "Row background on hover"
+    },
+    {
+      "name": "pa-command-palette-item-active-bg",
+      "usage": "Active (keyboard) row background"
+    },
+    {
+      "name": "pa-command-palette-highlight-bg",
+      "usage": "Background of the <mark> query highlight"
+    },
+    {
+      "name": "pa-command-palette-highlight-text",
+      "usage": "Text colour of the <mark> query highlight"
+    },
+    {
+      "name": "pa-command-palette-key-bg",
+      "usage": "Keycap background"
+    },
+    {
+      "name": "pa-command-palette-key-text",
+      "usage": "Keycap text colour"
+    },
+    {
+      "name": "pa-command-palette-key-font-size",
+      "usage": "Keycap font size"
+    },
+    {
+      "name": "pa-command-palette-key-font-weight",
+      "usage": "Keycap font weight"
+    }
+  ]
+}
