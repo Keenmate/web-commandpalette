@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>web-command-palette — basic</title>
+  <link rel="stylesheet" href="./examples-shared.css">
+</head>
+<body>
+  <header class="demo-header">
+    <h1>Basic — the three-line setup</h1>
+    <p><a href="./index.html">← playground</a></p>
+  </header>
+  <main class="demo-main">
+    <section class="demo-card">
+      <p>Press <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>. Type <kbd>/</kbd> for commands, <kbd>:</kbd> for contexts, or anything for global search.</p>
+      <pre class="demo-code">palette.commands = [...];
+palette.contexts = [...];
+palette.searchCallback = async (scope, query, signal) => fetchResults(scope, query);</pre>
+      <pre id="log" class="demo-log"></pre>
+    </section>
+  </main>
+
+  <web-command-palette></web-command-palette>
+
+  <script type="module">
+    import './src/index.ts';
+
+    const palette = document.querySelector('web-command-palette');
+    palette.commands = [
+      { id: 'home', shortcut: '/home', name: 'Go home', hotkey: 'g h', icon: '🏠' },
+      { id: 'theme', shortcut: '/theme', name: 'Switch theme', icon: '🎨',
+        steps: [{ id: 'theme', options: [{ label: 'Light', value: 'light' }, { label: 'Dark', value: 'dark' }] }] },
+    ];
+    palette.contexts = [{ id: 'people', shortcut: ':people', aliases: [':p'], name: 'People', icon: '👥' }];
+    palette.searchCallback = async (scope, query) =>
+      ['Ada Lovelace', 'Alan Turing', 'Grace Hopper', 'Linus Torvalds']
+        .filter((n) => n.toLowerCase().includes(query.toLowerCase()))
+        .map((n) => ({ id: n, title: n, subtitle: scope === 'global' ? 'Person' : 'In People' }));
+
+    // The host performs the effect; the palette closes itself.
+    const log = document.getElementById('log');
+    const write = (line) => { log.textContent = line + '\n' + log.textContent; };
+    palette.addEventListener('cp-select', (e) => write(`selected ${e.detail.item.title}`));
+    palette.addEventListener('cp-complete', (e) => write(`${e.detail.commandId}: ${e.detail.selections.map((s) => s.label).join(' → ')}`));
+    palette.addEventListener('cp-command', (e) => write(`ran ${e.detail.commandId}`));
+  </script>
+</body>
+</html>

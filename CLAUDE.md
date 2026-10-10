@@ -2,72 +2,70 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Status: greenfield
+## Status
 
-Nothing is implemented yet. Only `package.json` (a starter, not final), `README.md`, and
-`IMPLEMENTATION_PLAN.md` exist. **`IMPLEMENTATION_PLAN.md` is the spec and task list.** Read it
-before starting work, and follow its milestones (M0–M8) in order: one commit and a green build
-per milestone. Ship M1–M4 (element shell, lists and keyboard, wizard steps, async search) before
-polishing M5–M8.
+v1 is implemented (milestones M0–M8 of `IMPLEMENTATION_PLAN.md`). The plan remains the design
+spec and records the intent behind the behaviour; `docs/usage.md` is the public API reference.
 
-The `comment__` field in `package.json` says M0 must align the full devDependency and tool set
-(vite, typescript, vitest, @playwright/test, @custom-elements-manifest/analyzer, sass, rimraf…)
-by copying `../web-multiselect/package.json`. Remove that comment once it's done.
+## Commands
 
-## Commands (defined in package.json; they work once M0 scaffolding exists)
+- `npm run dev` — Vite dev server on port **12300** (`index.html` playground + `examples-*.html`)
+- `npm run build` — `check:vars:strict` → `cem analyze` → Vite library build into `dist/`
+- `npm run test:unit` — vitest (happy-dom), specs in `test/unit/`. Single file: `npx vitest run test/unit/palette.test.ts`; by name: `npx vitest run -t "context search"`
+- `npm run test:e2e` — Playwright against the dev server (reused if running); specs in `e2e/`, fixture page `test/fixture.html`. Single spec: `npx playwright test e2e/wizard.spec.ts`. `e2e/mobile.spec.ts` runs only in the `mobile` (Pixel 7) project
+- `npm run check:vars` — validate `component-variables.manifest.json` against the compiled shadow CSS
 
-- `npm run dev`: Vite dev server on port **12300** (the `index.html` playground)
-- `npm run build`: clean `dist/`, run `cem analyze`, then the Vite library build (ESM, UMD, `style.css`)
-- `npm run build:types`: `tsc`
-- `npm run test:unit`: vitest (jsdom). Single file: `npx vitest run test/<file>`. By name: `npx vitest run -t "<name>"`
-- `npm run test:unit:watch`: vitest watch mode
-- `npm run test:e2e`: Playwright. Single spec: `npx playwright test e2e/<file>`
-- `npm run check:vars` / `check:vars:strict`: check the themeable CSS vars against `component-variables.manifest.json`
+## Architecture
 
-## What this is
+`<web-command-palette>` is a framework-agnostic web component. It owns the whole command-palette
+state machine and talks to hosts only through properties, events (`cp-*`) and async callbacks
+(`searchCallback`, `stepOptionsCallback`). It replaces three drifting implementations (pure-admin
+vanilla, svelte-pure-admin, keen-pure-admin LiveComponent). **Top design priority: easy to
+configure** — `commands` + `searchCallback` must be a complete setup.
 
-`<web-command-palette>` (package `@keenmate/web-commandpalette`) is a framework-agnostic web
-component. It owns the whole command-palette state machine, and hosts talk to it only through
-**properties, events, and async callbacks**. It replaces three drifting implementations (the
-pure-admin vanilla JS, the svelte-pure-admin Svelte version, and the keen-pure-admin Phoenix
-LiveComponent). **Top design priority: easy to configure.** Setting `commands` and
-`searchCallback` must be all a host needs to do.
+- `src/palette.ts` — `PaletteMachine`, DOM-free. Owns modes (`idle`, `command-list`,
+  `command-step`, `context-list`, `context-search`, `global-search`), input routing, the wizard,
+  filtering, debounced/abortable provider calls and client-side pagination. Exposes read-only
+  view state (`items`, `activeIndex`, `listVersion`, `input`, `lockedLength`, …) and reports
+  terminal outcomes through `host.effect()`. Unit-tested directly via `test/unit/helpers.ts`.
+- `src/render.ts` — builds the shadow DOM once (`createShell`) and patches it (`Renderer`). Results
+  are rebuilt only when `listVersion`/list state changes; moving the active row only toggles a
+  class. Markup must match pure-admin-core's `snippets/command-palette.html`.
+- `src/keyboard.ts` — the document-level `GlobalKeys` (Ctrl/⌘+K, `g <letter>`) and the input
+  keydown map.
+- `src/web-component.ts` — thin `BlissElement` subclass: the `static inputs` / `static events`
+  tables (CEM metadata is generated from them), the `MachineHost` adapter, overlay/scroll-lock,
+  presentation (phone fullscreen sheet), focus. Only the first connected instance owns the global keys.
+- `src/filter.ts`, `src/icons.ts`, `src/types.ts` — substring filtering, icon rendering, public types.
 
-Architecturally it is "`web-multiselect` with more callback surfaces and a mode state machine".
-Copy the toolchain and conventions from `../web-multiselect` wholesale (input-def arrays on a
-`BlissElement` subclass, `?inline` CSS into an open shadow root, `registerComponent`, cem/web-types
-metadata, the `check:vars` script).
+### CSS pipeline (non-obvious)
 
-## Sibling repos you must read (relative to this repo)
+`src/css/main.scss` `@use`s pure-admin-core's partials by relative path into `node_modules`
+(never copied). `scripts/shadow-css.mjs` compiles it with plain Sass through a Vite plugin
+(`shadowCssPlugin`) — Vite's own Sass importer can't be used because it applies package `exports`
+to bare `@import`s inside core. The PostCSS step then (1) injects core's theme defaults as
+`var()` **fallbacks** rather than declarations, so a host theme on `:root` is never shadowed, and
+(2) rewrites `Nrem` → `calc(N * var(--base-rem, 10px))` because pure-admin assumes a 10px root.
+`check-variable-manifest.mjs` runs the same pipeline.
 
-- `../web-multiselect/`: the template. Start with `src/web-component.ts` (element) and `src/multiselect.ts` (logic)
-- `../web-components-core/`: `BlissElement`, `inputs` converters, `overlay` (scroll-lock/backdrop), `environment` (device class), `logging`. Read its `CLAUDE.md` and `docs/SPEC.md`. Do not re-implement anything it already provides.
-- `../pure-admin/packages/core/src/js/command-palette.js`: **the behavioral source of truth** (keyboard, filtering, scrolling, device logic). When in doubt, match it.
-- `../pure-admin/packages/core/snippets/command-palette.html`: the canonical DOM/class structure. Rendered markup must match it exactly.
-- `../pure-admin/packages/core/src/scss/core-components/_command-palette.scss`: the CSS, which gets **imported, never copied**
-- `../keen-web-multiselect/priv/static/keen_web_multiselect_hook.js`: the async `pushEventTo → {:reply}` bridge pattern that callback shapes must stay compatible with
-- `../keen-pure-admin/lib/keen_pure_admin/command_palette/source.ex`: the keen data contract to support
+## Invariants that are easy to break
 
-## Planned architecture
+See plan §10. These are the bugs that motivated the project.
 
-- `src/web-component.ts`: a thin element. It reads inputs, owns the shadow root and CSS, and delegates
-- `src/palette.ts`: the framework-free **mode state machine**, unit-tested without the DOM. Modes: `idle`, `command-list` (`/`), `command-step` (wizard), `context-list` (`:`), `context-search`, `global-search`
-- `src/render.ts`, `keyboard.ts`, `filter.ts`, `icons.ts`, `types.ts`: rendering, keys and `g <letter>` sequences, substring filter, icon rendering, public types
-- `src/css/main.scss`: `@import`s pure-admin-core's variables and palette partial (from the `@keenmate/pure-admin-core` devDep), adds `:host` neutral defaults
+- Static vs. dynamic: the `/` and `:` lists and non-`search` steps filter client-side. Only global
+  search, context search and `search: true` steps call providers, debounced (`searchDebounce`).
+- A context search with an empty query must NOT call `searchCallback`; show `labels.typeToSearch`.
+  The input keeps a locked `"<shortcut> "` prefix.
+- Global search prepends matching commands/contexts (works with no `searchCallback`), then appends
+  provider results.
+- Keyboard navigation never awaits a provider and must not bump `listVersion`.
+- Superseded requests are aborted via `AbortSignal`, and late results are dropped.
+- Callback arguments and event details must stay plain JSON, because the LiveView bridge
+  serializes them. `searchCallback`/`stepOptionsCallback` are read live. `data-search-event` /
+  `data-step-options-event` are reserved for the future `../keen-web-commandpalette` bridge.
+- The component closes itself after `cp-select` / `cp-complete` / `cp-command`, and the host
+  performs the effect. Instant commands fire only `cp-command`. A `// FUTURE:` note in
+  `#onEffect` marks where keep-open/directives would go.
+- Icons and strings are data. There is no built-in icon set, and every visible string comes from `labels`.
 
-## Invariants that are easy to get wrong
-
-These are the bugs that motivated the project. See plan §10 for the full rules.
-
-- **Static vs. dynamic filtering:** the `/` command list, the `:` context list, and non-`search` steps filter **client-side** with no provider call. Only global search, context search, and `search: true` steps call providers, debounced by about 150ms.
-- **Context search with an empty query must NOT call `searchCallback`.** Show `labels.typeToSearch` and an empty list. The input holds a locked `"<shortcut> "` prefix.
-- **Global search** first prepends matching commands and contexts (this works even with no `searchCallback`), then appends the provider's results.
-- **Keyboard navigation is pure client-side DOM** and never awaits a provider. Keep the active item `scrollIntoView({block:'nearest'})`.
-- **Superseded requests are aborted via `AbortSignal`.** A late result must never overwrite current state.
-- **Callback arguments (`scope`, step `ctx`) must be plain JSON** so they can be serialized to LiveView payloads. `searchCallback`/`stepOptionsCallback` must be live-assignable after connect. `data-search-event`/`data-step-options-event` are reserved bridge attributes; the wiring itself belongs to the future `../keen-web-commandpalette` repo.
-- **The component closes itself** on `cp-select`/`cp-complete`/`cp-command`, and the host performs the effect. Leave a `// FUTURE:` note at those emit sites for a keep-open or directive channel.
-- **Icons and strings are data.** There is no built-in icon set and no host-DOM scraping. Every visible string comes from `labels`, with English defaults.
-- **Footer hints are mode-aware.** Do not advertise `Tab`.
-- Mount the element once per page. It owns the global `Ctrl/⌘+K` listener and the `g <letter>` sequences.
-
-Out of scope: the keen bridge, Svelte/React/Razor wrappers, the directive-return channel, and migrating the existing palettes.
+Out of scope here: the keen bridge, Svelte/React/Razor wrappers, the directive-return channel, and migrating the existing palettes.

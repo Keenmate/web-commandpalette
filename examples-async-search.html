@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>web-command-palette — async search</title>
+  <link rel="stylesheet" href="./examples-shared.css">
+</head>
+<body>
+  <header class="demo-header">
+    <h1>Async search — scopes, debounce, abort, pagination</h1>
+    <p><a href="./index.html">← playground</a></p>
+  </header>
+  <main class="demo-main">
+    <section class="demo-card">
+      <p>
+        <code>searchCallback(scope, query, signal)</code> is called only for <b>non-empty</b> queries, after a
+        debounce (<code>search-debounce</code>, here <span id="debounce"></span> ms). A newer query aborts the old
+        request; its late result is dropped. Results are paginated in the browser (<kbd>←</kbd><kbd>→</kbd>).
+      </p>
+      <div class="demo-buttons">
+        <button type="button" data-open=":products ">:products (empty → prompt, no call)</button>
+        <button type="button" data-open=":users a">:users a</button>
+        <button type="button" data-open="item">“item” (40 hits, 5 pages)</button>
+      </div>
+      <label>Latency <input id="latency" type="range" min="0" max="2000" step="100" value="600"> <span id="latency-v">600</span> ms</label>
+    </section>
+    <section class="demo-card">
+      <h2>Provider calls</h2>
+      <pre id="log" class="demo-log"></pre>
+    </section>
+  </main>
+
+  <web-command-palette search-debounce="200" page-size="8"></web-command-palette>
+
+  <script type="module">
+    import './src/index.ts';
+    import { commands, contexts, products, users } from './examples-data.js';
+
+    const palette = document.querySelector('web-command-palette');
+    palette.commands = commands;
+    palette.contexts = contexts;
+    document.getElementById('debounce').textContent = palette.searchDebounce;
+
+    const log = document.getElementById('log');
+    const write = (line) => { log.textContent = `${new Date().toLocaleTimeString()} ${line}\n` + log.textContent; };
+    let latency = 600;
+    document.getElementById('latency').addEventListener('input', (e) => {
+      latency = Number(e.target.value);
+      document.getElementById('latency-v').textContent = latency;
+    });
+
+    // A fake server. Shape it like fetch(): honour the AbortSignal.
+    palette.searchCallback = (scope, query, signal) => new Promise((resolve, reject) => {
+      const label = scope === 'global' ? 'global' : scope.contextId;
+      write(`→ ${label} "${query}"`);
+      const q = query.toLowerCase();
+      const pool = {
+        products: products.map((p) => ({ id: 'p' + p.id, title: p.name, subtitle: p.sku, icon: p.icon, badge: p.status })),
+        users: users.map((u) => ({ id: 'u' + u.id, title: u.name, subtitle: u.email, icon: '👤', badge: u.role })),
+        orders: [],
+        global: Array.from({ length: 40 }, (_, i) => ({ id: 'i' + i, title: `Item ${i + 1}`, subtitle: 'Generated result', icon: '📄' })),
+      }[label] ?? [];
+      const results = pool.filter((r) => r.title.toLowerCase().includes(q) || (r.subtitle ?? '').toLowerCase().includes(q));
+      const timer = setTimeout(() => { write(`← ${label} "${query}": ${results.length} hits`); resolve(results); }, latency);
+      signal.addEventListener('abort', () => { clearTimeout(timer); write(`✕ ${label} "${query}" aborted`); reject(new DOMException('aborted', 'AbortError')); }, { once: true });
+    });
+
+    document.querySelectorAll('[data-open]').forEach((b) => b.addEventListener('click', () => palette.openWith(b.dataset.open)));
+  </script>
+</body>
+</html>

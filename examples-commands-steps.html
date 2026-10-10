@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>web-command-palette — commands &amp; steps</title>
+  <link rel="stylesheet" href="./examples-shared.css">
+</head>
+<body>
+  <header class="demo-header">
+    <h1>Commands &amp; multi-step wizards</h1>
+    <p><a href="./index.html">← playground</a></p>
+  </header>
+  <main class="demo-main">
+    <section class="demo-card">
+      <h2>Step kinds</h2>
+      <ul>
+        <li><b>Static</b> (default) — inline <code>options</code>, or <code>stepOptionsCallback</code> called ONCE on entry; filtered in the browser.</li>
+        <li><b><code>search: true</code></b> — <code>stepOptionsCallback</code> per debounced keystroke (try <code>/deploy</code> → branch).</li>
+        <li><b><code>freeText: true</code></b> — Enter with no match submits the typed text.</li>
+        <li><b><code>shouldShow(selections)</code></b> — skip a step conditionally (try <code>/report</code>: “Inventory” has no time range).</li>
+      </ul>
+      <div class="demo-buttons">
+        <button type="button" data-open="/deploy ">/deploy</button>
+        <button type="button" data-open="/assign ">/assign</button>
+        <button type="button" data-open="/report ">/report</button>
+        <label>Display <select id="display"><option>inline</option><option>tokens</option></select></label>
+      </div>
+      <p><kbd>Esc</kbd> or <kbd>⌫</kbd> at the start of your answer steps back one step.</p>
+    </section>
+    <section class="demo-card">
+      <h2>cp-complete</h2>
+      <pre id="log" class="demo-log"></pre>
+    </section>
+  </main>
+
+  <web-command-palette></web-command-palette>
+
+  <script type="module">
+    import './src/index.ts';
+    import { commands, stepOptionsCallback } from './examples-data.js';
+
+    const palette = document.querySelector('web-command-palette');
+    palette.commands = [
+      ...commands,
+      {
+        id: 'report', shortcut: '/report', aliases: ['/r'], icon: '📈', name: 'Run Report', description: 'Conditional time-range step',
+        steps: [
+          { id: 'report', placeholder: 'Select report…', options: [
+            { id: 'sales', label: 'Product Sales', value: { id: 'sales', needsRange: true } },
+            { id: 'inventory', label: 'Inventory Status', value: { id: 'inventory', needsRange: false } },
+          ] },
+          { id: 'range', prompt: ' for ', placeholder: 'Time range…',
+            shouldShow: (sel) => sel[0]?.value?.needsRange === true,
+            options: [{ label: 'Last 7 days', value: 7 }, { label: 'Last 30 days', value: 30 }, { label: 'This year', value: 365 }] },
+        ],
+      },
+    ];
+    palette.stepOptionsCallback = stepOptionsCallback;
+
+    const log = document.getElementById('log');
+    palette.addEventListener('cp-complete', (e) => {
+      log.textContent = JSON.stringify(e.detail, null, 2) + '\n\n' + log.textContent;
+    });
+    document.querySelectorAll('[data-open]').forEach((b) => b.addEventListener('click', () => palette.openWith(b.dataset.open)));
+    document.getElementById('display').addEventListener('change', (e) => { palette.display = e.target.value; });
+  </script>
+</body>
+</html>

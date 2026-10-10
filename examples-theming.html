@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>web-command-palette — theming</title>
+  <link rel="stylesheet" href="./examples-shared.css">
+  <style>
+    /* Themes are plain CSS custom properties on an ancestor (here :root via a class on <html>).
+       They pierce the shadow root; nothing is declared inside the component that could shadow them. */
+    html.theme-dark {
+      --base-main-bg: #1e1e2e;
+      --base-input-bg: #181825;
+      --base-input-color: #cdd6f4;
+      --base-text-color-1: #cdd6f4;
+      --base-text-color-2: #a6adc8;
+      --base-border-color: #313244;
+      --base-subtle-bg: #313244;
+      --base-accent-color: #cba6f7;
+      --pa-command-palette-item-active-bg: rgba(203, 166, 247, 0.15);
+      --pa-command-palette-item-hover-bg: rgba(203, 166, 247, 0.08);
+      --pa-command-palette-highlight-bg: rgba(203, 166, 247, 0.25);
+      --pa-command-palette-highlight-text: #f5c2e7;
+    }
+    html.theme-brand {
+      --base-accent-color: #e11d48;
+      --pa-command-palette-item-active-bg: rgba(225, 29, 72, 0.1);
+      --pa-command-palette-highlight-bg: rgba(225, 29, 72, 0.15);
+      --pa-command-palette-highlight-text: #e11d48;
+      --pa-command-palette-backdrop-filter: none;
+      --base-border-radius-md: 1.6;
+    }
+    html.theme-compact {
+      --base-rem: 8px;
+      --pa-command-palette-offset-top: 48px;
+    }
+  </style>
+</head>
+<body>
+  <header class="demo-header">
+    <h1>Theming</h1>
+    <p><a href="./index.html">← playground</a></p>
+  </header>
+  <main class="demo-main">
+    <section class="demo-card">
+      <p>
+        The CSS is pure-admin-core's own palette partial. Set <code>--base-*</code> (shared by every KeenMate
+        component) or the palette's own <code>--pa-command-palette-*</code> knobs on any ancestor.
+        <code>--base-rem</code> scales every dimension (default <code>10px</code>; pure-admin pages set <code>1rem</code>).
+      </p>
+      <div class="demo-buttons">
+        <button type="button" data-theme="">Default</button>
+        <button type="button" data-theme="theme-dark">Dark</button>
+        <button type="button" data-theme="theme-brand">Brand</button>
+        <button type="button" data-theme="theme-compact">Compact (--base-rem: 8px)</button>
+        <label>Size <select id="size"><option value="">default</option><option>sm</option><option>lg</option><option>xl</option></select></label>
+        <button type="button" id="open">Open palette</button>
+      </div>
+    </section>
+  </main>
+
+  <web-command-palette></web-command-palette>
+
+  <script type="module">
+    import './src/index.ts';
+    import { commands, contexts, searchCallback } from './examples-data.js';
+
+    const palette = document.querySelector('web-command-palette');
+    palette.commands = commands;
+    palette.contexts = contexts;
+    palette.searchCallback = searchCallback;
+
+    document.querySelectorAll('[data-theme]').forEach((b) => b.addEventListener('click', () => {
+      document.documentElement.className = b.dataset.theme;
+      palette.openWith('mac');
+    }));
+    document.getElementById('size').addEventListener('change', (e) => { palette.size = e.target.value || null; });
+    document.getElementById('open').addEventListener('click', () => palette.open());
+  </script>
+</body>
+</html>
