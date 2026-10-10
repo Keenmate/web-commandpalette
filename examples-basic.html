@@ -1,49 +1,165 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>web-command-palette — basic</title>
-  <link rel="stylesheet" href="./examples-shared.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basic Usage — Web Command Palette</title>
+
+    <!-- Shared example styles -->
+    <link rel="stylesheet" href="examples-shared.css">
 </head>
-<body>
-  <header class="demo-header">
-    <h1>Basic — the three-line setup</h1>
-    <p><a href="./index.html">← playground</a></p>
-  </header>
-  <main class="demo-main">
-    <section class="demo-card">
-      <p>Press <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>. Type <kbd>/</kbd> for commands, <kbd>:</kbd> for contexts, or anything for global search.</p>
-      <pre class="demo-code">palette.commands = [...];
-palette.contexts = [...];
-palette.searchCallback = async (scope, query, signal) => fetchResults(scope, query);</pre>
-      <pre id="log" class="demo-log"></pre>
-    </section>
-  </main>
+<body class="dark-output">
+    <div class="container">
+        <header>
+            <a href="index.html" class="back-link">← Back to Examples</a>
+            <h1>Basic Usage</h1>
+            <p class="subtitle">The three-line setup, the ways to open the palette, the <code>cp-*</code> effect events, and translating the UI with <code>labels</code>.</p>
+        </header>
 
-  <web-command-palette></web-command-palette>
+        <!-- ============================================================= -->
+        <!-- BU01 · The three-line setup                                    -->
+        <!-- ============================================================= -->
+        <div class="card">
+            <h2>BU01 · The Three-Line Setup</h2>
+            <p>
+                Mount one <code>&lt;web-command-palette&gt;</code> per page and give it
+                <code>commands</code>, <code>contexts</code> and a <code>searchCallback</code>. That's a
+                fully working palette. Press <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>, then type
+                <code>/</code> for commands, <code>:</code> for contexts, or anything else for global search.
+            </p>
+            <div class="code-block"><pre><code>palette.commands = [{ id: 'home', shortcut: '/home', name: 'Go home', hotkey: 'g h' }, …];
+palette.contexts = [{ id: 'people', shortcut: ':people', aliases: [':p'], name: 'People' }];
+palette.searchCallback = async (scope, query, signal) =&gt; fetchResults(scope, query, signal);</code></pre></div>
+            <div class="demo-area">
+                <button type="button" data-open="">Open (Ctrl/⌘+K)</button>
+                <button type="button" class="secondary" data-open="/">/ commands</button>
+                <button type="button" class="secondary" data-open=":">: contexts</button>
+                <button type="button" class="secondary" data-open="ada">“ada” (global)</button>
+            </div>
+        </div>
 
-  <script type="module">
-    import './src/index.ts';
+        <!-- ============================================================= -->
+        <!-- BU02 · Opening the palette                                     -->
+        <!-- ============================================================= -->
+        <div class="card">
+            <h2>BU02 · Opening the Palette</h2>
+            <p>
+                <code>open-key</code> sets the key used with Ctrl/⌘ (clear it to disable the global hotkey).
+                A command's <code>hotkey: 'g h'</code> runs it from anywhere while the palette is closed.
+                These <kbd>g</kbd>-sequences are ignored while you type in a field. Hosts can also call
+                <code>open()</code>, <code>toggle()</code> or <code>openWith(query)</code> to open it already filled in.
+            </p>
+            <div class="controls">
+                <span><code>open-key</code>:</span>
+                <label><input type="radio" name="bu02-key" value="k" checked> k</label>
+                <label><input type="radio" name="bu02-key" value="p"> p</label>
+                <label><input type="radio" name="bu02-key" value=""> <em>(disabled)</em></label>
+            </div>
+            <div class="demo-area">
+                <button type="button" data-open="/theme ">openWith('/theme ')</button>
+                <button type="button" class="secondary" data-open=":p ">openWith(':p ')</button>
+                <p class="muted mt-1">Click the page background, then press <kbd>g</kbd> <kbd>h</kbd>.</p>
+            </div>
+        </div>
 
-    const palette = document.querySelector('web-command-palette');
-    palette.commands = [
-      { id: 'home', shortcut: '/home', name: 'Go home', hotkey: 'g h', icon: '🏠' },
-      { id: 'theme', shortcut: '/theme', name: 'Switch theme', icon: '🎨',
-        steps: [{ id: 'theme', options: [{ label: 'Light', value: 'light' }, { label: 'Dark', value: 'dark' }] }] },
-    ];
-    palette.contexts = [{ id: 'people', shortcut: ':people', aliases: [':p'], name: 'People', icon: '👥' }];
-    palette.searchCallback = async (scope, query) =>
-      ['Ada Lovelace', 'Alan Turing', 'Grace Hopper', 'Linus Torvalds']
-        .filter((n) => n.toLowerCase().includes(query.toLowerCase()))
-        .map((n) => ({ id: n, title: n, subtitle: scope === 'global' ? 'Person' : 'In People' }));
+        <!-- ============================================================= -->
+        <!-- BU03 · Effect events                                           -->
+        <!-- ============================================================= -->
+        <div class="card">
+            <h2>BU03 · Effect Events</h2>
+            <p>
+                The host performs the effect and the palette closes itself:
+                <code>cp-select</code> for a search result, <code>cp-complete</code> when a wizard finishes, and
+                <code>cp-command</code> for an instant command (one with no <code>steps</code>).
+                <code>cp-open</code> and <code>cp-close</code> bracket every session.
+            </p>
+            <div class="output">
+                <div class="output-label">Event log</div>
+                <pre id="bu03-log">Open the palette and pick something…</pre>
+            </div>
+        </div>
 
-    // The host performs the effect; the palette closes itself.
-    const log = document.getElementById('log');
-    const write = (line) => { log.textContent = line + '\n' + log.textContent; };
-    palette.addEventListener('cp-select', (e) => write(`selected ${e.detail.item.title}`));
-    palette.addEventListener('cp-complete', (e) => write(`${e.detail.commandId}: ${e.detail.selections.map((s) => s.label).join(' → ')}`));
-    palette.addEventListener('cp-command', (e) => write(`ran ${e.detail.commandId}`));
-  </script>
+        <!-- ============================================================= -->
+        <!-- BU04 · Labels (i18n)                                           -->
+        <!-- ============================================================= -->
+        <div class="card">
+            <h2>BU04 · Labels (i18n)</h2>
+            <p>
+                Every visible string comes from <code>labels</code>. It's partial: unset keys fall back to English, and
+                <code>{name}</code>, <code>{page}</code>, <code>{total}</code> and <code>{count}</code> are filled in.
+            </p>
+            <div class="controls">
+                <span><code>labels</code>:</span>
+                <label><input type="radio" name="bu04-lang" value="en" checked> English</label>
+                <label><input type="radio" name="bu04-lang" value="cs"> Čeština</label>
+            </div>
+            <div class="demo-area">
+                <button type="button" data-open=":p ">Open a context</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- One palette per page: it owns the global Ctrl/⌘+K listener. -->
+    <web-command-palette id="palette"></web-command-palette>
+
+    <!-- Register the element (Vite dev serves the TS source). -->
+    <script type="module" src="/src/index.ts"></script>
+
+    <!-- Page wiring -->
+    <script type="module">
+        import { persistControls } from './examples-controls-store.js';
+
+        const CS = {
+            placeholder: 'Napište / pro příkazy, : pro hledání, nebo cokoli…',
+            emptyText: 'Nic nenalezeno',
+            searching: 'Hledám…',
+            searchingIn: 'Hledání v: {name}',
+            typeToSearch: 'Začněte psát pro hledání v: {name}',
+            commands: 'Příkazy', search: 'Hledání', searchContexts: 'Oblasti hledání',
+            navigate: 'Pohyb', select: 'Vybrat', back: 'Zpět', close: 'Zavřít', pages: 'Stránky',
+            pageOf: 'Strana {page} z {total} · {count} výsledků',
+        };
+
+        function wire() {
+            const palette = document.getElementById('palette');
+            palette.commands = [
+                { id: 'home', shortcut: '/home', name: 'Go home', description: 'Instant command', hotkey: 'g h', icon: '🏠' },
+                { id: 'theme', shortcut: '/theme', name: 'Switch theme', description: 'One-step wizard', icon: '🎨',
+                  steps: [{ id: 'theme', options: [{ label: 'Light', value: 'light', icon: '☀️' }, { label: 'Dark', value: 'dark', icon: '🌑' }] }] },
+            ];
+            palette.contexts = [{ id: 'people', shortcut: ':people', aliases: [':p'], name: 'People', description: 'Search people', icon: '👥' }];
+            palette.searchCallback = async (scope, query) =>
+                ['Ada Lovelace', 'Alan Turing', 'Grace Hopper', 'Linus Torvalds', 'Margaret Hamilton']
+                    .filter((n) => n.toLowerCase().includes(query.toLowerCase()))
+                    .map((n) => ({ id: n, title: n, subtitle: scope === 'global' ? 'Person' : 'In People', icon: '👤' }));
+
+            document.querySelectorAll('[data-open]').forEach((b) =>
+                b.addEventListener('click', () => palette.openWith(b.dataset.open)));
+
+            document.querySelectorAll('input[name="bu02-key"]').forEach((r) =>
+                r.addEventListener('change', (e) => { if (e.target.checked) palette.setAttribute('open-key', e.target.value); }));
+
+            document.querySelectorAll('input[name="bu04-lang"]').forEach((r) =>
+                r.addEventListener('change', (e) => { if (e.target.checked) palette.labels = e.target.value === 'cs' ? CS : {}; }));
+
+            const log = document.getElementById('bu03-log');
+            let started = false;
+            for (const name of ['cp-open', 'cp-close', 'cp-select', 'cp-complete', 'cp-command']) {
+                palette.addEventListener(name, (e) => {
+                    const line = `${name} ${JSON.stringify(e.detail)}`;
+                    log.textContent = started ? `${line}\n${log.textContent}` : line;
+                    started = true;
+                });
+            }
+
+            persistControls('basic');
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
+        else wire();
+    </script>
+
+    <!-- Shared helpers LAST (after the page's own wiring). -->
+    <script type="module" src="examples-copy-link.js"></script>
+    <script type="module" src="examples-chapter-nav.js"></script>
 </body>
 </html>

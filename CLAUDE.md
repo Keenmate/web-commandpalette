@@ -9,7 +9,7 @@ spec and records the intent behind the behaviour; `docs/usage.md` is the public 
 
 ## Commands
 
-- `npm run dev` — Vite dev server on port **12300** (`index.html` playground + `examples-*.html`)
+- `npm run dev` — Vite dev server on port **12300** (`index.html` hub + `examples-*.html`)
 - `npm run build` — `check:vars:strict` → `cem analyze` → Vite library build into `dist/`
 - `npm run test:unit` — vitest (happy-dom), specs in `test/unit/`. Single file: `npx vitest run test/unit/palette.test.ts`; by name: `npx vitest run -t "context search"`
 - `npm run test:e2e` — Playwright against the dev server (reused if running); specs in `e2e/`, fixture page `test/fixture.html`. Single spec: `npx playwright test e2e/wizard.spec.ts`. `e2e/mobile.spec.ts` runs only in the `mobile` (Pixel 7) project
@@ -37,6 +37,17 @@ configure** — `commands` + `searchCallback` must be a complete setup.
   tables (CEM metadata is generated from them), the `MachineHost` adapter, overlay/scroll-lock,
   presentation (phone fullscreen sheet), focus. Only the first connected instance owns the global keys.
 - `src/filter.ts`, `src/icons.ts`, `src/types.ts` — substring filtering, icon rendering, public types.
+
+### Example pages
+
+These follow the KeenMate examples convention in `../web-editor/EXAMPLES.md`. `index.html` is a
+hub that renders cards from a `pages` registry. Each `examples-<feature>.html` uses the shared
+skeleton (`.container` → header with `.back-link`, then `.card` sections with numbered `<h2>`s) and
+only the classes from `examples-shared.css`, with **no page `<style>`**. Controls sit in
+`.controls` and are saved with `persistControls('<page-key>')`. `examples-shared.css`,
+`examples-chapter-nav.js`, `examples-copy-link.js` and `examples-controls-store.js` are copied
+verbatim from `web-editor`; edit them only to keep them in sync. `e2e/examples.spec.ts` checks
+the hub registry and every page.
 
 ### CSS pipeline (non-obvious)
 

@@ -1,16 +1,20 @@
 # Examples
 
-Run `npm run dev` and open http://localhost:12300.
+Run `npm run dev` and open http://localhost:12300. The hub (`index.html`) links every page.
 
 | Page | Shows |
 |---|---|
-| [`index.html`](../index.html) | Playground with the pure-admin demo data, display/size toggles, event log. |
-| [`examples-basic.html`](../examples-basic.html) | The three-line setup and the three effect events. |
-| [`examples-commands-steps.html`](../examples-commands-steps.html) | Static, `search: true`, `freeText` and `shouldShow` steps; inline vs tokens display. |
-| [`examples-async-search.html`](../examples-async-search.html) | Scoped + global search with adjustable latency, debounce, abort log, pagination. |
-| [`examples-theming.html`](../examples-theming.html) | Dark / brand / compact themes via `--base-*` and `--pa-command-palette-*`. |
+| [`examples-basic.html`](../examples-basic.html) | The three-line setup, opening (Ctrl/⌘+K, `open-key`, `g`-sequences, `openWith`), the `cp-*` events, i18n `labels`. |
+| [`examples-commands-steps.html`](../examples-commands-steps.html) | Static steps (inline or fetched once), `search: true` live steps, `freeText`, `shouldShow`, inline vs tokens display. |
+| [`examples-async-search.html`](../examples-async-search.html) | Scoped context search (no call on an empty query), global search, debounce + abort with a provider-call log, pagination. |
+| [`examples-theming.html`](../examples-theming.html) | Themes via `--base-*` / `--pa-command-palette-*`, `--base-rem` scaling, size presets, the phone sheet. |
+| [`examples-playground.html`](../examples-playground.html) | The full pure-admin demo data with every switch and a live event log. |
 
-Shared demo data lives in [`examples-data.js`](../examples-data.js).
+Shared demo data lives in [`examples-data.js`](../examples-data.js). The pages follow the KeenMate
+examples convention (`../web-editor/EXAMPLES.md`): `examples-shared.css`, `examples-chapter-nav.js`,
+`examples-copy-link.js` and `examples-controls-store.js` are copied from `web-editor`. Pages are
+built only from the shared classes and use no page CSS. Switches persist across reloads through
+`persistControls('<page-key>')`. To add a page, add one entry to the `pages` registry in `index.html`.
 
 ## Recipes
 

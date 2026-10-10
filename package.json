@@ -6,7 +6,6 @@
   "main": "./dist/web-commandpalette.umd.js",
   "module": "./dist/web-commandpalette.js",
   "types": "./dist/index.d.ts",
-  "style": "./dist/style.css",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -14,7 +13,6 @@
       "require": "./dist/web-commandpalette.umd.js",
       "default": "./dist/web-commandpalette.js"
     },
-    "./style.css": "./dist/style.css",
     "./dist/*": "./dist/*",
     "./package.json": "./package.json",
     "./manifest": "./component-variables.manifest.json",

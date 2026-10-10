@@ -2,7 +2,7 @@
 
 ```bash
 npm install
-npm run dev              # playground + examples on http://localhost:12300
+npm run dev              # examples hub + pages on http://localhost:12300
 npm run build            # check:vars:strict → cem analyze → vite build (dist/)
 npm run test:unit        # vitest (machine + helpers)
 npm run test:e2e:install # once: Playwright chromium

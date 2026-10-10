@@ -1,81 +1,194 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>web-command-palette — theming</title>
-  <link rel="stylesheet" href="./examples-shared.css">
-  <style>
-    /* Themes are plain CSS custom properties on an ancestor (here :root via a class on <html>).
-       They pierce the shadow root; nothing is declared inside the component that could shadow them. */
-    html.theme-dark {
-      --base-main-bg: #1e1e2e;
-      --base-input-bg: #181825;
-      --base-input-color: #cdd6f4;
-      --base-text-color-1: #cdd6f4;
-      --base-text-color-2: #a6adc8;
-      --base-border-color: #313244;
-      --base-subtle-bg: #313244;
-      --base-accent-color: #cba6f7;
-      --pa-command-palette-item-active-bg: rgba(203, 166, 247, 0.15);
-      --pa-command-palette-item-hover-bg: rgba(203, 166, 247, 0.08);
-      --pa-command-palette-highlight-bg: rgba(203, 166, 247, 0.25);
-      --pa-command-palette-highlight-text: #f5c2e7;
-    }
-    html.theme-brand {
-      --base-accent-color: #e11d48;
-      --pa-command-palette-item-active-bg: rgba(225, 29, 72, 0.1);
-      --pa-command-palette-highlight-bg: rgba(225, 29, 72, 0.15);
-      --pa-command-palette-highlight-text: #e11d48;
-      --pa-command-palette-backdrop-filter: none;
-      --base-border-radius-md: 1.6;
-    }
-    html.theme-compact {
-      --base-rem: 8px;
-      --pa-command-palette-offset-top: 48px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theming &amp; Presentation — Web Command Palette</title>
+
+    <!-- Shared example styles -->
+    <link rel="stylesheet" href="examples-shared.css">
 </head>
-<body>
-  <header class="demo-header">
-    <h1>Theming</h1>
-    <p><a href="./index.html">← playground</a></p>
-  </header>
-  <main class="demo-main">
-    <section class="demo-card">
-      <p>
-        The CSS is pure-admin-core's own palette partial. Set <code>--base-*</code> (shared by every KeenMate
-        component) or the palette's own <code>--pa-command-palette-*</code> knobs on any ancestor.
-        <code>--base-rem</code> scales every dimension (default <code>10px</code>; pure-admin pages set <code>1rem</code>).
-      </p>
-      <div class="demo-buttons">
-        <button type="button" data-theme="">Default</button>
-        <button type="button" data-theme="theme-dark">Dark</button>
-        <button type="button" data-theme="theme-brand">Brand</button>
-        <button type="button" data-theme="theme-compact">Compact (--base-rem: 8px)</button>
-        <label>Size <select id="size"><option value="">default</option><option>sm</option><option>lg</option><option>xl</option></select></label>
-        <button type="button" id="open">Open palette</button>
-      </div>
-    </section>
-  </main>
+<body class="dark-output">
+    <div class="container">
+        <header>
+            <a href="index.html" class="back-link">← Back to Examples</a>
+            <h1>Theming &amp; Presentation</h1>
+            <p class="subtitle">The palette is styled by pure-admin-core's own CSS. Theme it with <code>--base-*</code> and <code>--pa-command-palette-*</code> variables, scale it with <code>--base-rem</code>, and pick a size preset or the phone sheet.</p>
+        </header>
 
-  <web-command-palette></web-command-palette>
+        <!-- ============================================================= -->
+        <!-- TH01 · Themes                                                   -->
+        <!-- ============================================================= -->
+        <div class="card">
+            <h2>TH01 · Themes via CSS Variables</h2>
+            <p>
+                Every variable the palette reads falls back to pure-admin-core's default. Nothing is
+                <em>declared</em> inside the shadow root, so a theme set on <code>:root</code> or any ancestor always
+                wins. These presets set variables on <code>&lt;html&gt;</code>.
+            </p>
+            <div class="controls">
+                <span>theme:</span>
+                <label><input type="radio" name="th01-theme" value="default" checked> default</label>
+                <label><input type="radio" name="th01-theme" value="dark"> dark</label>
+                <label><input type="radio" name="th01-theme" value="brand"> brand</label>
+            </div>
+            <div class="demo-area">
+                <button type="button" data-open="mac">Open (“mac”)</button>
+                <button type="button" class="secondary" data-open="/deploy ">/deploy</button>
+            </div>
+            <div class="output">
+                <div class="output-label">Variables applied to &lt;html&gt;</div>
+                <pre id="th01-vars">(none — core defaults)</pre>
+            </div>
+        </div>
 
-  <script type="module">
-    import './src/index.ts';
-    import { commands, contexts, searchCallback } from './examples-data.js';
+        <!-- ============================================================= -->
+        <!-- TH02 · Scale                                                    -->
+        <!-- ============================================================= -->
+        <div class="card">
+            <h2>TH02 · Scale with <code>--base-rem</code></h2>
+            <p>
+                pure-admin sizes everything in rem, assuming a 10px root. Inside the shadow root every <code>Nrem</code> is
+                compiled to <code>calc(N * var(--base-rem, 10px))</code>, so the palette looks the same on any page. On a
+                pure-admin page, set <code>--base-rem: 1rem</code> to follow the root font size.
+            </p>
+            <div class="controls">
+                <span><code>--base-rem</code>:</span>
+                <label><input type="radio" name="th02-rem" value="8px"> 8px</label>
+                <label><input type="radio" name="th02-rem" value="" checked> 10px (default)</label>
+                <label><input type="radio" name="th02-rem" value="12px"> 12px</label>
+            </div>
+            <div class="demo-area">
+                <button type="button" data-open="">Open</button>
+            </div>
+        </div>
 
-    const palette = document.querySelector('web-command-palette');
-    palette.commands = commands;
-    palette.contexts = contexts;
-    palette.searchCallback = searchCallback;
+        <!-- ============================================================= -->
+        <!-- TH03 · Size presets                                             -->
+        <!-- ============================================================= -->
+        <div class="card">
+            <h2>TH03 · Size Presets</h2>
+            <p>
+                <code>size="sm|lg|xl"</code> sets width and results height together. For any other size, set
+                <code>--pa-command-palette-width</code>, <code>--pa-command-palette-results-max-height</code> or
+                <code>--pa-command-palette-offset-top</code> yourself.
+            </p>
+            <div class="controls">
+                <span><code>size</code>:</span>
+                <label><input type="radio" name="th03-size" value="sm"> sm</label>
+                <label><input type="radio" name="th03-size" value="" checked> default</label>
+                <label><input type="radio" name="th03-size" value="lg"> lg</label>
+                <label><input type="radio" name="th03-size" value="xl"> xl</label>
+            </div>
+            <div class="demo-area">
+                <button type="button" data-open="">Open</button>
+            </div>
+        </div>
 
-    document.querySelectorAll('[data-theme]').forEach((b) => b.addEventListener('click', () => {
-      document.documentElement.className = b.dataset.theme;
-      palette.openWith('mac');
-    }));
-    document.getElementById('size').addEventListener('change', (e) => { palette.size = e.target.value || null; });
-    document.getElementById('open').addEventListener('click', () => palette.open());
-  </script>
+        <!-- ============================================================= -->
+        <!-- TH04 · Phone sheet                                              -->
+        <!-- ============================================================= -->
+        <div class="card">
+            <h2>TH04 · Phone Fullscreen Sheet</h2>
+            <p>
+                With <code>mobile-presentation="auto"</code> (the default), touch phones get a fullscreen sheet with a close
+                bar, which stays above the on-screen keyboard. A narrow desktop window keeps the floating dialog. Force
+                <code>fullscreen</code> to preview the sheet here.
+            </p>
+            <div class="controls">
+                <span><code>mobile-presentation</code>:</span>
+                <label><input type="radio" name="th04-presentation" value="auto" checked> auto</label>
+                <label><input type="radio" name="th04-presentation" value="floating"> floating</label>
+                <label><input type="radio" name="th04-presentation" value="fullscreen"> fullscreen</label>
+            </div>
+            <div class="demo-area">
+                <button type="button" data-open="">Open</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- One palette per page: it owns the global Ctrl/⌘+K listener. -->
+    <web-command-palette id="palette"></web-command-palette>
+
+    <!-- Register the element (Vite dev serves the TS source). -->
+    <script type="module" src="/src/index.ts"></script>
+
+    <!-- Page wiring -->
+    <script type="module">
+        import { persistControls } from './examples-controls-store.js';
+        import { commands, contexts, searchCallback, stepOptionsCallback } from './examples-data.js';
+
+        // Theme presets: plain custom properties set on <html>.
+        const THEMES = {
+            default: {},
+            dark: {
+                '--base-main-bg': '#1e1e2e',
+                '--base-input-bg': '#181825',
+                '--base-input-color': '#cdd6f4',
+                '--base-text-color-1': '#cdd6f4',
+                '--base-text-color-2': '#a6adc8',
+                '--base-border-color': '#313244',
+                '--base-subtle-bg': '#313244',
+                '--base-accent-color': '#cba6f7',
+                '--pa-command-palette-item-active-bg': 'rgba(203, 166, 247, 0.15)',
+                '--pa-command-palette-item-hover-bg': 'rgba(203, 166, 247, 0.08)',
+                '--pa-command-palette-highlight-bg': 'rgba(203, 166, 247, 0.25)',
+                '--pa-command-palette-highlight-text': '#f5c2e7',
+            },
+            brand: {
+                '--base-accent-color': '#e11d48',
+                '--pa-command-palette-item-active-bg': 'rgba(225, 29, 72, 0.1)',
+                '--pa-command-palette-highlight-bg': 'rgba(225, 29, 72, 0.15)',
+                '--pa-command-palette-highlight-text': '#e11d48',
+                '--pa-command-palette-backdrop-filter': 'none',
+                '--base-border-radius-md': '1.6',
+            },
+        };
+
+        function wire() {
+            const palette = document.getElementById('palette');
+            palette.commands = commands;
+            palette.contexts = contexts;
+            palette.searchCallback = searchCallback;
+            palette.stepOptionsCallback = stepOptionsCallback;
+
+            const root = document.documentElement;
+            const varsOut = document.getElementById('th01-vars');
+            let applied = [];
+            document.querySelectorAll('input[name="th01-theme"]').forEach((r) =>
+                r.addEventListener('change', (e) => {
+                    if (!e.target.checked) return;
+                    applied.forEach((name) => root.style.removeProperty(name));
+                    const vars = THEMES[e.target.value];
+                    Object.entries(vars).forEach(([name, value]) => root.style.setProperty(name, value));
+                    applied = Object.keys(vars);
+                    varsOut.textContent = applied.length
+                        ? Object.entries(vars).map(([n, v]) => `${n}: ${v};`).join('\n')
+                        : '(none — core defaults)';
+                }));
+
+            document.querySelectorAll('input[name="th02-rem"]').forEach((r) =>
+                r.addEventListener('change', (e) => {
+                    if (!e.target.checked) return;
+                    if (e.target.value) root.style.setProperty('--base-rem', e.target.value);
+                    else root.style.removeProperty('--base-rem');
+                }));
+            document.querySelectorAll('input[name="th03-size"]').forEach((r) =>
+                r.addEventListener('change', (e) => { if (e.target.checked) palette.size = e.target.value || null; }));
+            document.querySelectorAll('input[name="th04-presentation"]').forEach((r) =>
+                r.addEventListener('change', (e) => { if (e.target.checked) palette.setAttribute('mobile-presentation', e.target.value); }));
+
+            document.querySelectorAll('[data-open]').forEach((b) =>
+                b.addEventListener('click', () => palette.openWith(b.dataset.open)));
+
+            persistControls('theming');
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
+        else wire();
+    </script>
+
+    <!-- Shared helpers LAST (after the page's own wiring). -->
+    <script type="module" src="examples-copy-link.js"></script>
+    <script type="module" src="examples-chapter-nav.js"></script>
 </body>
 </html>

@@ -1,71 +1,215 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>web-command-palette — playground</title>
-  <link rel="stylesheet" href="./examples-shared.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Command Palette — Examples</title>
+    <link rel="stylesheet" href="examples-shared.css">
+    <style>
+        body {
+            background: #f0f2f5;
+            min-height: 100vh;
+            padding: 2rem;
+            max-width: none;
+        }
+
+        .page-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 2.5rem 3rem;
+            margin-bottom: 2rem;
+            color: white;
+        }
+
+        .header-card h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0 0 0.5rem 0;
+            color: white;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .header-card .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin: 0 0 1rem 0;
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.35rem 0.85rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card-link {
+            background: white;
+            border-radius: 12px;
+            padding: 1.75rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .card-link:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            text-decoration: none;
+        }
+
+        .card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+
+        .card-link h2.card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0 0 0.5rem 0;
+            color: #1a202c;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .card-description {
+            color: #64748b;
+            line-height: 1.6;
+            margin: 0;
+            font-size: 0.95rem;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #f56565;
+            color: white;
+            padding: 0.15rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+            text-transform: uppercase;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+
+        footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-  <header class="demo-header">
-    <h1>&lt;web-command-palette&gt;</h1>
-    <p>Press <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>, or <kbd>g</kbd> then <kbd>d</kbd> / <kbd>a</kbd> / <kbd>g</kbd> / <kbd>t</kbd> / <kbd>r</kbd>.</p>
-    <nav class="demo-nav">
-      <a href="./examples-basic.html">Basic</a>
-      <a href="./examples-commands-steps.html">Commands &amp; steps</a>
-      <a href="./examples-async-search.html">Async search</a>
-      <a href="./examples-theming.html">Theming</a>
-    </nav>
-  </header>
+    <div class="page-container">
+        <header class="header-card">
+            <h1>Web Command Palette</h1>
+            <p class="subtitle">A framework-agnostic command palette shipped as the <code>&lt;web-command-palette&gt;</code> Web Component. It covers <code>/</code> commands with multi-step wizards, <code>:</code> scoped search, global search and keyboard navigation, and you configure it with properties, events and async callbacks.</p>
+            <span class="version-badge" id="version-badge"></span>
+        </header>
 
-  <main class="demo-main">
-    <section class="demo-card">
-      <h2>Try it</h2>
-      <div class="demo-buttons">
-        <button type="button" data-open="">Open</button>
-        <button type="button" data-open="/">/ commands</button>
-        <button type="button" data-open="/deploy ">/deploy</button>
-        <button type="button" data-open=":">: contexts</button>
-        <button type="button" data-open=":products ">:products</button>
-        <button type="button" data-open="mac">“mac” (global)</button>
-      </div>
-      <label>Display
-        <select id="display"><option>inline</option><option>tokens</option></select>
-      </label>
-      <label>Size
-        <select id="size"><option value="">default</option><option>sm</option><option>lg</option><option>xl</option></select>
-      </label>
-    </section>
+        <div class="cards" id="cards"></div>
 
-    <section class="demo-card">
-      <h2>Event log</h2>
-      <pre id="log" class="demo-log"></pre>
-    </section>
-  </main>
+        <footer>
+            <p>Created by <a href="https://github.com/keenmate" target="_blank">Keenmate s.r.o.</a> | <a href="https://github.com/keenmate/web-commandpalette" target="_blank">GitHub</a></p>
+        </footer>
+    </div>
 
-  <web-command-palette id="palette"></web-command-palette>
+    <script>
+        // =====================================================
+        // Demo Page Registry
+        // Add new pages here - they'll appear automatically
+        // =====================================================
+        const pages = [
+            {
+                href: 'examples-basic.html',
+                icon: '🧩',
+                title: 'Basic Usage',
+                description: 'The three-line setup (commands, contexts and a searchCallback), the ways to open the palette (Ctrl/⌘+K, g-sequences, openWith), the cp-* effect events, and i18n labels.'
+            },
+            {
+                href: 'examples-commands-steps.html',
+                icon: '⚡',
+                title: 'Commands & Steps',
+                description: 'Multi-step command wizards: static steps (inline options or fetched once), live search:true steps, freeText answers, conditional shouldShow steps, and the inline vs tokens display.'
+            },
+            {
+                href: 'examples-async-search.html',
+                icon: '🔎',
+                title: 'Async Search',
+                description: 'Scoped :context search (which never queries on an empty query), global search with instant command matches, debounce, AbortSignal supersession and client-side pagination. Includes a live provider-call log.'
+            },
+            {
+                href: 'examples-theming.html',
+                icon: '🎨',
+                title: 'Theming & Presentation',
+                description: 'pure-admin-core styling theme-able through --base-* and --pa-command-palette-* variables, --base-rem scaling, size presets, and the phone fullscreen sheet.'
+            },
+            {
+                href: 'examples-playground.html',
+                icon: '🛠️',
+                title: 'Playground',
+                description: 'The kitchen sink: the full pure-admin demo data set with every switch wired up and a live event log.'
+            }
+        ]
 
-  <script type="module">
-    import './src/index.ts';
-    import { commands, contexts, searchCallback, stepOptionsCallback } from './examples-data.js';
+        // =====================================================
+        // Render cards from registry
+        // =====================================================
+        function renderCards() {
+            const container = document.getElementById('cards')
+            container.innerHTML = pages.map(page => `
+                <a href="${page.href}" class="card-link">
+                    <div class="card-icon">${page.icon}</div>
+                    <h2 class="card-title">
+                        ${page.title}${page.badge ? `<span class="badge">${page.badge}</span>` : ''}
+                    </h2>
+                    <p class="card-description">${page.description}</p>
+                </a>
+            `).join('')
+        }
 
-    const palette = document.getElementById('palette');
-    palette.commands = commands;
-    palette.contexts = contexts;
-    palette.searchCallback = searchCallback;
-    palette.stepOptionsCallback = stepOptionsCallback;
+        renderCards()
 
-    const log = document.getElementById('log');
-    for (const name of ['cp-open', 'cp-close', 'cp-select', 'cp-complete', 'cp-command', 'cp-ready']) {
-      palette.addEventListener(name, (e) => {
-        log.textContent = `${name} ${JSON.stringify(e.detail)}\n` + log.textContent;
-      });
-    }
+        // Feed the floating jump-nav (examples-chapter-nav.js) from the same registry,
+        // so the index gets a quick "hop to any example" list — no extra data needed.
+        window.CHAPTER_NAV_ITEMS = pages.map(function (p) { return { label: p.title, href: p.href } })
+    </script>
 
-    document.querySelectorAll('[data-open]').forEach((btn) =>
-      btn.addEventListener('click', () => palette.openWith(btn.dataset.open)));
-    document.getElementById('display').addEventListener('change', (e) => { palette.display = e.target.value; });
-    document.getElementById('size').addEventListener('change', (e) => { palette.size = e.target.value || null; });
-  </script>
+    <!-- Version badge — sourced from package.json (vite provides named JSON exports),
+         so it never drifts from the real package version. -->
+    <script type="module">
+        import { version } from './package.json'
+        const badge = document.getElementById('version-badge')
+        if (badge) badge.textContent = `v${version}`
+    </script>
+
+    <script type="module" src="examples-chapter-nav.js"></script>
 </body>
 </html>
