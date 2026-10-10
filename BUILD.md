@@ -37,3 +37,12 @@ fallback-less `var(--x)` reads get core's defaults as fallbacks, and `rem` becom
 manifest.
 
 To pick up a new core palette: bump `@keenmate/pure-admin-core`, rebuild, run `check:vars`.
+
+## Examples site image
+
+`make image-build` builds a two-stage image: a Node stage runs `npm ci` and `npm run build`, and
+an nginx stage serves the examples, the docs and `dist/`. The served pages get `/src/index.ts`
+rewritten to `/dist/web-commandpalette.js`, and the hub's version badge is stamped at build time.
+`make image-run` serves it on http://localhost:12310, and `make image-stop` / `make image-clean`
+tear it down. The runner defaults to podman; set `DOCKER_RUNNER`, `IMAGE_NAME`, `CONTAINER_NAME`
+or `IMAGE_PORT` in an uncommitted `.makefile.env`.

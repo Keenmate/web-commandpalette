@@ -34,3 +34,6 @@ custom-elements.json
 web-types.json
 vscode.html-custom-data.json
 vscode.css-custom-data.json
+
+# Per-developer Make config (container runner, ports)
+.makefile.env

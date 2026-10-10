@@ -11,7 +11,8 @@ spec and records the intent behind the behaviour; `docs/usage.md` is the public 
 
 A `Makefile` wraps these (run `make` for the list). It also has `make kill-port` (frees
 12300–12305), `make publish-dry`, `make publish-rc` (the `rc` dist-tag) and `make publish`
-(`latest`). Don't run the publish targets unless the user asks.
+(`latest`), plus `make image-build` / `image-run` (examples site on nginx, port 12310; see
+BUILD.md). Don't run the publish targets unless the user asks.
 
 - `npm run dev` — Vite dev server on port **12300** (`index.html` hub + `examples-*.html`)
 - `npm run build` — `check:vars:strict` → `cem analyze` → Vite library build into `dist/`
