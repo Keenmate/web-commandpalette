@@ -9,6 +9,10 @@ spec and records the intent behind the behaviour; `docs/usage.md` is the public 
 
 ## Commands
 
+A `Makefile` wraps these (run `make` for the list). It also has `make kill-port` (frees
+12300–12305), `make publish-dry`, `make publish-rc` (the `rc` dist-tag) and `make publish`
+(`latest`). Don't run the publish targets unless the user asks.
+
 - `npm run dev` — Vite dev server on port **12300** (`index.html` hub + `examples-*.html`)
 - `npm run build` — `check:vars:strict` → `cem analyze` → Vite library build into `dist/`
 - `npm run test:unit` — vitest (happy-dom), specs in `test/unit/`. Single file: `npx vitest run test/unit/palette.test.ts`; by name: `npx vitest run -t "context search"`
