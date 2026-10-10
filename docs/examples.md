@@ -10,7 +10,7 @@ Run `npm run dev` and open http://localhost:12300. The hub (`index.html`) links 
 | [`examples-theming.html`](../examples-theming.html) | Themes via `--base-*` / `--pa-command-palette-*`, `--base-rem` scaling, size presets, the phone sheet. |
 | [`examples-playground.html`](../examples-playground.html) | The full pure-admin demo data with every switch and a live event log. |
 
-Shared demo data lives in [`examples-data.js`](../examples-data.js). The pages follow the KeenMate
+Shared demo data lives in [`examples-data.js`](../examples-data.js). The pages follow the Keenmate
 examples convention (`../web-editor/EXAMPLES.md`): `examples-shared.css`, `examples-chapter-nav.js`,
 `examples-copy-link.js` and `examples-controls-store.js` are copied from `web-editor`. Pages are
 built only from the shared classes and use no page CSS. Switches persist across reloads through

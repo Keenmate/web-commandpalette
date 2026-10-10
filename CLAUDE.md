@@ -45,7 +45,7 @@ configure** — `commands` + `searchCallback` must be a complete setup.
 
 ### Example pages
 
-These follow the KeenMate examples convention in `../web-editor/EXAMPLES.md`. `index.html` is a
+These follow the Keenmate examples convention in `../web-editor/EXAMPLES.md`. `index.html` is a
 hub that renders cards from a `pages` registry. Each `examples-<feature>.html` uses the shared
 skeleton (`.container` → header with `.back-link`, then `.card` sections with numbered `<h2>`s) and
 only the classes from `examples-shared.css`, with **no page `<style>`**. Controls sit in

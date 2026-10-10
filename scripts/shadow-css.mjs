@@ -18,7 +18,7 @@
  *    `html { font-size: 10px }`). Inside a shadow root `rem` still resolves
  *    against the HOST page's root, so on a 16px page everything would be 1.6×.
  *    Every `Nrem` becomes `calc(N * var(--base-rem, 10px))` — the same shared
- *    `--base-rem` knob the other KeenMate components use (pure-admin hosts set it
+ *    `--base-rem` knob the other Keenmate components use (pure-admin hosts set it
  *    to `1rem` to follow their root font-size). Media-query params are untouched.
  *
  * Also maps `:root` selectors to `:host` (`:root` never matches inside a shadow tree).

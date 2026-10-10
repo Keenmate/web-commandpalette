@@ -65,4 +65,4 @@ Navigation (<kbd>↑</kbd><kbd>↓</kbd> <kbd>PgUp</kbd><kbd>PgDn</kbd> <kbd>Hom
 
 ## License
 
-MIT © Keenmate
+MIT © Keenmate s.r.o.
