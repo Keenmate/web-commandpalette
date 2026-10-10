@@ -271,7 +271,9 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents> {
     this.#render();
     if (!this.#isReady && this.isConnected) {
       this.#isReady = true;
-      this.emit('cp-ready', {});
+      // Deferred a microtask: upgrade happens while the defining module is still
+      // evaluating, so a listener added right after `import` would otherwise miss it.
+      queueMicrotask(() => this.emit('cp-ready', {}));
     }
   }
 
