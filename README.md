@@ -1,76 +1,159 @@
 # @keenmate/web-commandpalette
 
-A framework-agnostic **command-palette web component** (`<web-command-palette>`) — the whole
-palette machine (modes, multi-step command wizards, scoped + global search, keyboard nav,
-client-side filtering, mobile sheet, focus/scroll-lock) in one custom element that talks to the
-host only through **properties, events, and async callbacks**.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Hosts (pure-admin vanilla, keen/Phoenix, svelte, later react/razor) become thin adapters instead
-of re-implementing ~1000 lines of palette logic each.
+> A framework-agnostic command palette web component — commands with multi-step wizards, scoped and
+> global search, favorites and recents, full keyboard control, RTL and a phone sheet.
 
-## The three-line setup
+## What is it
+
+`@keenmate/web-commandpalette` is a custom element (`<web-command-palette>`) that holds the whole
+command-palette state machine — routing, wizards, search, keyboard, focus and scroll-lock — and
+talks to its host only through **properties, events and async callbacks**. Hosts (plain JS, Svelte,
+React, Blazor, Phoenix LiveView) stay thin adapters instead of re-implementing the palette.
+
+Reads the shared `--base-*` variables from the page (pure-admin, or
+[`@keenmate/theme-designer`](https://theme-designer.keenmate.dev)), with its own `--cp-*` knobs on
+top; the CSS is pure-admin-core's palette, compiled into the shadow root.
+
+**Headline features:**
+
+- `/` commands and `:` search contexts, plus global search that shows matching commands instantly.
+- Multi-step command wizards — fixed, loaded-once or live-searched steps, free text, branches.
+- Async search with debounce and `AbortSignal` cancellation; empty scoped queries never hit the server.
+- Favorites and recently used items (incl. completed runs, replayable with <kbd>Tab</kbd> / <kbd>Enter</kbd>),
+  stored in `localStorage` or your backend.
+- A short confirmation of what ran, instead of the dialog just vanishing.
+- Full keyboard control, `g <letter>` hotkeys, RTL, i18n `labels`, a fullscreen sheet on phones.
+
+## Demos & docs
+
+- 🧪 [Live examples](https://examples.web-commandpalette.keenmate.dev) — the hosted example site
+  (basic usage, commands & steps, async search, favorites, theming, playground). Locally:
+  `make dev` → http://localhost:12300.
+- 📘 [Usage / API reference](./docs/usage.md) — behaviour, properties, attributes, methods, events, data shapes.
+- 🎨 [Theming](./docs/theming.md) — `--cp-*` and `--base-*` variables, font sizes, icons, size presets.
+- 📚 [Examples / cookbook](./docs/examples.md) — the example pages and common recipes.
+- ♿ [Accessibility](./docs/accessibility.md) — keyboard model, ARIA, focus, RTL.
+
+All guides are listed in [docs/README.md](./docs/README.md).
+
+## Install
+
+```bash
+npm install @keenmate/web-commandpalette
+```
+
+## Quick start
+
+**Minimal — commands, no server:**
 
 ```html
 <web-command-palette></web-command-palette>
+
 <script type="module">
   import '@keenmate/web-commandpalette';
 
   const palette = document.querySelector('web-command-palette');
   palette.commands = [
-    { id: 'go', shortcut: '/go', name: 'Go to Page', hotkey: 'g g',
-      steps: [{ id: 'page', placeholder: 'Type a page…', options: [{ label: 'Users', value: '/users' }] }] },
+    { id: 'reload', shortcut: '/reload', name: 'Reload data', hotkey: 'g r' },
+    { id: 'go', shortcut: '/go', name: 'Go to page',
+      steps: [{ id: 'page', options: [{ label: 'Users', value: '/users' }, { label: 'Orders', value: '/orders' }] }] },
   ];
-  palette.contexts = [{ id: 'products', shortcut: ':products', aliases: [':p'], name: 'Products' }];
-  palette.searchCallback = async (scope, query, signal) => fetchResults(scope, query, signal);
 
-  // The host performs the effect; the palette closes itself.
-  palette.addEventListener('cp-select',   (e) => location.href = e.detail.item.href);
-  palette.addEventListener('cp-complete', (e) => run(e.detail.commandId, e.detail.selections));
-  palette.addEventListener('cp-command',  (e) => run(e.detail.commandId, []));
+  palette.addEventListener('cp-command', (e) => reload());                                      // instant command
+  palette.addEventListener('cp-complete', (e) => (location.href = e.detail.selections[0].value)); // wizard done
 </script>
 ```
 
-<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd> opens it. Type `/` for commands, `:` for search contexts,
-or anything else for global search. `g` then a letter runs a command's `hotkey` sequence.
+<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd> opens it; type `/` for commands.
 
-## How it behaves
+**With search — contexts, a server callback and results:**
 
-| You type | Mode | Data source |
-|---|---|---|
-| *(nothing)* | home: commands + contexts | in memory |
-| `/dep` | command list | in memory, filtered client-side |
-| `/deploy ` | command wizard | step `options`, or `stepOptionsCallback` (static: once; `search: true`: per keystroke) |
-| `:` | context list | in memory, filtered client-side |
-| `:p ` | scoped search, input locked to `":products "` | **nothing until you type** — then `searchCallback({ contextId }, q)` |
-| `mac` | global search | matching commands/contexts first (instantly), then `searchCallback('global', q)` |
+```js
+palette.contexts = [{ id: 'products', shortcut: ':products', aliases: [':p'], name: 'Products' }];
 
-Navigation (<kbd>↑</kbd><kbd>↓</kbd> <kbd>PgUp</kbd><kbd>PgDn</kbd> <kbd>Home</kbd><kbd>End</kbd>
-<kbd>←</kbd><kbd>→</kbd> pages) is pure client-side DOM and never waits on a provider.
-<kbd>Esc</kbd> / <kbd>⌫</kbd> at the locked prefix step back; <kbd>Esc</kbd> elsewhere closes.
+palette.searchCallback = async (scope, query, signal) => {
+  // scope: 'global' | { contextId: 'products' } — called only for non-empty, debounced queries
+  const where = scope === 'global' ? 'global' : scope.contextId;
+  const res = await fetch(`/api/search?scope=${where}&q=${encodeURIComponent(query)}`, { signal });
+  return res.json(); // [{ id, title, subtitle?, icon?, href?, group? }]
+};
 
-**Favorites & recents** (on by default, `localStorage` or your own load/upsert callbacks): the home
-screen leads with starred items (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>D</kbd>) and recently used ones —
-including completed wizard runs, which reopen with their answers: <kbd>Enter</kbd> runs them again,
-<kbd>Tab</kbd> walks through step by step. Steps can share pickers via their own `load`, an option
-can fork the wizard with its own `steps`, and results with a `group` get section headings. After a
-command runs, the dialog briefly collapses to a one-line **confirmation** (✓ `/deploy to Staging branch
-main` · Done, `confirmation-duration`) instead of just vanishing. Right-to-left: set `dir="rtl"` on the element or an ancestor.
+palette.addEventListener('cp-select', (e) => (location.href = e.detail.item.href));
+```
 
-## Docs
+The palette closes itself after `cp-select` / `cp-complete` / `cp-command`; the host performs the
+effect. See [docs/usage.md](./docs/usage.md) for the full API and
+[docs/examples.md](./docs/examples.md) for recipes (step pickers, branching wizards, favorites on
+the server, custom confirmation).
 
-- [Usage — properties, attributes, methods, events, data shapes](./docs/usage.md)
-- [Theming — CSS variables, `--base-rem`, size presets](./docs/theming.md)
-- [Examples](./docs/examples.md) (run `npm run dev` → http://localhost:12300)
-- [Accessibility](./docs/accessibility.md)
-- [Building & testing](./BUILD.md)
+## Editor IntelliSense
 
-## Built on
+The package ships editor metadata — autocomplete and hover docs for the element's attributes,
+events and `--cp-*` CSS variables — generated from the component's source on every build.
 
-- `@keenmate/web-components-core` — `BlissElement` base, `overlay` (scroll-lock, keyboard inset,
-  one-overlay-at-a-time), `environment` (device classification for the phone sheet).
-- CSS is single-sourced from `@keenmate/pure-admin-core`'s `_command-palette.scss` — compiled into
-  the shadow root, never forked.
+- **JetBrains** (WebStorm / IntelliJ) — works automatically via the `web-types` field in `package.json`.
+- **VS Code** — point your workspace at the data files once in `.vscode/settings.json`:
+
+  ```json
+  {
+    "html.customData": ["./node_modules/@keenmate/web-commandpalette/vscode.html-custom-data.json"],
+    "css.customData": ["./node_modules/@keenmate/web-commandpalette/vscode.css-custom-data.json"]
+  }
+  ```
+
+  Reload the window after adding them.
+
+## Browser support
+
+Modern evergreen browsers with native `customElements`, Shadow DOM, CSS `color-mix()` and
+dynamic viewport units:
+
+- Chrome / Edge 111+
+- Firefox 113+
+- Safari 16.2+
+
+No polyfills are shipped.
+
+## Development
+
+```bash
+make setup        # npm install
+make dev          # examples hub on http://localhost:12300
+make build        # check:vars → cem analyze → library build (dist/)
+make test         # unit (Vitest) + e2e (Playwright: desktop + Pixel 7)
+make              # list every target (publish-rc, image-build, kill-port, …)
+```
+
+Details — single tests, the CSS pipeline, publishing, the example-site image — are in
+[BUILD.md](./BUILD.md).
+
+## Code structure
+
+| Layer | File | Role |
+|-------|------|------|
+| Element | `src/web-component.ts` | `CommandPaletteElement` — the `static inputs` / `static events` tables (IDE metadata is generated from them), overlay, presentation, confirmation |
+| Logic | `src/palette.ts` | `PaletteMachine` — DOM-free modes, wizard, filtering, async search, pagination |
+| Logic | `src/usage.ts` | `UsageStore` — favorites + recents, frecency, pluggable persistence |
+| Render | `src/render.ts` | builds the shadow DOM once and patches it |
+| Service | `src/keyboard.ts`, `src/filter.ts`, `src/icons.ts` | global hotkeys + input key map, filtering, icon rendering |
+| Side | `src/types.ts`, `src/logger.ts`, `src/css/` | public types, logging, shadow-root CSS |
+
+The palette CSS is pure-admin-core's `_command-palette.scss`, compiled by
+`scripts/shadow-css.mjs` into the shadow root and adapted to read only `--cp-*` and `--base-*`
+(never forked — a rebuild re-pulls core).
 
 ## License
 
-MIT © Keenmate s.r.o.
+MIT © Keenmate s.r.o. — see [LICENSE](./LICENSE).
+
+## Built with BlissFramework
+
+Built on `@keenmate/web-components-core` (`BlissElement`) following the
+[BlissFramework component guidelines](https://blissframework.dev/) for structure, theming and
+accessibility.
+
+## Credits
+
+Created by [Keenmate](https://github.com/keenmate) as part of the Pure Admin design system.

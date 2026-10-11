@@ -13,7 +13,7 @@
   <kbd>Shift</kbd>+<kbd>Tab</kbd> steps back, and from
   the fullscreen close button it returns to the input.
 - **Keyboard**: everything is reachable without a pointer — see the keyboard map in the
-  [README](../README.md#how-it-behaves). `g <letter>` sequences are ignored while typing in any
+  [usage guide](./usage.md#keyboard). `g <letter>` sequences are ignored while typing in any
   field, so they never hijack text entry.
 - The page behind is scroll-locked while open; on touch phones the palette becomes a fullscreen
   sheet that stays above the on-screen keyboard.

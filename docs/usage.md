@@ -7,6 +7,32 @@ Mount **one** `<web-command-palette>` per page. The first connected instance own
 import '@keenmate/web-commandpalette';
 ```
 
+## How it behaves
+
+What the user types decides the mode:
+
+| You type | Mode | Data source |
+|---|---|---|
+| *(nothing)* | home: favorites, recent, commands, contexts | in memory |
+| `/dep` | command list | in memory, filtered client-side |
+| `/deploy ` | command wizard | step `options`, its own `load`, or `stepOptionsCallback` (static: once; `search: true`: per keystroke) |
+| `:` | context list | in memory, filtered client-side |
+| `:p ` | scoped search, input locked to `":products "` | **nothing until you type** — then the context's `search`, or `searchCallback({ contextId }, q)` |
+| `mac` | global search | matching commands/contexts first (instantly), then `searchCallback('global', q)` |
+
+### Keyboard
+
+| Keys | Where | Does |
+|---|---|---|
+| <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd> | anywhere | open / close (`open-key`) |
+| <kbd>g</kbd> then a letter | anywhere, not typing | run the command with that `hotkey`; `g f` opens favorites |
+| <kbd>↑</kbd><kbd>↓</kbd> <kbd>PgUp</kbd><kbd>PgDn</kbd> <kbd>Home</kbd><kbd>End</kbd> | list | move — pure client-side, never waits on a provider |
+| <kbd>←</kbd><kbd>→</kbd> | search, caret at the edge | previous / next page (mirrored in RTL) |
+| <kbd>Enter</kbd> | list | select; in a replayed run, also accept the remaining remembered answers |
+| <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> | wizard | accept this step / step back |
+| <kbd>Esc</kbd>, <kbd>⌫</kbd> at the locked prefix | wizard, scoped search, full lists | step back; <kbd>Esc</kbd> elsewhere closes |
+| <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>D</kbd> / <kbd>F</kbd> / <kbd>R</kbd> | palette open | star the active row / all favorites / all recent |
+
 ## Properties
 
 Objects and functions are **properties only** — set them from JS (or a framework/LiveView hook).

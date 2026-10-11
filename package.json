@@ -28,6 +28,7 @@
   "files": [
     "dist",
     "src/css",
+    "docs/README.md",
     "docs/usage.md",
     "docs/theming.md",
     "docs/examples.md",

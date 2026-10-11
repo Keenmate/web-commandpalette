@@ -1,6 +1,7 @@
 # Examples
 
-Run `npm run dev` and open http://localhost:12300. The hub (`index.html`) links every page.
+Browse them at https://examples.web-commandpalette.keenmate.dev, or run `npm run dev` and open
+http://localhost:12300. The hub (`index.html`) links every page.
 
 | Page | Shows |
 |---|---|
