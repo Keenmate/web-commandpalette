@@ -48,6 +48,14 @@ Navigation (<kbd>↑</kbd><kbd>↓</kbd> <kbd>PgUp</kbd><kbd>PgDn</kbd> <kbd>Hom
 <kbd>←</kbd><kbd>→</kbd> pages) is pure client-side DOM and never waits on a provider.
 <kbd>Esc</kbd> / <kbd>⌫</kbd> at the locked prefix step back; <kbd>Esc</kbd> elsewhere closes.
 
+**Favorites & recents** (on by default, `localStorage` or your own load/upsert callbacks): the home
+screen leads with starred items (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>D</kbd>) and recently used ones —
+including completed wizard runs, which reopen with their answers: <kbd>Enter</kbd> runs them again,
+<kbd>Tab</kbd> walks through step by step. Steps can share pickers via their own `load`, an option
+can fork the wizard with its own `steps`, and results with a `group` get section headings. After a
+command runs, the dialog briefly collapses to a one-line **confirmation** (✓ `/deploy to Staging branch
+main` · Done, `confirmation-duration`) instead of just vanishing. Right-to-left: set `dir="rtl"` on the element or an ancestor.
+
 ## Docs
 
 - [Usage — properties, attributes, methods, events, data shapes](./docs/usage.md)

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { COMMANDS, CONTEXTS, harness, titles } from './helpers';
-import type { Option, Result } from '../../src/types';
+import type { Command, Option, Result } from '../../src/types';
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
@@ -219,6 +219,79 @@ describe('command steps (wizard)', () => {
     host.state.display = 'inline';
     m.displayChanged();
     expect(m.input).toBe('/deploy to ');
+  });
+
+  describe('branching (option.steps)', () => {
+    const ASSIGN: Command = {
+      id: 'assign-admin', shortcut: '/assign-admin', name: 'Assign admin',
+      steps: [
+        { id: 'user', options: [{ id: 'john', label: 'John' }] },
+        { id: 'target', prompt: ' to ', options: [
+          { id: 'group', label: 'group', steps: [{ id: 'group', options: [{ label: 'Finance' }] }] },
+          { id: 'site', label: 'site', steps: [{ id: 'site', options: [{ label: 'Intranet' }] }] },
+        ] },
+        { id: 'role', prompt: ' as ', options: [{ label: 'owner' }] },
+      ],
+    };
+
+    it('an option with steps splices them in before the remaining siblings', () => {
+      const { m, effects } = harness({ commands: [ASSIGN] });
+      m.setInput('/assign-admin ');
+      m.select(); // John
+      m.setInput('/assign-admin John to si');
+      m.select(); // site
+      expect(m.step?.id).toBe('site');
+      expect(m.input).toBe('/assign-admin John to site ');
+      expect(titles(m)).toEqual(['Intranet']);
+      m.select();
+      expect(m.step?.id).toBe('role');
+      m.select();
+      expect(effects[0]).toEqual({
+        type: 'complete', commandId: 'assign-admin', selections: [
+          { stepId: 'user', label: 'John', value: 'John', optionId: 'john', isFreeText: false },
+          { stepId: 'target', label: 'site', value: 'site', optionId: 'site', isFreeText: false },
+          { stepId: 'site', label: 'Intranet', value: 'Intranet', isFreeText: false },
+          { stepId: 'role', label: 'owner', value: 'owner', isFreeText: false },
+        ],
+      });
+    });
+
+    it('stepping back past the branching answer drops its branch', () => {
+      const { m } = harness({ commands: [ASSIGN] });
+      m.setInput('/assign-admin ');
+      m.select(); // John
+      m.select(); // group
+      expect(m.step?.id).toBe('group');
+      m.back(); // re-ask target
+      expect(m.step?.id).toBe('target');
+      m.setInput('/assign-admin John to si');
+      m.select(); // site
+      expect(m.step?.id).toBe('site');
+      m.select();
+      expect(m.step?.id).toBe('role'); // the group branch is gone
+    });
+
+    it('removeToken before the branch rebuilds the plan', () => {
+      const { m } = harness({ commands: [ASSIGN], display: 'tokens' });
+      m.setInput('/assign-admin ');
+      m.select(); // John
+      m.select(); // group
+      m.select(); // Finance
+      expect(m.step?.id).toBe('role');
+      m.removeToken(1); // drop "group" and everything after
+      expect(m.step?.id).toBe('target');
+      expect(m.selections.map((s) => s.stepId)).toEqual(['user']);
+    });
+
+    it('branch steps can come from stepOptionsCallback (plain JSON)', () => {
+      const stepOptions = vi.fn((ctx: { stepId: string }) =>
+        ctx.stepId === 'kind' ? [{ label: 'group', steps: [{ id: 'group', search: true }] }] : [{ label: 'Finance' }]);
+      const cmd: Command = { id: 'x', shortcut: '/x', name: 'X', steps: [{ id: 'kind' }] };
+      const { m } = harness({ commands: [cmd], stepOptions });
+      m.setInput('/x ');
+      m.select(); // group (from the callback)
+      expect(m.step?.id).toBe('group');
+    });
   });
 
   it('breaking the locked prefix leaves the wizard and re-routes', () => {

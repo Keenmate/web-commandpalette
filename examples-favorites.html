@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Favorites, Recents &amp; Pickers — Web Command Palette</title>
+
+    <!-- Shared example styles -->
+    <link rel="stylesheet" href="examples-shared.css">
+</head>
+<body class="dark-output">
+    <div class="container">
+        <header>
+            <a href="index.html" class="back-link">← Back to Examples</a>
+            <h1>Favorites, Recents &amp; Pickers</h1>
+            <p class="subtitle">An admin console: reusable pickers defined once with <code>load</code>, a branching command,
+                favorites and recently used items, replaying a past run with <kbd>Tab</kbd> / <kbd>Enter</kbd>, and grouped search results.</p>
+        </header>
+
+        <!-- ============================================================= -->
+        <!-- FR01 · Reusable pickers                                          -->
+        <!-- ============================================================= -->
+        <div class="card">
+            <h2>FR01 · Reusable Pickers (<code>step.load</code>)</h2>
+            <p>
+                Each picker is defined once and spread into any step that needs it. A step's own <code>load</code> wins over
+                <code>stepOptionsCallback</code>, so there's no <code>switch (commandId + stepId)</code>. <code>pickUser</code> is a live
+                (<code>search: true</code>) lookup; <code>pickGroup</code> / <code>pickSite</code> load once and filter in the browser; the
+                permission list is fixed inline.
+            </p>
+<pre>const pickUser  = { search: true, placeholder: 'User…',  load: ({ query }, signal) =&gt; api.users(query, signal) };
+const pickGroup = {               placeholder: 'Group…', load: (_, signal) =&gt; api.groups(signal) };
+
+{ id: 'add-permission', shortcut: '/add-permission', steps: [
+    { id: 'permission', options: [{ label: 'read' }, { label: 'write' }, { label: 'admin' }] },
+    { id: 'user', prompt: ' to ', ...pickUser },
+] }
+{ id: 'assign-admin', shortcut: '/assign-admin', steps: [
+    { id: 'user', ...pickUser },
+    { id: 'target', prompt: ' to ', options: [
+        { id: 'group', label: 'group', steps: [{ id: 'group', ...pickGroup }] },
+        { id: 'site',  label: 'site',  steps: [{ id: 'site',  ...pickSite }] },
+    ] },
+] }</pre>
+            <div class="demo-area">
+                <button type="button" data-open="/add-permission ">/add-permission</button>
+                <button type="button" class="secondary" data-open="/assign-admin ">/assign-admin</button>
+                <button type="button" class="secondary" data-open="/set-priority ">/set-priority</button>
+            </div>
+            <div class="output">
+                <div class="output-label">Picker calls</div>
+                <pre id="fr01-log">—</pre>
+            </div>
+        </div>
+
+        <!-- ============================================================= -->
+        <!-- FR02 · Favorites & recent                                        -->
+        <!-- ============================================================= -->
+        <div class="card">
+            <h2>FR02 · Favorites &amp; Recent</h2>
+            <p>
+                Run a few commands, then reopen the palette: the home screen starts with <b>Recent</b>, ranked by how often
+                and how recently you used each item. Commands, completed runs, contexts and search results are all remembered.
+                Star the active row with <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>D</kbd> or the ☆ button to pin it under <b>Favorites</b>.
+                The home screen keeps both sections short (<code>favorites-limit</code> / <code>recent-limit</code>, 3 by default).
+                The full lists are one chord away: <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>F</kbd> for favorites and
+                <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>R</kbd> for recent (type to filter). Or click the section heading's “+N” control. With the palette
+                closed, <kbd>g</kbd> <kbd>f</kbd> opens it straight on favorites.
+                By default everything lives in <code>localStorage</code> under <code>usage-key</code>; switch the user to see that
+                each key keeps its own list.
+            </p>
+            <div class="controls">
+                <span>signed-in user (<code>usage-key</code>):</span>
+                <label><input type="radio" name="fr02-user" value="alice" checked> alice</label>
+                <label><input type="radio" name="fr02-user" value="bob"> bob</label>
+            </div>
+            <div class="controls">
+                <span><code>favorites-limit</code> + <code>recent-limit</code>:</span>
+                <label><input type="radio" name="fr02-limit" value="1"> 1</label>
+                <label><input type="radio" name="fr02-limit" value="3" checked> 3</label>
+                <label><input type="radio" name="fr02-limit" value="5"> 5</label>
+            </div>
+            <div class="controls">
+                <span><code>usage-storage</code>:</span>
+                <label><input type="radio" name="fr02-storage" value="local" checked> local</label>
+                <label><input type="radio" name="fr02-storage" value="none"> none</label>
+            </div>
+            <div class="demo-area">
+                <button type="button" data-open="">Open the home screen</button>
+                <button type="button" class="secondary" id="fr02-favorites">openFavorites()</button>
+                <button type="button" class="secondary" id="fr02-clear">Forget this user's history</button>
+            </div>
+        </div>
+
+        <!-- ============================================================= -->
+        <!-- FR03 · Replay                                                    -->
+        <!-- ============================================================= -->
+        <div class="card">
+            <h2>FR03 · Replaying a Run</h2>
+            <p>
+                Run <code>/add-permission write to Peter Parker</code>, then reopen the palette and pick it from Recent. The wizard
+                reopens with each remembered answer offered first:
+            </p>
+            <ul>
+                <li><kbd>Enter</kbd> runs the rest of the remembered answers. Choosing it from Recent and pressing <kbd>Enter</kbd> again repeats the whole command.</li>
+                <li><kbd>Tab</kbd> accepts the current step and moves to the next one, so you can walk through the run step by step.</li>
+                <li>Typing replaces the current step's answer (“…write to Ja” → Jane). <kbd>Enter</kbd> then keeps the answers after it.</li>
+                <li><kbd>Shift</kbd>+<kbd>Tab</kbd>, <kbd>Esc</kbd> or <kbd>⌫</kbd> at the start step back.</li>
+            </ul>
+            <p>
+                Branches replay too: <code>/assign-admin … to site Intranet</code> comes back as a site run. If a branching step's
+                list is still loading, <kbd>Enter</kbd> stops there; press it again once the list appears.
+            </p>
+            <div class="output">
+                <div class="output-label">cp-complete / cp-command / cp-select</div>
+                <pre id="fr03-log">—</pre>
+            </div>
+        </div>
+
+        <!-- ============================================================= -->
+        <!-- FR04 · Host storage                                              -->
+        <!-- ============================================================= -->
+        <div class="card">
+            <h2>FR04 · Storing Favorites on the Server</h2>
+            <p>
+                Set <code>loadUsageCallback</code> and <code>saveUsageCallback</code> to keep favorites and history with the user
+                (synced across devices) instead of in <code>localStorage</code>. The palette loads the list once, then upserts one
+                plain-JSON entry per use or star. Here a fake server holds it in memory, with 300 ms of latency.
+            </p>
+            <div class="controls">
+                <span>storage:</span>
+                <label><input type="radio" name="fr04-mode" value="local" checked> localStorage</label>
+                <label><input type="radio" name="fr04-mode" value="server"> callbacks (fake server)</label>
+            </div>
+            <div class="output">
+                <div class="output-label">Server calls</div>
+                <pre id="fr04-log">—</pre>
+            </div>
+        </div>
+
+        <!-- ============================================================= -->
+        <!-- FR05 · Grouped results                                           -->
+        <!-- ============================================================= -->
+        <div class="card">
+            <h2>FR05 · Grouped Results &amp; Context <code>search</code></h2>
+            <p>
+                Results with a <code>group</code> appear under headings, grouped in the order each group first appears. Global
+                search for “an” returns users, groups and sites. The <code>:users</code> context brings its own <code>search</code>
+                function, so <code>searchCallback</code> is never asked for it.
+            </p>
+            <div class="demo-area">
+                <button type="button" data-open="an">“an” (grouped)</button>
+                <button type="button" class="secondary" data-open=":users pe">:users pe</button>
+            </div>
+        </div>
+
+        <!-- ============================================================= -->
+        <!-- FR06 · Confirmation                                              -->
+        <!-- ============================================================= -->
+        <div class="card">
+            <h2>FR06 · Confirmation</h2>
+            <p>
+                When a command finishes, the dialog briefly collapses to one line showing what ran (✓ <code>/deploy to
+                Staging branch main</code> · Done) instead of vanishing the moment you press <kbd>Enter</kbd>. The effect event still fires
+                immediately; only the closing waits. Any key or click dismisses it, and <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>
+                goes straight to a fresh palette. <code>renderConfirmationCallback(ctx)</code> can replace the content,
+                return <code>false</code> to skip the confirmation, or opt search-result selections in. By default they get none,
+                because they usually navigate away.
+            </p>
+            <div class="controls">
+                <span><code>confirmation</code>:</span>
+                <label><input type="radio" name="fr06-on" value="true" checked> on</label>
+                <label><input type="radio" name="fr06-on" value="false"> off</label>
+            </div>
+            <div class="controls">
+                <span><code>confirmation-duration</code>:</span>
+                <label><input type="radio" name="fr06-duration" value="800"> 800 ms</label>
+                <label><input type="radio" name="fr06-duration" value="1500" checked> 1500 ms</label>
+                <label><input type="radio" name="fr06-duration" value="3000"> 3000 ms</label>
+            </div>
+            <div class="controls">
+                <span>content:</span>
+                <label><input type="radio" name="fr06-render" value="default" checked> default</label>
+                <label><input type="radio" name="fr06-render" value="custom"> custom callback (+ search results)</label>
+            </div>
+<pre>palette.renderConfirmationCallback = (ctx) =&gt; {
+    if (ctx.type === 'select') return `Opening &lt;b&gt;${ctx.sentence}&lt;/b&gt;…`;
+    if (ctx.commandId === 'reload') return false;             // no confirmation for this one
+    return `&lt;b&gt;${ctx.commandName}&lt;/b&gt; queued — ${ctx.selections.map((s) =&gt; s.label).join(' → ')}`;
+};</pre>
+            <div class="demo-area">
+                <button type="button" data-open="/set-priority ">/set-priority</button>
+                <button type="button" class="secondary" data-open="/reload">/reload (instant)</button>
+                <button type="button" class="secondary" data-open=":users pe">:users pe (a search result)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- One palette per page: it owns the global Ctrl/⌘+K listener. -->
+    <web-command-palette id="palette" usage-key="demo:usage:alice"></web-command-palette>
+
+    <!-- Register the element (Vite dev serves the TS source). -->
+    <script type="module" src="/src/index.ts"></script>
+
+    <!-- Page wiring -->
+    <script type="module">
+        import { persistControls } from './examples-controls-store.js';
+
+        // ── fake directory ───────────────────────────────────────────────
+        const people = ['Peter Parker', 'Jane Foster', 'John Smith', 'Anna Novak', 'Daniel Black', 'Hana Svobodova', 'Ian Grant']
+            .map((name, i) => ({ id: 'u' + i, label: name, description: name.toLowerCase().replace(' ', '.') + '@corp.example', icon: '👤', value: 'u' + i }));
+        const groups = ['Finance', 'Engineering', 'Sales', 'Management', 'Support']
+            .map((name) => ({ id: 'g-' + name.toLowerCase(), label: name, icon: '👥', value: name }));
+        const sites = ['Intranet', 'HR Portal', 'Projects', 'Sales Hub', 'Engineering Wiki']
+            .map((name) => ({ id: 's-' + name.toLowerCase().replace(' ', '-'), label: name, icon: '🌐', value: name }));
+
+        const pickerLog = document.getElementById('fr01-log');
+        const logPicker = (line) => { pickerLog.textContent = line + '\n' + (pickerLog.textContent === '—' ? '' : pickerLog.textContent); };
+        const later = (value, ms, signal) => new Promise((resolve, reject) => {
+            const t = setTimeout(() => resolve(value), ms);
+            signal?.addEventListener('abort', () => { clearTimeout(t); reject(new DOMException('aborted', 'AbortError')); }, { once: true });
+        });
+        const has = (text, q) => text.toLowerCase().includes(q.toLowerCase());
+
+        // ── pickers: defined once, reused by any step ────────────────────
+        const pickUser = {
+            search: true, placeholder: 'Search users…',
+            load: ({ query }, signal) => {
+                logPicker(`pickUser  query=${JSON.stringify(query)}`);
+                return later(people.filter((p) => has(p.label, query)), 200, signal);
+            },
+        };
+        const pickGroup = {
+            placeholder: 'Select group…',
+            load: (_ctx, signal) => { logPicker('pickGroup (once)'); return later(groups, 300, signal); },
+        };
+        const pickSite = {
+            placeholder: 'Select site collection…',
+            load: (_ctx, signal) => { logPicker('pickSite  (once)'); return later(sites, 300, signal); },
+        };
+
+        const commands = [
+            { id: 'add-permission', shortcut: '/add-permission', aliases: ['/perm'], icon: '🔑', name: 'Add Permission', description: 'Grant a permission to a user',
+              steps: [
+                { id: 'permission', placeholder: 'Permission…', options: [
+                    { id: 'read', label: 'read', icon: '👁️' }, { id: 'write', label: 'write', icon: '✏️' }, { id: 'admin', label: 'admin', icon: '🛡️' },
+                ] },
+                { id: 'user', prompt: ' to ', ...pickUser },
+              ] },
+            { id: 'assign-admin', shortcut: '/assign-admin', aliases: ['/admin'], icon: '🛡️', name: 'Assign Admin', description: 'To a group or a SharePoint site collection',
+              steps: [
+                { id: 'user', ...pickUser },
+                { id: 'target', prompt: ' to ', placeholder: 'group or site…', options: [
+                    { id: 'group', label: 'group', icon: '👥', steps: [{ id: 'group', ...pickGroup }] },
+                    { id: 'site', label: 'site', icon: '🌐', steps: [{ id: 'site', ...pickSite }] },
+                ] },
+              ] },
+            { id: 'set-priority', shortcut: '/set-priority', aliases: ['/prio'], icon: '🚩', name: 'Set Priority', description: 'A fixed list',
+              steps: [{ id: 'priority', placeholder: 'Priority…', options: [
+                { id: 'high', label: 'High', icon: '🔴' }, { id: 'medium', label: 'Medium', icon: '🟡' }, { id: 'low', label: 'Low', icon: '🟢' },
+              ] }] },
+            { id: 'reload', shortcut: '/reload', hotkey: 'g r', icon: '🔄', name: 'Reload Directory', description: 'Instant command' },
+        ];
+
+        const asResult = (o, group) => ({ id: o.id, title: o.label, subtitle: o.description, icon: o.icon, group });
+        const contexts = [
+            { id: 'users', shortcut: ':users', aliases: [':u'], icon: '👤', name: 'Users', description: 'Own search function',
+              search: (query, signal) => later(people.filter((p) => has(p.label, query)).map((p) => asResult(p)), 200, signal) },
+            { id: 'groups', shortcut: ':groups', aliases: [':g'], icon: '👥', name: 'Groups', description: 'Via searchCallback' },
+        ];
+
+        function wire() {
+            const palette = document.getElementById('palette');
+            palette.commands = commands;
+            palette.contexts = contexts;
+            palette.searchCallback = (scope, query, signal) => {
+                const hit = (list, group) => list.filter((o) => has(o.label, query)).map((o) => asResult(o, group));
+                const results = scope === 'global'
+                    ? [...hit(people, 'Users'), ...hit(groups, 'Groups'), ...hit(sites, 'Sites')]
+                    : hit(groups);
+                return later(results, 250, signal);
+            };
+
+            const out = document.getElementById('fr03-log');
+            const write = (line) => { out.textContent = line + '\n\n' + (out.textContent === '—' ? '' : out.textContent); };
+            palette.addEventListener('cp-complete', (e) => write('cp-complete ' + JSON.stringify(e.detail)));
+            palette.addEventListener('cp-command', (e) => write('cp-command ' + JSON.stringify(e.detail)));
+            palette.addEventListener('cp-select', (e) => write('cp-select ' + JSON.stringify({ title: e.detail.item.title, scope: e.detail.scope })));
+
+            document.querySelectorAll('[data-open]').forEach((b) =>
+                b.addEventListener('click', () => palette.openWith(b.dataset.open)));
+
+            // FR02 — per-user key, limit, on/off
+            const radio = (name, fn) => document.querySelectorAll(`input[name="${name}"]`).forEach((r) =>
+                r.addEventListener('change', (e) => { if (e.target.checked) fn(e.target.value); }));
+            radio('fr02-user', (user) => palette.setAttribute('usage-key', `demo:usage:${user}`));
+            radio('fr02-limit', (n) => { palette.setAttribute('favorites-limit', n); palette.setAttribute('recent-limit', n); });
+            radio('fr02-storage', (v) => palette.setAttribute('usage-storage', v));
+            document.getElementById('fr02-favorites').addEventListener('click', () => palette.openFavorites());
+            document.getElementById('fr02-clear').addEventListener('click', () => {
+                if (palette.loadUsageCallback) {
+                    server.clear();
+                    palette.loadUsageCallback = serverLoad; // re-assigning reloads
+                } else {
+                    localStorage.removeItem(palette.usageKey);
+                    palette.setAttribute('usage-storage', 'none');
+                    palette.setAttribute('usage-storage', document.querySelector('input[name="fr02-storage"]:checked').value);
+                }
+            });
+
+            // FR04 — the same data through the host
+            const serverLog = document.getElementById('fr04-log');
+            const logServer = (line) => { serverLog.textContent = line + '\n' + (serverLog.textContent === '—' ? '' : serverLog.textContent); };
+            const server = new Map();
+            const serverLoad = () => {
+                logServer(`GET  /api/me/palette-usage → ${server.size} entries`);
+                return later([...server.values()], 300);
+            };
+            radio('fr04-mode', (mode) => {
+                if (mode === 'server') {
+                    palette.saveUsageCallback = (entry) => {
+                        logServer(`PUT  /api/me/palette-usage/${encodeURIComponent(entry.key).slice(0, 40)}  count=${entry.count} ★=${entry.isFavorite}`);
+                        server.set(entry.key, entry);
+                        return later(undefined, 300);
+                    };
+                    palette.loadUsageCallback = serverLoad;
+                } else {
+                    palette.saveUsageCallback = null;
+                    palette.loadUsageCallback = null;
+                }
+            });
+
+            // FR06 — confirmation
+            radio('fr06-on', (v) => palette.setAttribute('confirmation', v));
+            radio('fr06-duration', (ms) => palette.setAttribute('confirmation-duration', ms));
+            const customConfirmation = (ctx) => {
+                if (ctx.type === 'select') return `Opening <b>${ctx.sentence}</b>…`;
+                if (ctx.commandId === 'reload') return false;
+                return `<b>${ctx.commandName}</b> queued — ${ctx.selections.map((s) => s.label).join(' → ') || 'no answers'}`;
+            };
+            radio('fr06-render', (v) => { palette.renderConfirmationCallback = v === 'custom' ? customConfirmation : null; });
+
+            persistControls('favorites');
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
+        else wire();
+    </script>
+
+    <!-- Shared helpers LAST (after the page's own wiring). -->
+    <script type="module" src="examples-copy-link.js"></script>
+    <script type="module" src="examples-chapter-nav.js"></script>
+</body>
+</html>

@@ -6,8 +6,10 @@
  *    palette is open, 1200 ms window. (Chosen over Alt+letter, which types glyphs
  *    on macOS: Option+G = ©.)
  *  - Input: ↑↓ wrap, PgUp/PgDn ±8 clamp, Home/End, ←→ page (search modes, caret at
- *    the edge), Enter/Tab select, Esc back-or-close, Backspace at the locked
- *    prefix steps back. Navigation never awaits a provider.
+ *    the edge; mirrored in RTL), Tab select (one wizard step), Shift+Tab step back, Enter select —
+ *    and in a replayed run, accept the remaining remembered answers — Esc
+ *    back-or-close, Backspace at the locked prefix steps back, Ctrl/⌘+D star the
+ *    active row. Navigation never awaits a provider.
  */
 import type { PaletteMachine } from './palette';
 import type { Command } from './types';
@@ -15,13 +17,16 @@ import type { Command } from './types';
 export const SEQUENCE_LEADER = 'g';
 export const SEQUENCE_WINDOW_MS = 1200;
 
+/** `"g f"` → `"f"`; anything that isn't a `g <letter>` sequence → null. */
+export function sequenceLetter(hotkey: string | null | undefined): string | null {
+  const parts = (hotkey ?? '').trim().toLowerCase().split(/\s+/);
+  return parts.length === 2 && parts[0] === SEQUENCE_LEADER && parts[1].length === 1 ? parts[1] : null;
+}
+
 /** The command whose `hotkey` is the sequence `g <letter>`. Chords (`Ctrl+K`) never match. */
 export function findSequenceCommand(commands: readonly Command[], letter: string): Command | undefined {
   const key = letter.toLowerCase();
-  return commands.find((c) => {
-    const parts = (c.hotkey ?? '').trim().toLowerCase().split(/\s+/);
-    return parts.length === 2 && parts[0] === SEQUENCE_LEADER && parts[1] === key;
-  });
+  return commands.find((c) => sequenceLetter(c.hotkey) === key);
 }
 
 /** Is the (shadow-piercing) event origin a text-entry field? */
@@ -38,6 +43,8 @@ export interface GlobalKeysHost {
   openKey(): string;
   commands(): readonly Command[];
   runCommand(command: Command): void;
+  /** Built-in sequences (e.g. `g f` → favorites): letter → action. Commands win on a clash. */
+  sequences?(): ReadonlyMap<string, () => void>;
 }
 
 /**
@@ -89,11 +96,17 @@ export class GlobalKeys {
     if (command) {
       e.preventDefault();
       this.#host.runCommand(command);
+      return;
+    }
+    const builtin = this.#host.sequences?.().get(e.key.toLowerCase());
+    if (builtin) {
+      e.preventDefault();
+      builtin();
     }
   }
 
   #hasSequences(): boolean {
-    return this.#host.commands().some((c) => /^\s*g\s+\S\s*$/i.test(c.hotkey ?? ''));
+    return !!this.#host.sequences?.().size || this.#host.commands().some((c) => sequenceLetter(c.hotkey) !== null);
   }
 
   #disarm(): void {
@@ -103,9 +116,36 @@ export class GlobalKeys {
   }
 }
 
+/** Ctrl/⌘ + letter shortcuts inside the palette ('' = off). */
+export interface PaletteKeys {
+  /** Star the active row. Default `d`. */
+  favorite: string;
+  /** Show all favorites. Default `f`. */
+  favorites: string;
+  /** Show all recently used. Default `r`. */
+  recent: string;
+}
+
+export const DEFAULT_PALETTE_KEYS: PaletteKeys = { favorite: 'd', favorites: 'f', recent: 'r' };
+
 /** Keydown inside the palette input. Returns true when handled. */
-export function handleInputKeydown(e: KeyboardEvent, m: PaletteMachine, input: HTMLInputElement): boolean {
+export function handleInputKeydown(
+  e: KeyboardEvent,
+  m: PaletteMachine,
+  input: HTMLInputElement,
+  keys: PaletteKeys = DEFAULT_PALETTE_KEYS,
+  /** Right-to-left: ←/→ paging swaps so "previous" is the arrow toward the inline start. */
+  isRTL = false,
+): boolean {
   if (e.isComposing) return false;
+  // Ctrl/⌘ + letter: palette shortcuts (they shadow the browser's find/reload/bookmark while open).
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.length === 1) {
+    const k = e.key.toLowerCase();
+    const is = (key: string): boolean => !!key && k === key.toLowerCase();
+    if (is(keys.favorite)) { m.toggleFavorite(); e.preventDefault(); return true; }
+    if (is(keys.favorites)) { m.showUsage('favorites'); e.preventDefault(); return true; }
+    if (is(keys.recent)) { m.showUsage('recent'); e.preventDefault(); return true; }
+  }
   const start = input.selectionStart ?? 0;
   const end = input.selectionEnd ?? 0;
   const handled = (): true => {
@@ -120,26 +160,37 @@ export function handleInputKeydown(e: KeyboardEvent, m: PaletteMachine, input: H
     case 'Home': m.move('home'); return handled();
     case 'End': m.move('end'); return handled();
     case 'Enter':
+      m.commit();
+      return handled();
     case 'Tab':
+      if (e.shiftKey) {
+        if (m.canStepBack) m.back();
+        return handled();
+      }
       m.select();
       return handled();
     case 'Escape':
       m.back();
       return handled();
     case 'ArrowLeft':
-      if (m.isPaginated && start === end && start <= m.lockedLength) {
-        m.turnPage(-1);
-        return handled();
+    case 'ArrowRight': {
+      // "Back" is the arrow pointing at the inline start: ← in LTR, → in RTL.
+      const isBack = (e.key === 'ArrowLeft') !== isRTL;
+      if (isBack) {
+        if (m.isPaginated && start === end && start <= m.lockedLength) {
+          m.turnPage(-1);
+          return handled();
+        }
+        // Keep the caret out of the locked prefix.
+        if (m.lockedLength && start === end && start <= m.lockedLength) return handled();
+        return false;
       }
-      // Keep the caret out of the locked prefix.
-      if (m.lockedLength && start === end && start <= m.lockedLength) return handled();
-      return false;
-    case 'ArrowRight':
       if (m.isPaginated && start === end && end === input.value.length) {
         m.turnPage(1);
         return handled();
       }
       return false;
+    }
     case 'Backspace':
       if (!m.canStepBack) return false;
       // Caret at the locked prefix (or at 0 in tokens display) with nothing selected → step back.

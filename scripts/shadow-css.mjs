@@ -21,6 +21,14 @@
  *    `--base-rem` knob the other Keenmate components use (pure-admin hosts set it
  *    to `1rem` to follow their root font-size). Media-query params are untouched.
  *
+ * 3. **Font sizes → `--base-font-size-*`.** Core compiles its type scale to plain
+ *    numbers (`$font-size-sm` → `1.4rem`), so a host's `--base-font-size-sm` would
+ *    never reach the palette. On `font-size` (and `*-font-size` custom properties),
+ *    a rem value that is a step of the shared scale becomes
+ *    `calc(var(--base-font-size-sm, 1.4) * var(--base-rem, 10px))` — the same
+ *    contract web-multiselect uses. Off-scale values (e.g. `$font-size-md`, 1.5)
+ *    stay plain `--base-rem` multiples.
+ *
  * Also maps `:root` selectors to `:host` (`:root` never matches inside a shadow tree).
  */
 import * as sass from 'sass';
@@ -104,6 +112,68 @@ export function injectFallbacks(value, defaults, seen = new Set()) {
   return out + value.slice(i);
 }
 
+/** pure-css's `$base-font-size-*` scale: rem multiplier → step name. */
+export const FONT_SCALE = new Map([
+  ['1', '2xs'], ['1.2', 'xs'], ['1.4', 'sm'], ['1.6', 'base'], ['1.8', 'lg'], ['2', 'xl'], ['2.4', '2xl'],
+]);
+
+const isFontSizeProp = (prop) => prop === 'font-size' || /^--.*font-size$/.test(prop);
+
+/** On a font-size: `1.4rem` → `calc(var(--base-font-size-sm, 1.4) * var(--base-rem, 10px))` (scale steps only). */
+export function fontSizeToVar(value) {
+  return value.replace(/(^|[^\w.-])(\d*\.?\d+)rem\b/g, (m, pre, n) => {
+    const step = FONT_SCALE.get(String(Number(n)));
+    return step ? `${pre}calc(var(--base-font-size-${step}, ${Number(n)}) * ${REM_VAR})` : m;
+  });
+}
+
+/**
+ * The component's own namespace. Core's palette knobs and icon plumbing become
+ * `--cp-*`; everything else in pure-admin's layer (`--pc-*`, `--pa-input-*`,
+ * `--pa-btn-*`, …) is unwrapped to its fallback — which injectFallbacks has made
+ * the `--base-*` chain — so the component reads only `--cp-*` and `--base-*`.
+ */
+const RENAMES = [
+  [/^--pa-command-palette-/, '--cp-'],
+  [/^--pa-icon-x$/, '--cp-icon-close'],
+  [/^--pa-icon-src$/, '--_cp-icon-src'], // private plumbing: which glyph a .pa-icon draws
+  [/^--pa-icon-/, '--cp-icon-'],
+];
+
+/** `--pa-command-palette-width` → `--cp-width`; null when the name isn't renamed. */
+export function renameVar(name) {
+  for (const [re, to] of RENAMES) if (re.test(name)) return name.replace(re, to);
+  return null;
+}
+
+/** A pure-admin variable outside the component namespace. */
+export const isForeignVar = (name) => /^--(pa|pc)-/.test(name) && renameVar(name) === null;
+
+/** Rename `--cp-*` reads and replace foreign `var(--pc-x, fb)` reads with `fb` (recursively). */
+export function namespaceVars(value) {
+  let out = '';
+  let i = 0;
+  while (i < value.length) {
+    const at = value.indexOf('var(', i);
+    if (at === -1) break;
+    const close = matchParen(value, at + 3);
+    if (close === -1) break;
+    out += value.slice(i, at);
+    const inner = value.slice(at + 4, close);
+    const comma = topLevelComma(inner);
+    const name = (comma === -1 ? inner : inner.slice(0, comma)).trim();
+    const fallback = comma === -1 ? null : namespaceVars(inner.slice(comma + 1).trim());
+    if (isForeignVar(name) && fallback !== null) {
+      out += fallback;
+    } else {
+      const ref = renameVar(name) ?? name;
+      out += fallback === null ? `var(${ref})` : `var(${ref}, ${fallback})`;
+    }
+    i = close + 1;
+  }
+  return out + value.slice(i);
+}
+
 /** `1.6rem` → `calc(1.6 * var(--base-rem, 10px))`. */
 export function remToVar(value) {
   return value.replace(/(-?\d*\.?\d+)rem\b/g, (_, n) => `calc(${n} * ${REM_VAR})`);
@@ -115,12 +185,30 @@ export function shadowCss(defaults = compileDefaults()) {
   return {
     postcssPlugin: 'km-shadow-css',
     Rule(rule) {
+      // Core's partial also styles the navbar search pill that OPENS a palette on a
+      // pure-admin page; that markup never exists inside this shadow root.
+      if (rule.selector.includes('pc-navbar-search')) {
+        rule.remove();
+        return;
+      }
       if (rule.selector.includes(':root')) rule.selector = rule.selector.replace(/:root\b/g, ':host');
     },
     Declaration(decl) {
       if (done.has(decl)) return;
       done.add(decl);
-      decl.value = remToVar(injectFallbacks(decl.value, defaults));
+      // A custom-property declaration: our namespace keeps it (renamed); a foreign
+      // one (core setting `--pc-*` on a rule) has no reader left after unwrapping.
+      if (decl.prop.startsWith('--')) {
+        const renamed = renameVar(decl.prop);
+        if (renamed) decl.prop = renamed;
+        else if (isForeignVar(decl.prop)) {
+          decl.remove();
+          return;
+        }
+      }
+      let value = namespaceVars(injectFallbacks(decl.value, defaults));
+      if (isFontSizeProp(decl.prop)) value = fontSizeToVar(value);
+      decl.value = remToVar(value);
     },
   };
 }

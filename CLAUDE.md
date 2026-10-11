@@ -41,6 +41,11 @@ configure** — `commands` + `searchCallback` must be a complete setup.
 - `src/web-component.ts` — thin `BlissElement` subclass: the `static inputs` / `static events`
   tables (CEM metadata is generated from them), the `MachineHost` adapter, overlay/scroll-lock,
   presentation (phone fullscreen sheet), focus. Only the first connected instance owns the global keys.
+- `src/usage.ts` — `UsageStore`: favorites + recents (frecency-ranked, pruned to 50 non-favorites),
+  persisted via `localStorage` (`usage-key`) or the host's `loadUsageCallback`/`saveUsageCallback`.
+  The machine records uses (instant commands, completed runs + answers, contexts, results) and
+  offers a run's remembered answers when it's replayed (`#replay`; Enter = `commit()` fast-forwards,
+  Tab = `select()` one step).
 - `src/filter.ts`, `src/icons.ts`, `src/types.ts` — substring filtering, icon rendering, public types.
 
 ### Example pages
@@ -62,6 +67,11 @@ the hub registry and every page.
 to bare `@import`s inside core. The PostCSS step then (1) injects core's theme defaults as
 `var()` **fallbacks** rather than declarations, so a host theme on `:root` is never shadowed, and
 (2) rewrites `Nrem` → `calc(N * var(--base-rem, 10px))` because pure-admin assumes a 10px root.
+It also (3) maps scale font sizes to `--base-font-size-*`, and (4) enforces the component's own
+namespace: core's `--pa-command-palette-*` / `--pa-icon-*` become `--cp-*` (`--_cp-*` = private),
+every other `--pc-*` / `--pa-*` read is replaced by its `--base-*` fallback, and the navbar
+search-pill rules are dropped. **The shipped CSS reads only `--cp-*` and `--base-*`** — never add
+a `--pa-*` / `--pc-*` read in `src/css`; icons are `--cp-icon-*` → `--base-icon-*` → inline SVG.
 `check-variable-manifest.mjs` runs the same pipeline.
 
 ## Invariants that are easy to break
@@ -80,8 +90,18 @@ See plan §10. These are the bugs that motivated the project.
   serializes them. `searchCallback`/`stepOptionsCallback` are read live. `data-search-event` /
   `data-step-options-event` are reserved for the future `../keen-web-commandpalette` bridge.
 - The component closes itself after `cp-select` / `cp-complete` / `cp-command`, and the host
-  performs the effect. Instant commands fire only `cp-command`. A `// FUTURE:` note in
+  performs the effect. Commands first collapse to the one-line confirmation (`#showConfirmation` in the
+  element, `.cp-confirming` hides everything but `.cp-confirm`; the event still fires immediately, `cp-close` follows) — while `#confirmTimer` is set,
+  `#render()` must not repaint over it. Instant commands fire only `cp-command`. A `// FUTURE:` note in
   `#onEffect` marks where keep-open/directives would go.
+- RTL comes from inherited `direction`: CSS must stay logical (`inset-inline-*`, `margin-inline-*`,
+  `inline-size` — no physical left/right), rendered text runs are wrapped in `<bdi>`, and ←/→
+  paging swaps via `this.isRTL` (read per keydown, so runtime `dir` flips need no rebuild).
 - Icons and strings are data. There is no built-in icon set, and every visible string comes from `labels`.
+- Usage entries must stay plain JSON (they're persisted). A run's branch steps are NOT stored: on
+  replay, a forking answer is resolved against the step's current options, and Enter's
+  fast-forward stops at a step whose list isn't loaded yet rather than guess the branch.
+- `Step.load`, `Context.search` and `Step.shouldShow` are JS-only conveniences; the central
+  `stepOptionsCallback` / `searchCallback` must keep working for server-driven hosts.
 
 Out of scope here: the keen bridge, Svelte/React/Razor wrappers, the directive-return channel, and migrating the existing palettes.

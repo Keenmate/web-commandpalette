@@ -22,6 +22,10 @@ export default defineConfig({
     '__REPOSITORY__': JSON.stringify(pkg.repository.url),
     '__HOMEPAGE__': JSON.stringify(pkg.homepage)
   },
+  // Dev dep-scan only the real pages — not stray HTML in tmp/, test-results/ etc.
+  optimizeDeps: {
+    entries: ['index.html', 'examples-*.html', 'test/fixture.html'],
+  },
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),

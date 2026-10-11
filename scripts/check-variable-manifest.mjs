@@ -11,7 +11,7 @@
  * Contract:
  *   - Every `--base-*` READ via `var()` must appear in `baseVariables`, and every
  *     `baseVariables` entry must be read (no dead entries).
- *   - Every `--pa-command-palette-*` READ must appear in `componentVariables`, and
+ *   - Every `--cp-*` READ must appear in `componentVariables` (`--_cp-*` is private), and
  *     every `componentVariables` entry must be read. (The palette's own knobs are
  *     consumed, not declared: core declares them on a pure-admin page's `:root`;
  *     here their defaults are injected as `var()` fallbacks.)
@@ -31,7 +31,7 @@ const css = built.replace(/\/\*[\s\S]*?\*\//g, '');
 
 const read = (prefix) => new Set([...css.matchAll(new RegExp(String.raw`var\(\s*--(${prefix}[a-z0-9-]*)`, 'gi'))].map((m) => m[1]));
 const usedBase = read('base-');
-const usedComponent = read('pa-command-palette-');
+const usedComponent = read('cp-');
 
 const manifest = JSON.parse(readFileSync(join(root, 'component-variables.manifest.json'), 'utf8'));
 const manifestBase = new Set(manifest.baseVariables.map((v) => v.name));
@@ -46,10 +46,13 @@ const compMissing = minus(usedComponent, manifestComponent);
 const section = (title, list) => `${title} (${list.length}):\n` + list.map((n) => `  --${n}`).join('\n');
 const errors = [];
 const warns = [];
+// The component's namespace is --cp-* (+ the shared --base-*): no pure-admin variable may leak in.
+const foreign = [...new Set([...css.matchAll(/--(?:pa|pc)-[a-z0-9-]+/gi)].map((m) => m[0]))].sort();
+if (foreign.length) errors.push(`--pa-* / --pc-* variables in the shipped CSS (must be --cp-* or --base-*) (${foreign.length}):\n` + foreign.map((n) => `  ${n}`).join('\n'));
 if (baseMissing.length) errors.push(section('--base-* read by the CSS but MISSING from manifest.baseVariables', baseMissing));
 if (baseDead.length) errors.push(section('--base-* in manifest.baseVariables but NOT read by the CSS (dead)', baseDead));
-if (compDead.length) errors.push(section('--pa-command-palette-* in manifest.componentVariables but NOT read by the CSS (dead)', compDead));
-if (compMissing.length) (strict ? errors : warns).push(section('--pa-command-palette-* read by the CSS but MISSING from manifest.componentVariables', compMissing));
+if (compDead.length) errors.push(section('--cp-* in manifest.componentVariables but NOT read by the CSS (dead)', compDead));
+if (compMissing.length) (strict ? errors : warns).push(section('--cp-* read by the CSS but MISSING from manifest.componentVariables', compMissing));
 
 if (process.argv.includes('--list')) {
   console.log(JSON.stringify({ base: [...usedBase].sort(), component: [...usedComponent].sort() }, null, 2));

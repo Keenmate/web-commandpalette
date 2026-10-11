@@ -38,6 +38,12 @@ export interface Step {
   options?: Option[];
   /** Skip this step unless the predicate returns true (JS hosts only). */
   shouldShow?: (selections: Selection[]) => boolean;
+  /**
+   * This step's own options provider (JS hosts only) — same contract as
+   * `stepOptionsCallback`, which stays the fallback for steps without one. Lets a
+   * picker be defined once and reused: `{ id: 'user', ...pickUser }`.
+   */
+  load?: StepOptionsCallback;
 }
 
 /** A command, listed under `/` and on the home screen. */
@@ -64,6 +70,11 @@ export interface Context {
   aliases?: string[];
   description?: string;
   icon?: IconInput;
+  /**
+   * This context's own search (JS hosts only). Called instead of `searchCallback`
+   * for queries inside the context — same rules: non-empty queries, debounced, abortable.
+   */
+  search?: (query: string, signal: AbortSignal) => MaybePromise<Result[] | null | undefined>;
 }
 
 /** A command-step option. */
@@ -73,6 +84,13 @@ export interface Option {
   value?: unknown;
   description?: string;
   icon?: IconInput;
+  /**
+   * Branch: steps asked right after this option is chosen, before the step's
+   * remaining siblings. `"/assign-admin John to [group|site] …"` — the `group`
+   * and `site` options each carry their own follow-up step. Step ids must be
+   * unique across the whole command.
+   */
+  steps?: Step[];
 }
 
 /** A search hit (context or global). Extra keys pass through to the `cp-select` handler. */
@@ -84,6 +102,8 @@ export interface Result {
   badge?: string;
   badgeVariant?: BadgeVariant;
   href?: string;
+  /** Section heading. Results are clustered by group in first-appearance order. */
+  group?: string;
   [key: string]: unknown;
 }
 
@@ -111,6 +131,58 @@ export interface StepOptionsContext {
 }
 
 export type MaybePromise<T> = T | Promise<T>;
+
+/**
+ * One remembered thing — a favorite and/or a recently used item. Plain JSON: this
+ * is what `localStorage` holds and what `saveUsageCallback` upserts.
+ *  - `command` — an instant command, or a wizard to start blank (a starred command)
+ *  - `run`     — a completed wizard with its answers; replayed with Tab / Enter
+ *  - `context` — a search context
+ *  - `result`  — a chosen search hit
+ */
+export interface UsageEntry {
+  /** Stable identity, e.g. `command:deploy`, `run:deploy:[…]`, `context:products`, `result:global:p1`. */
+  key: string;
+  kind: 'command' | 'run' | 'context' | 'result';
+  /** Display text captured when recorded (a run's whole sentence). */
+  label: string;
+  commandId?: string;
+  selections?: Selection[];
+  contextId?: string;
+  item?: Result;
+  scope?: Scope;
+  /** Times used. 0 for an item starred but never used. */
+  count: number;
+  /** Epoch ms of the last use (or of starring). */
+  lastUsed: number;
+  isFavorite: boolean;
+}
+
+/** What `renderConfirmationCallback` gets — plain JSON, like the effect events. */
+export interface ConfirmationContext {
+  /** Which effect just fired: a finished wizard, an instant command, or a chosen search result. */
+  type: 'complete' | 'command' | 'select';
+  commandId?: string;
+  /** The command's display name. */
+  commandName?: string;
+  selections?: Selection[];
+  /** `"/deploy to Staging branch main"`, the command shortcut, or the result title. */
+  sentence: string;
+  item?: Result;
+  scope?: Scope;
+  /** How long the panel stays (ms). */
+  duration: number;
+}
+
+/**
+ * Render the confirmation panel. Return markup or an element to replace the default,
+ * `null`/`undefined` for the default, or `false` to skip the confirmation this time.
+ */
+export type RenderConfirmationCallback = (ctx: ConfirmationContext) => string | HTMLElement | null | undefined | false;
+
+export type LoadUsageCallback = () => MaybePromise<UsageEntry[] | null | undefined>;
+/** Upsert one entry (insert or replace by `key`). */
+export type SaveUsageCallback = (entry: UsageEntry) => MaybePromise<void>;
 
 export type SearchCallback = (scope: Scope, query: string, signal: AbortSignal) => MaybePromise<Result[] | null | undefined>;
 export type StepOptionsCallback = (ctx: StepOptionsContext, signal: AbortSignal) => MaybePromise<Option[] | null | undefined>;
@@ -149,6 +221,28 @@ export interface Labels {
   removeToken: string;
   /** Live-region announcement of the result count; `{count}`. */
   resultsCount: string;
+  /** Home heading for starred items. */
+  favorites: string;
+  /** Home heading for recently / frequently used items. */
+  recent: string;
+  /** Star button / footer hint, when the active row is not starred. */
+  addFavorite: string;
+  /** Star button, when the active row is starred. */
+  removeFavorite: string;
+  /** Footer hint for Tab in a wizard (accept and go to the next step). */
+  next: string;
+  /** Footer hint for Enter when remembered answers can finish the wizard. */
+  run: string;
+  /** Badge on a replayed step's remembered answer. */
+  lastUsed: string;
+  /** Home section-heading link to the full list; `{count}` = rows not shown on the home screen. */
+  showAll: string;
+  /** Favorites list with nothing starred; `{key}` = the star shortcut. */
+  noFavorites: string;
+  /** Recent list with nothing used yet. */
+  noRecent: string;
+  /** Confirmation panel heading after a command ran. */
+  done: string;
 }
 
 export const DEFAULT_LABELS: Labels = {
@@ -171,10 +265,31 @@ export const DEFAULT_LABELS: Labels = {
   dialogLabel: 'Command palette',
   removeToken: 'Remove {name}',
   resultsCount: '{count} results',
+  favorites: 'Favorites',
+  recent: 'Recent',
+  addFavorite: 'Add to favorites',
+  removeFavorite: 'Remove from favorites',
+  next: 'Next',
+  run: 'Run',
+  lastUsed: 'Last used',
+  showAll: '+{count}',
+  noFavorites: 'No favorites yet — star a row with {key}',
+  noRecent: 'Nothing used yet',
+  done: 'Done',
 };
 
 /** Palette modes (IMPLEMENTATION_PLAN §10). */
-export type Mode = 'idle' | 'command-list' | 'command-step' | 'context-list' | 'context-search' | 'global-search';
+export type Mode =
+  | 'idle'
+  | 'command-list'
+  | 'command-step'
+  | 'context-list'
+  | 'context-search'
+  | 'global-search'
+  /** All favorites, filterable (Ctrl/⌘+F, `g f`). */
+  | 'favorites-list'
+  /** All recently used items, filterable (Ctrl/⌘+R). */
+  | 'recent-list';
 
 export type Display = 'inline' | 'tokens';
 

@@ -1,6 +1,7 @@
 import { vi } from 'vitest';
 import { PaletteMachine, type Effect, type MachineHost } from '../../src/palette';
-import { DEFAULT_LABELS, type Command, type Context, type Display, type SearchCallback, type StepOptionsCallback } from '../../src/types';
+import { UsageStore } from '../../src/usage';
+import { DEFAULT_LABELS, type Command, type Context, type Display, type SearchCallback, type StepOptionsCallback, type UsageEntry } from '../../src/types';
 
 export const COMMANDS: Command[] = [
   {
@@ -31,6 +32,10 @@ export interface Harness {
   effects: Effect[];
   changed: ReturnType<typeof vi.fn>;
   host: MachineHost & { state: HostState };
+  /** The in-memory favorites/recents store (when `usage: true`). */
+  store: UsageStore | null;
+  /** What the store last persisted. */
+  saved: UsageEntry[];
 }
 
 interface HostState {
@@ -41,6 +46,9 @@ interface HostState {
   display: Display;
   pageSize: number;
   debounce: number;
+  /** Turn favorites/recents on (in-memory). */
+  usage: boolean;
+  recentLimit: number;
 }
 
 export function harness(over: Partial<HostState> = {}): Harness {
@@ -54,8 +62,15 @@ export function harness(over: Partial<HostState> = {}): Harness {
     display: 'inline',
     pageSize: 8,
     debounce: 150,
+    usage: false,
+    recentLimit: 5,
     ...over,
   };
+  const saved: UsageEntry[] = [];
+  let m: PaletteMachine | null = null;
+  const store = state.usage
+    ? new UsageStore({ load: () => [], save: (entry) => { saved.push(entry); } }, () => m?.usageChanged())
+    : null;
   const host = {
     state,
     commands: () => state.commands,
@@ -66,11 +81,13 @@ export function harness(over: Partial<HostState> = {}): Harness {
     pageSize: () => state.pageSize,
     debounceMs: () => state.debounce,
     labels: () => DEFAULT_LABELS,
+    usage: () => store,
+    recentLimit: () => state.recentLimit,
     changed: () => changed(),
     effect: (e: Effect) => effects.push(e),
   };
-  const m = new PaletteMachine(host);
-  return { m, effects, changed, host };
+  m = new PaletteMachine(host);
+  return { m, effects, changed, host, store, saved };
 }
 
 /** Flush pending promise callbacks. */

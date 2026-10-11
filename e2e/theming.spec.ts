@@ -23,14 +23,14 @@ test('a host theme on :root pierces the shadow DOM (--base-* + --base-rem)', asy
   expect(await style(p.context, 'color')).toBe('rgb(255, 0, 128)');
 });
 
-test('component knobs: --pa-command-palette-width on the host, and size presets', async ({ page }) => {
+test('component knobs: --cp-width on the host, and size presets', async ({ page }) => {
   await load(page);
   const p = palette(page);
-  await p.host.evaluate((el) => (el as HTMLElement).style.setProperty('--pa-command-palette-width', '500px'));
+  await p.host.evaluate((el) => (el as HTMLElement).style.setProperty('--cp-width', '500px'));
   await open(page);
   expect(await style(p.container, 'max-width')).toBe('500px');
   await p.host.evaluate((el) => {
-    (el as HTMLElement).style.removeProperty('--pa-command-palette-width');
+    (el as HTMLElement).style.removeProperty('--cp-width');
     el.setAttribute('size', 'sm');
   });
   await expect(p.root).toHaveClass(/pa-command-palette--sm/);

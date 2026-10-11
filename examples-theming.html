@@ -13,7 +13,7 @@
         <header>
             <a href="index.html" class="back-link">← Back to Examples</a>
             <h1>Theming &amp; Presentation</h1>
-            <p class="subtitle">The palette is styled by pure-admin-core's own CSS. Theme it with <code>--base-*</code> and <code>--pa-command-palette-*</code> variables, scale it with <code>--base-rem</code>, and pick a size preset or the phone sheet.</p>
+            <p class="subtitle">The palette is styled by pure-admin-core's own CSS. Theme it with <code>--base-*</code> and <code>--cp-*</code> variables, scale it with <code>--base-rem</code>, and pick a size preset or the phone sheet.</p>
         </header>
 
         <!-- ============================================================= -->
@@ -70,8 +70,8 @@
             <h2>TH03 · Size Presets</h2>
             <p>
                 <code>size="sm|lg|xl"</code> sets width and results height together. For any other size, set
-                <code>--pa-command-palette-width</code>, <code>--pa-command-palette-results-max-height</code> or
-                <code>--pa-command-palette-offset-top</code> yourself.
+                <code>--cp-width</code>, <code>--cp-results-max-height</code> or
+                <code>--cp-offset-top</code> yourself.
             </p>
             <div class="controls">
                 <span><code>size</code>:</span>
@@ -130,17 +130,17 @@
                 '--base-border-color': '#313244',
                 '--base-subtle-bg': '#313244',
                 '--base-accent-color': '#cba6f7',
-                '--pa-command-palette-item-active-bg': 'rgba(203, 166, 247, 0.15)',
-                '--pa-command-palette-item-hover-bg': 'rgba(203, 166, 247, 0.08)',
-                '--pa-command-palette-highlight-bg': 'rgba(203, 166, 247, 0.25)',
-                '--pa-command-palette-highlight-text': '#f5c2e7',
+                '--cp-item-active-bg': 'rgba(203, 166, 247, 0.15)',
+                '--cp-item-hover-bg': 'rgba(203, 166, 247, 0.08)',
+                '--cp-highlight-bg': 'rgba(203, 166, 247, 0.25)',
+                '--cp-highlight-text': '#f5c2e7',
             },
             brand: {
                 '--base-accent-color': '#e11d48',
-                '--pa-command-palette-item-active-bg': 'rgba(225, 29, 72, 0.1)',
-                '--pa-command-palette-highlight-bg': 'rgba(225, 29, 72, 0.15)',
-                '--pa-command-palette-highlight-text': '#e11d48',
-                '--pa-command-palette-backdrop-filter': 'none',
+                '--cp-item-active-bg': 'rgba(225, 29, 72, 0.1)',
+                '--cp-highlight-bg': 'rgba(225, 29, 72, 0.15)',
+                '--cp-highlight-text': '#e11d48',
+                '--cp-backdrop-filter': 'none',
                 '--base-border-radius-md': '1.6',
             },
         };

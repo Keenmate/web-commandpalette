@@ -1,8 +1,8 @@
 {
   "$schema": "https://raw.githubusercontent.com/keenmate/schemas/main/component-variables.schema.json",
   "component": "@keenmate/web-commandpalette",
-  "prefix": "pa-command-palette",
-  "note": "The palette CSS is pure-admin-core's own partial. Its variables are read (not declared) inside the shadow root, with core's defaults injected as var() fallbacks — set any of them on :root (or an ancestor) to theme the component.",
+  "prefix": "cp",
+  "note": "The palette CSS is pure-admin-core's own partial, adapted at build time: the component reads only its own --cp-* knobs and the shared --base-* variables (pure-admin's --pc-* / --pa-* layer is resolved to its --base-* fallbacks). Nothing is declared inside the shadow root, so set any of them on :root, an ancestor or the element itself.",
   "baseVariables": [
     {
       "name": "base-accent-color",
@@ -115,14 +115,39 @@
       "usage": "Text on palette colour 9"
     },
     {
-      "name": "base-icon-close",
+      "name": "base-font-size-2xs",
       "required": false,
-      "usage": "Close (✕) glyph mask URL — token remove + fullscreen close"
+      "usage": "Section headings (unitless multiplier of --base-rem; default 1)"
     },
     {
-      "name": "base-icon-search",
+      "name": "base-font-size-base",
       "required": false,
-      "usage": "Search glyph mask URL (navbar-search pill rules shipped with the partial)"
+      "usage": "The search input and its placeholder (default 1.6)"
+    },
+    {
+      "name": "base-font-size-lg",
+      "required": false,
+      "usage": "Icon-font glyphs (<i>) in the row icon box (default 1.8)"
+    },
+    {
+      "name": "base-font-size-sm",
+      "required": false,
+      "usage": "Row titles, empty/loader text (default 1.4)"
+    },
+    {
+      "name": "base-font-size-xs",
+      "required": false,
+      "usage": "Meta text, keycaps, footer hints, context pill (default 1.2)"
+    },
+    {
+      "name": "base-icon-close",
+      "required": false,
+      "usage": "✕ glyph (chained by --cp-icon-close)"
+    },
+    {
+      "name": "base-icon-check",
+      "required": false,
+      "usage": "✓ glyph (chained by --cp-icon-check)"
     },
     {
       "name": "base-input-bg",
@@ -192,56 +217,80 @@
   ],
   "componentVariables": [
     {
-      "name": "pa-command-palette-width",
-      "usage": "Dialog max width (presets: size=\"sm|lg|xl\")"
-    },
-    {
-      "name": "pa-command-palette-offset-top",
-      "usage": "Distance of the floating dialog from the top of the viewport"
-    },
-    {
-      "name": "pa-command-palette-results-max-height",
-      "usage": "Max height of the results list before it scrolls"
-    },
-    {
-      "name": "pa-command-palette-backdrop-bg",
+      "name": "cp-backdrop-bg",
       "usage": "Backdrop colour"
     },
     {
-      "name": "pa-command-palette-backdrop-filter",
+      "name": "cp-backdrop-filter",
       "usage": "Backdrop filter (default blur(4px); set none to disable)"
     },
     {
-      "name": "pa-command-palette-item-hover-bg",
-      "usage": "Row background on hover"
+      "name": "cp-confirm-min-height",
+      "usage": "Minimum height of the dialog while it shows the one-line confirmation (the shrink animates down to it). Default 16 × --base-rem"
     },
     {
-      "name": "pa-command-palette-item-active-bg",
-      "usage": "Active (keyboard) row background"
-    },
-    {
-      "name": "pa-command-palette-highlight-bg",
+      "name": "cp-highlight-bg",
       "usage": "Background of the <mark> query highlight"
     },
     {
-      "name": "pa-command-palette-highlight-text",
+      "name": "cp-highlight-text",
       "usage": "Text colour of the <mark> query highlight"
     },
     {
-      "name": "pa-command-palette-key-bg",
+      "name": "cp-icon-close",
+      "usage": "✕ glyph (token remove, fullscreen close): any url(...). Falls back to --base-icon-close, then an inline Lucide SVG"
+    },
+    {
+      "name": "cp-icon-check",
+      "usage": "✓ glyph of the confirmation. Falls back to --base-icon-check, then an inline Lucide SVG"
+    },
+    {
+      "name": "cp-icon-size",
+      "usage": "Size of the masked glyphs (default 1em)"
+    },
+    {
+      "name": "cp-icon-star",
+      "usage": "☆ glyph (favorite toggle, not starred): any url(...). Inline Lucide SVG fallback"
+    },
+    {
+      "name": "cp-icon-star-filled",
+      "usage": "★ glyph (favorite toggle, starred). Inline Lucide SVG fallback"
+    },
+    {
+      "name": "cp-item-active-bg",
+      "usage": "Active (keyboard) row background"
+    },
+    {
+      "name": "cp-item-hover-bg",
+      "usage": "Row background on hover"
+    },
+    {
+      "name": "cp-key-bg",
       "usage": "Keycap background"
     },
     {
-      "name": "pa-command-palette-key-text",
-      "usage": "Keycap text colour"
-    },
-    {
-      "name": "pa-command-palette-key-font-size",
+      "name": "cp-key-font-size",
       "usage": "Keycap font size"
     },
     {
-      "name": "pa-command-palette-key-font-weight",
+      "name": "cp-key-font-weight",
       "usage": "Keycap font weight"
+    },
+    {
+      "name": "cp-key-text",
+      "usage": "Keycap text colour"
+    },
+    {
+      "name": "cp-offset-top",
+      "usage": "Distance of the floating dialog from the top of the viewport"
+    },
+    {
+      "name": "cp-results-max-height",
+      "usage": "Max height of the results list before it scrolls"
+    },
+    {
+      "name": "cp-width",
+      "usage": "Dialog max width (presets: size=\"sm|lg|xl\")"
     }
   ]
 }

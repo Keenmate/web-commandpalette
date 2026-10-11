@@ -55,18 +55,21 @@
         </div>
 
         <!-- ============================================================= -->
-        <!-- CS03 · Free text & conditional steps                           -->
+        <!-- CS03 · Free text, conditional & branching steps               -->
         <!-- ============================================================= -->
         <div class="card">
-            <h2>CS03 · Free Text &amp; Conditional Steps</h2>
+            <h2>CS03 · Free Text, Conditional &amp; Branching Steps</h2>
             <p>
                 <code>freeText: true</code> means pressing <kbd>Enter</kbd> when nothing matches submits the typed text (try
                 <code>/go /my/custom/path</code>). <code>shouldShow(selections)</code> skips a step: in <code>/report</code>,
-                “Inventory Status” has no time range, so the command completes right away.
+                “Inventory Status” has no time range, so the command completes right away. An option with its own
+                <code>steps</code> forks the wizard: <code>/assign-admin John to group Finance</code> vs
+                <code>… to site Intranet</code>.
             </p>
             <div class="demo-area">
                 <button type="button" data-open="/go /my/custom/path">/go /my/custom/path</button>
                 <button type="button" class="secondary" data-open="/report ">/report</button>
+                <button type="button" class="secondary" data-open="/assign-admin ">/assign-admin</button>
             </div>
         </div>
 
@@ -133,9 +136,22 @@
             ],
         };
 
+        const assignAdmin = {
+            id: 'assign-admin', shortcut: '/assign-admin', icon: '🛡️', name: 'Assign Admin', description: 'Branches on group vs site',
+            steps: [
+                { id: 'user', placeholder: 'Select user…', options: [{ label: 'John Doe', value: 'john' }, { label: 'Jane Smith', value: 'jane' }] },
+                { id: 'target', prompt: ' to ', placeholder: 'group or site…', options: [
+                    { id: 'group', label: 'group', steps: [{ id: 'group', placeholder: 'Select group…',
+                        options: [{ label: 'Finance' }, { label: 'Engineering' }, { label: 'Sales' }] }] },
+                    { id: 'site', label: 'site', steps: [{ id: 'site', placeholder: 'Select site collection…',
+                        options: [{ label: 'Intranet' }, { label: 'HR Portal' }, { label: 'Projects' }] }] },
+                ] },
+            ],
+        };
+
         function wire() {
             const palette = document.getElementById('palette');
-            palette.commands = [...commands, report];
+            palette.commands = [...commands, report, assignAdmin];
             palette.contexts = contexts;
 
             const stepLog = document.getElementById('cs02-log');

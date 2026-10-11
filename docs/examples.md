@@ -7,7 +7,8 @@ Run `npm run dev` and open http://localhost:12300. The hub (`index.html`) links 
 | [`examples-basic.html`](../examples-basic.html) | The three-line setup, opening (Ctrl/⌘+K, `open-key`, `g`-sequences, `openWith`), the `cp-*` events, i18n `labels`. |
 | [`examples-commands-steps.html`](../examples-commands-steps.html) | Static steps (inline or fetched once), `search: true` live steps, `freeText`, `shouldShow`, inline vs tokens display. |
 | [`examples-async-search.html`](../examples-async-search.html) | Scoped context search (no call on an empty query), global search, debounce + abort with a provider-call log, pagination. |
-| [`examples-theming.html`](../examples-theming.html) | Themes via `--base-*` / `--pa-command-palette-*`, `--base-rem` scaling, size presets, the phone sheet. |
+| [`examples-favorites.html`](../examples-favorites.html) | Reusable pickers (`step.load`), a branching admin command, favorites + recents (localStorage or `load`/`saveUsageCallback`), replaying a run with Tab/Enter, grouped results, a context with its own `search`. |
+| [`examples-theming.html`](../examples-theming.html) | Themes via `--base-*` / `--cp-*`, `--base-rem` scaling, size presets, the phone sheet. |
 | [`examples-playground.html`](../examples-playground.html) | The full pure-admin demo data with every switch and a live event log. |
 
 Shared demo data lives in [`examples-data.js`](../examples-data.js). The pages follow the Keenmate

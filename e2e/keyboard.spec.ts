@@ -84,9 +84,11 @@ test('Backspace at the locked prefix steps back; typed text deletes normally', a
 test('footer hints are mode-aware', async ({ page }) => {
   const p = palette(page);
   await open(page);
-  expect(await hints(p.footer)).toEqual(['↑↓ Navigate', '↵ Select', 'Esc Close']);
+  // The home row (a command) is starrable → the favorite hint shows.
+  expect(await hints(p.footer)).toEqual(['↑↓ Navigate', '↵ Select', 'Esc Close', 'Ctrl D Add to favorites']);
   await p.input.fill('/go ');
-  expect(await hints(p.footer)).toEqual(['↑↓ Navigate', '↵ Select', '⌫ Back', 'Esc Back']);
+  // Options can't be starred; in a wizard Tab moves to the next step.
+  expect(await hints(p.footer)).toEqual(['↑↓ Navigate', 'Tab Next', '↵ Select', '⌫ Back', 'Esc Back']);
 });
 
 test('Tab selects like Enter and keeps focus in the palette', async ({ page }) => {

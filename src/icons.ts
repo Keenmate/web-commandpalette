@@ -5,7 +5,7 @@
  *
  *  - `<svg …>` (starts with `<`)   → injected raw. The host vouches for this markup.
  *  - `fa-gear`, `x`, `search` (ASCII-letter start) → an icon NAME, rendered as
- *    `<span class="pa-icon pa-icon--NAME">`; style it via `--pa-icon-src`.
+ *    `<span class="pa-icon pa-icon--NAME">` (a masked glyph in currentColor).
  *  - `🚀` / any other glyph        → rendered as text.
  */
 export function escapeHtml(value: unknown): string {

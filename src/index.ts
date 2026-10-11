@@ -6,7 +6,9 @@ export { CommandPaletteElement };
 
 // The DOM-free machine + helpers, for hosts that want to drive or test the logic directly.
 export { PaletteMachine, PAGE_STEP } from './palette';
-export type { MachineHost, Effect, ViewItem, TokenView, NavDirection } from './palette';
+export type { MachineHost, Effect, ViewItem, TokenView, NavDirection, HomeSection } from './palette';
+export { UsageStore, usageKey, frecency, localStoragePersistence, MAX_RECENT_ENTRIES } from './usage';
+export type { UsagePersistence, UsageTarget } from './usage';
 export { renderIcon } from './icons';
 
 export { DEFAULT_LABELS } from './types';
@@ -23,6 +25,11 @@ export type {
   StepOptionsContext,
   SearchCallback,
   StepOptionsCallback,
+  UsageEntry,
+  LoadUsageCallback,
+  SaveUsageCallback,
+  ConfirmationContext,
+  RenderConfirmationCallback,
   Labels,
   Mode,
   Display,
