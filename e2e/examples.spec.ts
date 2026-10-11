@@ -25,9 +25,12 @@ for (const name of PAGES) {
     await page.goto(`/${name}.html`);
     // Shared skeleton: white gradient header with a back link, numbered card sections.
     await expect(page.locator('.container > header .back-link')).toHaveAttribute('href', 'index.html');
-    expect(await page.locator('.container > .card > h2').count()).toBeGreaterThanOrEqual(2);
-    await expect(page.locator('.chapter-nav')).toBeAttached();
-    const host = page.locator('web-command-palette');
+    const cards = await page.locator('.container > .card > h2').count();
+    expect(cards).toBeGreaterThanOrEqual(1);
+    // The shared chapter nav only builds itself when there's more than one section to jump between.
+    if (cards > 1) await expect(page.locator('.chapter-nav')).toBeAttached();
+    // The page's main palette (the theming page also has gallery instances).
+    const host = page.locator('web-command-palette#palette');
     await page.waitForFunction(() => !!customElements.get('web-command-palette'));
     await host.evaluate((el) => (el as unknown as { open(): void }).open());
     await expect(host.locator('.pa-command-palette')).toHaveClass(/--active/);

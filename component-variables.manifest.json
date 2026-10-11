@@ -115,6 +115,11 @@
       "usage": "Text on palette colour 9"
     },
     {
+      "name": "base-font-family",
+      "required": false,
+      "usage": "Text font of the whole palette (default: inherited from the page)"
+    },
+    {
       "name": "base-font-size-2xs",
       "required": false,
       "usage": "Section headings (unitless multiplier of --base-rem; default 1)"
@@ -269,6 +274,10 @@
       "usage": "Keycap background"
     },
     {
+      "name": "cp-key-font-family",
+      "usage": "Keycap font (default: a system UI stack, independent of --base-font-family)"
+    },
+    {
       "name": "cp-key-font-size",
       "usage": "Keycap font size"
     },
@@ -287,6 +296,26 @@
     {
       "name": "cp-results-max-height",
       "usage": "Max height of the results list before it scrolls"
+    },
+    {
+      "name": "cp-scrollbar-thumb-bg",
+      "usage": "Results scrollbar thumb. Default --base-border-color"
+    },
+    {
+      "name": "cp-scrollbar-thumb-bg-hover",
+      "usage": "Results scrollbar thumb on hover (WebKit). Default --base-text-color-2"
+    },
+    {
+      "name": "cp-scrollbar-thumb-border-radius",
+      "usage": "Results scrollbar thumb radius (WebKit). Default 4px"
+    },
+    {
+      "name": "cp-scrollbar-track-bg",
+      "usage": "Results scrollbar track. Default transparent"
+    },
+    {
+      "name": "cp-scrollbar-width",
+      "usage": "Results scrollbar width (WebKit/older Chromium; Firefox and Chromium 121+ draw a thin bar). Default 8px"
     },
     {
       "name": "cp-width",

@@ -54,6 +54,12 @@ A pure-admin theme already defines these on `:root`, so the palette follows it. 
 input only: `--base-font-size-base: 1.4` (note this also affects anything else on the page that
 reads it).
 
+## Font family
+
+The palette uses `--base-font-family` if set, else the page's font — the input and buttons
+included (form controls don't inherit fonts on their own, so the component tells them to).
+Keycaps keep a system UI stack by default; `--cp-key-font-family` changes them.
+
 ## Palette knobs
 
 | Variable | Purpose |
@@ -66,6 +72,8 @@ reads it).
 | `--cp-item-hover-bg` / `-item-active-bg` | Row backgrounds |
 | `--cp-highlight-bg` / `-highlight-text` | `<mark>` query highlight |
 | `--cp-key-bg` / `-key-text` / `-key-font-size` / `-key-font-weight` | Keycaps |
+| `--cp-scrollbar-thumb-bg` / `-thumb-bg-hover` / `-track-bg` | Results scrollbar colours (default: `--base-border-color` thumb on a transparent track) |
+| `--cp-scrollbar-width` / `-thumb-border-radius` | Results scrollbar size and thumb radius (WebKit; Firefox and Chromium 121+ draw a thin bar) |
 | `--cp-confirm-min-height` | Height the dialog shrinks to (animated) while showing the confirmation. Default 16 × `--base-rem` |
 
 `size="sm|lg|xl"` presets set width + results height together (480/288, 768/512, 896/640 px at
@@ -110,6 +118,13 @@ web-command-palette {
   --cp-icon-star-filled: url('/icons/bookmark-solid.svg');
 }
 ```
+
+## Beyond variables: `::part()`
+
+Variables cover colours, radii, sizes, fonts and icons. For anything else — the dialog's shadow
+or border, the input's shape — style the shadow parts directly (list below). The **theme gallery**
+on the theming examples page (TH01) combines all three to build seven very different palettes —
+dark, neon, corporate, soft, brutalist, terminal, material — without touching the component's CSS.
 
 ## Shadow parts
 

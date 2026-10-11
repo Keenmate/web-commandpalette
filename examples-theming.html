@@ -7,6 +7,191 @@
 
     <!-- Shared example styles -->
     <link rel="stylesheet" href="examples-shared.css">
+
+    <!-- TH01 theme gallery. These rules ARE the example (EXAMPLES.md §5 exception): each one
+         themes one palette instance through --base-*, --cp-* and ::part() only. The cards print
+         these very rules, so what you read is what's applied. -->
+    <style id="theme-gallery-css">
+        /* Dark — Catppuccin Mocha */
+        #theme-dark {
+            --base-main-bg: #1e1e2e;
+            --base-input-bg: #181825;
+            --base-input-color: #cdd6f4;
+            --base-text-color-1: #cdd6f4;
+            --base-text-color-2: #a6adc8;
+            --base-border-color: #313244;
+            --base-subtle-bg: #313244;
+            --base-accent-color: #cba6f7;
+            --base-text-color-on-accent: #1e1e2e;
+            --cp-item-active-bg: rgba(203, 166, 247, 0.15);
+            --cp-item-hover-bg: rgba(203, 166, 247, 0.08);
+            --cp-highlight-bg: rgba(203, 166, 247, 0.25);
+            --cp-highlight-text: #f5c2e7;
+            --cp-scrollbar-thumb-bg: #45475a;
+            --cp-scrollbar-thumb-bg-hover: #585b70;
+        }
+        #theme-dark::part(container) {
+            border: 1px solid #313244;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
+        }
+
+        /* Neon / cyberpunk — glow, plus a bolt and hearts instead of ✓ and ☆ */
+        #theme-neon {
+            --base-main-bg: #0d0221;
+            --base-input-bg: #1a0533;
+            --base-input-color: #00fff9;
+            --base-text-color-1: #00fff9;
+            --base-text-color-2: #ff6ec7;
+            --base-border-color: #ff00ff;
+            --base-subtle-bg: #2a0845;
+            --base-accent-color: #ff00ff;
+            --base-text-color-on-accent: #0d0221;
+            --cp-item-active-bg: rgba(255, 0, 255, 0.25);
+            --cp-highlight-bg: transparent;
+            --cp-highlight-text: #fffb00;
+            --cp-key-bg: transparent;
+            --cp-key-text: #00fff9;
+            --cp-backdrop-bg: rgba(13, 2, 33, 0.75);
+            --cp-scrollbar-thumb-bg: #ff00ff;
+            --cp-scrollbar-thumb-bg-hover: #00fff9;
+            --cp-scrollbar-track-bg: #1a0533;
+            --cp-icon-check: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'><path d='M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z'/></svg>");
+            --cp-icon-star: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z'/></svg>");
+            --cp-icon-star-filled: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'><path d='M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z'/></svg>");
+        }
+        #theme-neon::part(container) {
+            border: 1px solid #ff00ff;
+            box-shadow: 0 0 24px #ff00ff, 0 0 64px rgba(0, 255, 249, 0.35);
+        }
+
+        /* Corporate — square-ish, one brand colour, no blur */
+        #theme-corporate {
+            --base-font-family: "Helvetica Neue", Arial, sans-serif;
+            --base-accent-color: #bb0a30;
+            --base-border-radius-md: 0.2;
+            --base-border-radius-sm: 0.1;
+            --base-text-color-1: #1a1a1a;
+            --base-text-color-2: #6b6b6b;
+            --base-border-color: #d9d9d9;
+            --cp-item-active-bg: #f2f2f2;
+            --cp-highlight-bg: transparent;
+            --cp-highlight-text: #bb0a30;
+            --cp-backdrop-bg: rgba(0, 0, 0, 0.35);
+            --cp-backdrop-filter: none;
+            --cp-width: 680px;
+            --cp-scrollbar-thumb-bg: #c4c4c4;
+            --cp-scrollbar-thumb-border-radius: 0;
+        }
+        #theme-corporate::part(container) {
+            border-top: 4px solid #bb0a30;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Soft — big radius, pastel pink, circled check */
+        #theme-soft {
+            --base-accent-color: #ec4899;
+            --base-border-radius-md: 2.4;
+            --base-border-radius-sm: 1.2;
+            --base-main-bg: #fff7fb;
+            --base-border-color: #fbcfe8;
+            --base-subtle-bg: #fce7f3;
+            --cp-item-active-bg: #fce7f3;
+            --cp-highlight-bg: #fbcfe8;
+            --cp-highlight-text: #9d174d;
+            --cp-backdrop-bg: rgba(236, 72, 153, 0.15);
+            --cp-offset-top: 20vh;
+            --cp-scrollbar-thumb-bg: #f9a8d4;
+            --cp-scrollbar-thumb-bg-hover: #ec4899;
+            --cp-scrollbar-thumb-border-radius: 8px;
+            --cp-icon-check: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'/><path d='m9 12 2 2 4-4'/></svg>");
+        }
+        #theme-soft::part(container) {
+            box-shadow: 0 24px 48px rgba(236, 72, 153, 0.25);
+        }
+
+        /* Brutalist — no radius, black on white, hard offset shadow */
+        #theme-brutal {
+            --base-font-family: "Courier New", Courier, monospace;
+            --cp-key-font-family: "Courier New", Courier, monospace;
+            --base-border-radius-md: 0;
+            --base-border-radius-sm: 0;
+            --base-accent-color: #000000;
+            --base-text-color-on-accent: #ffffff;
+            --base-text-color-1: #000000;
+            --base-text-color-2: #000000;
+            --base-border-color: #000000;
+            --cp-item-active-bg: #ffeb3b;
+            --cp-item-hover-bg: #fff59d;
+            --cp-highlight-bg: #000000;
+            --cp-highlight-text: #ffffff;
+            --cp-key-bg: #ffffff;
+            --cp-backdrop-bg: rgba(255, 255, 255, 0.7);
+            --cp-backdrop-filter: none;
+            --cp-scrollbar-thumb-bg: #000000;
+            --cp-scrollbar-thumb-bg-hover: #000000;
+            --cp-scrollbar-thumb-border-radius: 0;
+            --cp-scrollbar-width: 12px;
+        }
+        #theme-brutal::part(container) {
+            border: 3px solid #000000;
+            box-shadow: 10px 10px 0 #000000;
+        }
+
+        /* Terminal — green phosphor, monospace everywhere, a prompt instead of ✓ */
+        #theme-terminal {
+            --base-font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+            --cp-key-font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+            --base-main-bg: #0c0c0c;
+            --base-input-bg: #0c0c0c;
+            --base-input-color: #33ff66;
+            --base-text-color-1: #33ff66;
+            --base-text-color-2: #1f9e3f;
+            --base-border-color: #1f6e33;
+            --base-subtle-bg: #0f2a17;
+            --base-accent-color: #33ff66;
+            --base-text-color-on-accent: #0c0c0c;
+            --base-border-radius-md: 0;
+            --base-border-radius-sm: 0;
+            --cp-item-active-bg: rgba(51, 255, 102, 0.12);
+            --cp-highlight-bg: #33ff66;
+            --cp-highlight-text: #0c0c0c;
+            --cp-key-bg: transparent;
+            --cp-key-text: #33ff66;
+            --cp-backdrop-bg: rgba(0, 0, 0, 0.8);
+            --cp-backdrop-filter: none;
+            --cp-scrollbar-thumb-bg: #1f6e33;
+            --cp-scrollbar-thumb-bg-hover: #33ff66;
+            --cp-scrollbar-thumb-border-radius: 0;
+            --cp-icon-check: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='4 17 10 11 4 5'/><line x1='12' x2='20' y1='19' y2='19'/></svg>");
+        }
+        #theme-terminal::part(container) {
+            box-shadow: 0 0 0 1px #1f6e33, 0 0 32px rgba(51, 255, 102, 0.2);
+        }
+
+        /* Material — elevation, underlined input, bookmarks instead of stars */
+        #theme-material {
+            --base-font-family: Roboto, "Segoe UI", system-ui, sans-serif;
+            --base-accent-color: #3f51b5;
+            --base-border-radius-md: 0.4;
+            --base-border-color: #e0e0e0;
+            --cp-item-active-bg: rgba(63, 81, 181, 0.08);
+            --cp-highlight-bg: transparent;
+            --cp-highlight-text: #3f51b5;
+            --cp-scrollbar-thumb-bg: #bdbdbd;
+            --cp-scrollbar-thumb-bg-hover: #3f51b5;
+            --cp-icon-star: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z'/></svg>");
+            --cp-icon-star-filled: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z'/></svg>");
+        }
+        #theme-material::part(container) {
+            box-shadow: 0 11px 15px -7px rgba(0, 0, 0, 0.2), 0 24px 38px 3px rgba(0, 0, 0, 0.14), 0 9px 46px 8px rgba(0, 0, 0, 0.12);
+        }
+        #theme-material::part(input) {
+            border: 0;
+            border-bottom: 2px solid #3f51b5;
+            border-radius: 0;
+            box-shadow: none;
+        }
+    </style>
 </head>
 <body class="dark-output">
     <div class="container">
@@ -17,98 +202,140 @@
         </header>
 
         <!-- ============================================================= -->
-        <!-- TH01 · Themes                                                   -->
+        <!-- TH01 · Themes & sizes                                           -->
         <!-- ============================================================= -->
         <div class="card">
-            <h2>TH01 · Themes via CSS Variables</h2>
+            <h2>TH01 · Themes &amp; Sizes</h2>
             <p>
-                Every variable the palette reads falls back to pure-admin-core's default. Nothing is
-                <em>declared</em> inside the shadow root, so a theme set on <code>:root</code> or any ancestor always
-                wins. These presets set variables on <code>&lt;html&gt;</code>.
+                How far you can take the palette without touching its CSS. Each theme below is its own palette instance,
+                styled only from the outside through the shared <code>--base-*</code> variables, the palette's
+                <code>--cp-*</code> knobs (icons included) and the <code>::part()</code> hooks (<code>container</code>,
+                <code>input</code>, <code>results</code>, <code>footer</code>, <code>backdrop</code>). The CSS under each card is read
+                back from this page's stylesheet, so it's exactly what's applied. Try <code>/deploy</code> to see the
+                wizard and the confirmation, and <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>D</kbd> for the star icon.
             </p>
-            <div class="controls">
-                <span>theme:</span>
-                <label><input type="radio" name="th01-theme" value="default" checked> default</label>
-                <label><input type="radio" name="th01-theme" value="dark"> dark</label>
-                <label><input type="radio" name="th01-theme" value="brand"> brand</label>
-            </div>
-            <div class="demo-area">
-                <button type="button" data-open="mac">Open (“mac”)</button>
-                <button type="button" class="secondary" data-open="/deploy ">/deploy</button>
-            </div>
-            <div class="output">
-                <div class="output-label">Variables applied to &lt;html&gt;</div>
-                <pre id="th01-vars">(none — core defaults)</pre>
-            </div>
-        </div>
-
-        <!-- ============================================================= -->
-        <!-- TH02 · Scale                                                    -->
-        <!-- ============================================================= -->
-        <div class="card">
-            <h2>TH02 · Scale with <code>--base-rem</code></h2>
             <p>
-                pure-admin sizes everything in rem, assuming a 10px root. Inside the shadow root every <code>Nrem</code> is
-                compiled to <code>calc(N * var(--base-rem, 10px))</code>, so the palette looks the same on any page. On a
-                pure-admin page, set <code>--base-rem: 1rem</code> to follow the root font size.
+                The rules here are scoped to one instance (<code>#theme-neon</code>). Nothing is <em>declared</em> inside the
+                shadow root, so the same rules on <code>:root</code> or any ancestor theme every palette on the page, and
+                anything you don't set falls back to pure-admin-core's default.
+            </p>
+            <p>
+                The size switches below apply to <b>every</b> palette here, so any theme can be tried at any size.
+                <code>--base-rem</code> scales everything: inside the shadow root every <code>Nrem</code> is compiled to
+                <code>calc(N * var(--base-rem, 10px))</code> (on a pure-admin page set <code>--base-rem: 1rem</code> to follow the
+                root font size). <code>size</code> presets set width and results height together; for anything else use
+                <code>--cp-width</code>, <code>--cp-results-max-height</code> and <code>--cp-offset-top</code>.
+                <code>mobile-presentation="auto"</code> gives touch phones a fullscreen sheet above the on-screen keyboard;
+                force <code>fullscreen</code> to preview it here.
             </p>
             <div class="controls">
                 <span><code>--base-rem</code>:</span>
-                <label><input type="radio" name="th02-rem" value="8px"> 8px</label>
-                <label><input type="radio" name="th02-rem" value="" checked> 10px (default)</label>
-                <label><input type="radio" name="th02-rem" value="12px"> 12px</label>
+                <label><input type="radio" name="th01-rem" value="8px"> 8px</label>
+                <label><input type="radio" name="th01-rem" value="" checked> 10px (default)</label>
+                <label><input type="radio" name="th01-rem" value="12px"> 12px</label>
             </div>
-            <div class="demo-area">
-                <button type="button" data-open="">Open</button>
-            </div>
-        </div>
-
-        <!-- ============================================================= -->
-        <!-- TH03 · Size presets                                             -->
-        <!-- ============================================================= -->
-        <div class="card">
-            <h2>TH03 · Size Presets</h2>
-            <p>
-                <code>size="sm|lg|xl"</code> sets width and results height together. For any other size, set
-                <code>--cp-width</code>, <code>--cp-results-max-height</code> or
-                <code>--cp-offset-top</code> yourself.
-            </p>
             <div class="controls">
                 <span><code>size</code>:</span>
-                <label><input type="radio" name="th03-size" value="sm"> sm</label>
-                <label><input type="radio" name="th03-size" value="" checked> default</label>
-                <label><input type="radio" name="th03-size" value="lg"> lg</label>
-                <label><input type="radio" name="th03-size" value="xl"> xl</label>
+                <label><input type="radio" name="th01-size" value="sm"> sm</label>
+                <label><input type="radio" name="th01-size" value="" checked> default</label>
+                <label><input type="radio" name="th01-size" value="lg"> lg</label>
+                <label><input type="radio" name="th01-size" value="xl"> xl</label>
             </div>
-            <div class="demo-area">
-                <button type="button" data-open="">Open</button>
-            </div>
-        </div>
-
-        <!-- ============================================================= -->
-        <!-- TH04 · Phone sheet                                              -->
-        <!-- ============================================================= -->
-        <div class="card">
-            <h2>TH04 · Phone Fullscreen Sheet</h2>
-            <p>
-                With <code>mobile-presentation="auto"</code> (the default), touch phones get a fullscreen sheet with a close
-                bar, which stays above the on-screen keyboard. A narrow desktop window keeps the floating dialog. Force
-                <code>fullscreen</code> to preview the sheet here.
-            </p>
             <div class="controls">
                 <span><code>mobile-presentation</code>:</span>
-                <label><input type="radio" name="th04-presentation" value="auto" checked> auto</label>
-                <label><input type="radio" name="th04-presentation" value="floating"> floating</label>
-                <label><input type="radio" name="th04-presentation" value="fullscreen"> fullscreen</label>
+                <label><input type="radio" name="th01-presentation" value="auto" checked> auto</label>
+                <label><input type="radio" name="th01-presentation" value="floating"> floating</label>
+                <label><input type="radio" name="th01-presentation" value="fullscreen"> fullscreen</label>
             </div>
-            <div class="demo-area">
-                <button type="button" data-open="">Open</button>
+            <div class="card-grid" style="--grid-min: 340px">
+                <div class="demo-card">
+                    <h3>Default</h3>
+                    <p>No theme at all: pure-admin-core's own defaults (this page's main palette, <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>).</p>
+                    <div class="demo-area">
+                        <button type="button" data-open="">Open</button>
+                        <button type="button" class="secondary" data-open="/deploy ">/deploy</button>
+                    </div>
+                    <div class="output"><div class="output-label">CSS</div><pre>/* none */</pre></div>
+                </div>
+                <div class="demo-card" data-theme="dark">
+                    <h3>Dark — Catppuccin</h3>
+                    <p>Base colours only, plus a deeper shadow via <code>::part(container)</code>.</p>
+                    <div class="demo-area">
+                        <button type="button" data-theme-open="">Open</button>
+                        <button type="button" class="secondary" data-theme-open="/deploy ">/deploy</button>
+                    </div>
+                    <div class="output"><div class="output-label">CSS</div><pre></pre></div>
+                </div>
+                <div class="demo-card" data-theme="neon">
+                    <h3>Neon / Cyberpunk</h3>
+                    <p>Glow on the container, a bolt for ✓ and hearts for ☆ via <code>--cp-icon-*</code>.</p>
+                    <div class="demo-area">
+                        <button type="button" data-theme-open="">Open</button>
+                        <button type="button" class="secondary" data-theme-open="/deploy ">/deploy</button>
+                    </div>
+                    <div class="output"><div class="output-label">CSS</div><pre></pre></div>
+                </div>
+                <div class="demo-card" data-theme="corporate">
+                    <h3>Corporate</h3>
+                    <p>Nearly square corners, one brand red, no backdrop blur, a wider dialog (<code>--cp-width</code>).</p>
+                    <div class="demo-area">
+                        <button type="button" data-theme-open="">Open</button>
+                        <button type="button" class="secondary" data-theme-open="/deploy ">/deploy</button>
+                    </div>
+                    <div class="output"><div class="output-label">CSS</div><pre></pre></div>
+                </div>
+                <div class="demo-card" data-theme="soft">
+                    <h3>Soft / Rounded</h3>
+                    <p>Large radii, pastel pink, lower on the screen (<code>--cp-offset-top</code>), a circled check.</p>
+                    <div class="demo-area">
+                        <button type="button" data-theme-open="">Open</button>
+                        <button type="button" class="secondary" data-theme-open="/deploy ">/deploy</button>
+                    </div>
+                    <div class="output"><div class="output-label">CSS</div><pre></pre></div>
+                </div>
+                <div class="demo-card" data-theme="brutal">
+                    <h3>Brutalist</h3>
+                    <p>Zero radius, black on white, a hard offset shadow and a typewriter font (<code>--base-font-family</code>).</p>
+                    <div class="demo-area">
+                        <button type="button" data-theme-open="">Open</button>
+                        <button type="button" class="secondary" data-theme-open="/deploy ">/deploy</button>
+                    </div>
+                    <div class="output"><div class="output-label">CSS</div><pre></pre></div>
+                </div>
+                <div class="demo-card" data-theme="terminal">
+                    <h3>Terminal</h3>
+                    <p>Green phosphor, monospace everywhere (keycaps too: <code>--cp-key-font-family</code>), a prompt for ✓.</p>
+                    <div class="demo-area">
+                        <button type="button" data-theme-open="">Open</button>
+                        <button type="button" class="secondary" data-theme-open="/deploy ">/deploy</button>
+                    </div>
+                    <div class="output"><div class="output-label">CSS</div><pre></pre></div>
+                </div>
+                <div class="demo-card" data-theme="material">
+                    <h3>Material</h3>
+                    <p>Elevation shadow, an underlined input via <code>::part(input)</code>, bookmarks instead of stars.</p>
+                    <div class="demo-area">
+                        <button type="button" data-theme-open="">Open</button>
+                        <button type="button" class="secondary" data-theme-open="/deploy ">/deploy</button>
+                    </div>
+                    <div class="output"><div class="output-label">CSS</div><pre></pre></div>
+                </div>
             </div>
         </div>
+
     </div>
 
-    <!-- One palette per page: it owns the global Ctrl/⌘+K listener. -->
+    <!-- One palette per page owns the global Ctrl/⌘+K listener: this one. -->
     <web-command-palette id="palette"></web-command-palette>
+
+    <!-- TH01: one themed instance per gallery card (global keys off — opened by their buttons). -->
+    <web-command-palette id="theme-dark" open-key="" favorites-hotkey=""></web-command-palette>
+    <web-command-palette id="theme-neon" open-key="" favorites-hotkey=""></web-command-palette>
+    <web-command-palette id="theme-corporate" open-key="" favorites-hotkey=""></web-command-palette>
+    <web-command-palette id="theme-soft" open-key="" favorites-hotkey=""></web-command-palette>
+    <web-command-palette id="theme-brutal" open-key="" favorites-hotkey=""></web-command-palette>
+    <web-command-palette id="theme-terminal" open-key="" favorites-hotkey=""></web-command-palette>
+    <web-command-palette id="theme-material" open-key="" favorites-hotkey=""></web-command-palette>
 
     <!-- Register the element (Vite dev serves the TS source). -->
     <script type="module" src="/src/index.ts"></script>
@@ -118,32 +345,19 @@
         import { persistControls } from './examples-controls-store.js';
         import { commands, contexts, searchCallback, stepOptionsCallback } from './examples-data.js';
 
-        // Theme presets: plain custom properties set on <html>.
-        const THEMES = {
-            default: {},
-            dark: {
-                '--base-main-bg': '#1e1e2e',
-                '--base-input-bg': '#181825',
-                '--base-input-color': '#cdd6f4',
-                '--base-text-color-1': '#cdd6f4',
-                '--base-text-color-2': '#a6adc8',
-                '--base-border-color': '#313244',
-                '--base-subtle-bg': '#313244',
-                '--base-accent-color': '#cba6f7',
-                '--cp-item-active-bg': 'rgba(203, 166, 247, 0.15)',
-                '--cp-item-hover-bg': 'rgba(203, 166, 247, 0.08)',
-                '--cp-highlight-bg': 'rgba(203, 166, 247, 0.25)',
-                '--cp-highlight-text': '#f5c2e7',
-            },
-            brand: {
-                '--base-accent-color': '#e11d48',
-                '--cp-item-active-bg': 'rgba(225, 29, 72, 0.1)',
-                '--cp-highlight-bg': 'rgba(225, 29, 72, 0.15)',
-                '--cp-highlight-text': '#e11d48',
-                '--cp-backdrop-filter': 'none',
-                '--base-border-radius-md': '1.6',
-            },
-        };
+        /** The gallery stylesheet's source rules for `#<id>` (and its ::part()s), as written; inline SVGs shortened. */
+        function rulesFor(id) {
+            const source = document.getElementById('theme-gallery-css').textContent;
+            const blocks = source.match(/^[ \t]*#[\w-]+[^{]*\{[^}]*\}/gm) ?? [];
+            return blocks
+                .map((block) => block.trim())
+                .filter((block) => block.startsWith(`#${id}`) && /^#[\w-]+/.exec(block)[0] === `#${id}`)
+                .map((block) => block
+                    .replace(/url\("data:[^"]*"\)/g, 'url(<inline SVG>)')
+                    .replace(/^[ \t]+/gm, '  ')
+                    .replace(/^ {2}(#|\})/gm, '$1'))
+                .join('\n\n');
+        }
 
         function wire() {
             const palette = document.getElementById('palette');
@@ -152,34 +366,26 @@
             palette.searchCallback = searchCallback;
             palette.stepOptionsCallback = stepOptionsCallback;
 
-            const root = document.documentElement;
-            const varsOut = document.getElementById('th01-vars');
-            let applied = [];
-            document.querySelectorAll('input[name="th01-theme"]').forEach((r) =>
-                r.addEventListener('change', (e) => {
-                    if (!e.target.checked) return;
-                    applied.forEach((name) => root.style.removeProperty(name));
-                    const vars = THEMES[e.target.value];
-                    Object.entries(vars).forEach(([name, value]) => root.style.setProperty(name, value));
-                    applied = Object.keys(vars);
-                    varsOut.textContent = applied.length
-                        ? Object.entries(vars).map(([n, v]) => `${n}: ${v};`).join('\n')
-                        : '(none — core defaults)';
-                }));
-
-            document.querySelectorAll('input[name="th02-rem"]').forEach((r) =>
-                r.addEventListener('change', (e) => {
-                    if (!e.target.checked) return;
-                    if (e.target.value) root.style.setProperty('--base-rem', e.target.value);
-                    else root.style.removeProperty('--base-rem');
-                }));
-            document.querySelectorAll('input[name="th03-size"]').forEach((r) =>
-                r.addEventListener('change', (e) => { if (e.target.checked) palette.size = e.target.value || null; }));
-            document.querySelectorAll('input[name="th04-presentation"]').forEach((r) =>
-                r.addEventListener('change', (e) => { if (e.target.checked) palette.setAttribute('mobile-presentation', e.target.value); }));
+            // Size & presentation apply to every palette on the page (main + gallery instances).
+            const palettes = [...document.querySelectorAll('web-command-palette')];
+            const bind = (name, apply) => document.querySelectorAll(`input[name="${name}"]`).forEach((r) =>
+                r.addEventListener('change', (e) => { if (e.target.checked) palettes.forEach((el) => apply(el, e.target.value)); }));
+            bind('th01-rem', (el, v) => (v ? el.style.setProperty('--base-rem', v) : el.style.removeProperty('--base-rem')));
+            bind('th01-size', (el, v) => { el.size = v || null; });
+            bind('th01-presentation', (el, v) => el.setAttribute('mobile-presentation', v));
 
             document.querySelectorAll('[data-open]').forEach((b) =>
                 b.addEventListener('click', () => palette.openWith(b.dataset.open)));
+
+            // TH01 — each gallery card drives its own themed instance and prints its rules.
+            for (const card of document.querySelectorAll('[data-theme]')) {
+                const id = `theme-${card.dataset.theme}`;
+                const themed = document.getElementById(id);
+                Object.assign(themed, { commands, contexts, searchCallback, stepOptionsCallback });
+                card.querySelectorAll('[data-theme-open]').forEach((b) =>
+                    b.addEventListener('click', () => themed.openWith(b.dataset.themeOpen)));
+                card.querySelector('pre').textContent = rulesFor(id);
+            }
 
             persistControls('theming');
         }

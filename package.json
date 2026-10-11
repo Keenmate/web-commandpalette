@@ -28,6 +28,7 @@
   "files": [
     "dist",
     "src/css",
+    "CHANGELOG.md",
     "docs/README.md",
     "docs/usage.md",
     "docs/theming.md",

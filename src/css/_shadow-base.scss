@@ -15,6 +15,22 @@
   display: none !important;
 }
 
+// Fonts: the shared --base-font-family, else whatever the page uses. Form controls
+// don't inherit fonts by default, so the input and buttons are told to.
+.pa-command-palette {
+  font-family: var(--base-font-family, inherit);
+}
+
+.pa-command-palette input,
+.pa-command-palette button {
+  font-family: inherit;
+}
+
+// Core pins keycaps to a system stack; keep that as the default, but themable.
+.pa-command-palette__key {
+  font-family: var(--cp-key-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
+}
+
 // The masked-icon primitive (core `_icons.scss`): a glyph painted in currentColor
 // through a CSS mask. Every glyph the palette draws is replaceable — set the
 // `--cp-icon-*` variable (or the shared `--base-icon-*` one) to any `url(...)`;
@@ -237,4 +253,28 @@
 .pa-command-palette__input,
 .pa-command-palette__input::placeholder {
   unicode-bidi: plaintext;
+}
+
+// Scrollbar of the results list — themable like web-multiselect's (--ms-scrollbar-*).
+// Defaults follow the theme: a border-coloured thumb on a transparent track.
+.pa-command-palette__results {
+  scrollbar-width: thin; // Firefox, and Chromium 121+ (which then ignores ::-webkit-scrollbar)
+  scrollbar-color: var(--cp-scrollbar-thumb-bg, var(--base-border-color, #e2e8f0)) var(--cp-scrollbar-track-bg, transparent);
+}
+
+.pa-command-palette__results::-webkit-scrollbar {
+  width: var(--cp-scrollbar-width, 8px);
+}
+
+.pa-command-palette__results::-webkit-scrollbar-track {
+  background: var(--cp-scrollbar-track-bg, transparent);
+}
+
+.pa-command-palette__results::-webkit-scrollbar-thumb {
+  background: var(--cp-scrollbar-thumb-bg, var(--base-border-color, #e2e8f0));
+  border-radius: var(--cp-scrollbar-thumb-border-radius, 4px);
+}
+
+.pa-command-palette__results::-webkit-scrollbar-thumb:hover {
+  background: var(--cp-scrollbar-thumb-bg-hover, var(--base-text-color-2, #64748b));
 }
