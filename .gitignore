@@ -37,3 +37,6 @@ vscode.css-custom-data.json
 
 # Per-developer Make config (container runner, ports)
 .makefile.env
+
+# Vite config bundling leftovers
+vite.config.ts.timestamp-*.mjs
