@@ -46,7 +46,7 @@ top; the CSS is pure-admin-core's palette, compiled into the shadow root.
 
 - 🧪 [Live examples](https://examples.web-commandpalette.keenmate.dev) — the hosted example site
   (basic usage, commands & steps, async search, favorites, theming, playground). Locally:
-  `make dev` → http://localhost:12300.
+  `make dev` → http://localhost:12400.
 - 📘 [Usage / API reference](./docs/usage.md) — behaviour, properties, attributes, methods, events, data shapes.
 - 🎨 [Theming](./docs/theming.md) — `--cp-*` and `--base-*` variables, font sizes, icons, size presets.
 - 📚 [Examples / cookbook](./docs/examples.md) — the example pages and common recipes.
@@ -136,8 +136,8 @@ No polyfills are shipped.
 
 ```bash
 make setup        # npm install
-make dev          # examples hub on http://localhost:12300
-make build        # check:vars → cem analyze → library build (dist/)
+make dev          # examples hub on http://localhost:12400
+make build        # cem analyze → library build (dist/) → check:vars
 make test         # unit (Vitest) + e2e (Playwright: desktop + Pixel 7)
 make              # list every target (publish-rc, image-build, kill-port, …)
 ```

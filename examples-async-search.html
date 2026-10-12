@@ -1,168 +1,144 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Async Search — Web Command Palette</title>
+<meta name="kmwc:title" content="Async Search">
+<meta name="kmwc:subtitle" content="<code>searchCallback(scope, query, signal)</code> covers scoped and global search, with debounce, AbortSignal cancellation and client-side pages. Every provider call shows up in the log below.">
+<meta name="kmwc:body-class" content="dark-output">
 
-    <!-- Shared example styles -->
-    <link rel="stylesheet" href="examples-shared.css">
-</head>
-<body class="dark-output">
-    <div class="container">
-        <header>
-            <a href="index.html" class="back-link">← Back to Examples</a>
-            <h1>Async Search</h1>
-            <p class="subtitle"><code>searchCallback(scope, query, signal)</code> covers scoped and global search, with debounce, AbortSignal cancellation and client-side pages. Every provider call shows up in the log below.</p>
-        </header>
-
-        <!-- ============================================================= -->
-        <!-- AS01 · Context search                                           -->
-        <!-- ============================================================= -->
-        <div class="card">
-            <h2>AS01 · Scoped Context Search</h2>
-            <p>
-                Entering a context (<code>:products</code> or its alias <code>:p</code>, from the home screen, or with
-                <code>:p laptop</code>) locks the input to <code>":products "</code> and shows “Searching in Products”.
-                <b>An empty query never calls the provider</b>: you get “Type to search Products” instead.
-                Typing calls <code>searchCallback({ contextId: 'products' }, query)</code>.
-            </p>
-            <div class="demo-area">
-                <button type="button" data-open=":products ">:products (empty → no call)</button>
-                <button type="button" class="secondary" data-open=":users a">:users a</button>
-            </div>
-        </div>
-
-        <!-- ============================================================= -->
-        <!-- AS02 · Global search                                            -->
-        <!-- ============================================================= -->
-        <div class="card">
-            <h2>AS02 · Global Search</h2>
-            <p>
-                Free text first shows any command or context whose name, shortcut or alias matches, <b>instantly and
-                without calling the provider</b>. It then appends <code>searchCallback('global', query)</code> results.
-                Try “deploy” (a command, then server hits) or “mac”.
-            </p>
-            <div class="demo-area">
-                <button type="button" data-open="deploy">“deploy”</button>
-                <button type="button" class="secondary" data-open="mac">“mac”</button>
-            </div>
-        </div>
-
-        <!-- ============================================================= -->
-        <!-- AS03 · Debounce & abort                                         -->
-        <!-- ============================================================= -->
-        <div class="card">
-            <h2>AS03 · Debounce &amp; Abort</h2>
-            <p>
-                Provider calls wait <code>search-debounce</code> ms after the last keystroke. A newer query aborts the
-                in-flight request through its <code>signal</code>, and its late result is dropped, so stale results never overwrite
-                fresh ones. Raise the simulated latency and type quickly to see the aborts.
-            </p>
-            <div class="controls">
-                <span><code>search-debounce</code>:</span>
-                <label><input type="radio" name="as03-debounce" value="0"> 0</label>
-                <label><input type="radio" name="as03-debounce" value="150" checked> 150</label>
-                <label><input type="radio" name="as03-debounce" value="400"> 400</label>
-            </div>
-            <div class="controls">
-                <span>simulated latency:</span>
-                <label><input type="radio" name="as03-latency" value="100"> 100 ms</label>
-                <label><input type="radio" name="as03-latency" value="600" checked> 600 ms</label>
-                <label><input type="radio" name="as03-latency" value="1500"> 1500 ms</label>
-            </div>
-            <div class="demo-area">
-                <button type="button" data-open="">Open and type</button>
-            </div>
-            <div class="output">
-                <div class="output-label">Provider calls</div>
-                <pre id="as03-log">—</pre>
-            </div>
-        </div>
-
-        <!-- ============================================================= -->
-        <!-- AS04 · Pagination                                               -->
-        <!-- ============================================================= -->
-        <div class="card">
-            <h2>AS04 · Pagination</h2>
-            <p>
-                Results are split into pages of <code>page-size</code> in the browser. <kbd>←</kbd> and <kbd>→</kbd> turn pages when the
-                caret is at the edge of the input, with no new provider call. “item” returns 40 hits.
-            </p>
-            <div class="controls">
-                <span><code>page-size</code>:</span>
-                <label><input type="radio" name="as04-size" value="5"> 5</label>
-                <label><input type="radio" name="as04-size" value="8" checked> 8</label>
-                <label><input type="radio" name="as04-size" value="20"> 20</label>
-            </div>
-            <div class="demo-area">
-                <button type="button" data-open="item">“item” (40 hits)</button>
-            </div>
-        </div>
+<!-- ============================================================= -->
+<!-- AS01 · Context search                                           -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>AS01 · Scoped Context Search</h2>
+    <p>
+        Entering a context (<code>:products</code> or its alias <code>:p</code>, from the home screen, or with
+        <code>:p laptop</code>) locks the input to <code>":products "</code> and shows “Searching in Products”.
+        <b>An empty query never calls the provider</b>: you get “Type to search Products” instead.
+        Typing calls <code>searchCallback({ contextId: 'products' }, query)</code>.
+    </p>
+    <div class="demo-area">
+        <button type="button" data-open=":products ">:products (empty → no call)</button>
+        <button type="button" class="secondary" data-open=":users a">:users a</button>
     </div>
+</div>
 
-    <!-- One palette per page: it owns the global Ctrl/⌘+K listener. -->
-    <web-command-palette id="palette"></web-command-palette>
+<!-- ============================================================= -->
+<!-- AS02 · Global search                                            -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>AS02 · Global Search</h2>
+    <p>
+        Free text first shows any command or context whose name, shortcut or alias matches, <b>instantly and
+        without calling the provider</b>. It then appends <code>searchCallback('global', query)</code> results.
+        Try “deploy” (a command, then server hits) or “mac”.
+    </p>
+    <div class="demo-area">
+        <button type="button" data-open="deploy">“deploy”</button>
+        <button type="button" class="secondary" data-open="mac">“mac”</button>
+    </div>
+</div>
 
-    <!-- Register the element (Vite dev serves the TS source). -->
-    <script type="module" src="/src/index.ts"></script>
+<!-- ============================================================= -->
+<!-- AS03 · Debounce & abort                                         -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>AS03 · Debounce &amp; Abort</h2>
+    <p>
+        Provider calls wait <code>search-debounce</code> ms after the last keystroke. A newer query aborts the
+        in-flight request through its <code>signal</code>, and its late result is dropped, so stale results never overwrite
+        fresh ones. Raise the simulated latency and type quickly to see the aborts.
+    </p>
+    <div class="controls">
+        <span><code>search-debounce</code>:</span>
+        <label><input type="radio" name="as03-debounce" value="0"> 0</label>
+        <label><input type="radio" name="as03-debounce" value="150" checked> 150</label>
+        <label><input type="radio" name="as03-debounce" value="400"> 400</label>
+    </div>
+    <div class="controls">
+        <span>simulated latency:</span>
+        <label><input type="radio" name="as03-latency" value="100"> 100 ms</label>
+        <label><input type="radio" name="as03-latency" value="600" checked> 600 ms</label>
+        <label><input type="radio" name="as03-latency" value="1500"> 1500 ms</label>
+    </div>
+    <div class="demo-area">
+        <button type="button" data-open="">Open and type</button>
+    </div>
+    <div class="output">
+        <div class="output-label">Provider calls</div>
+        <pre id="as03-log">—</pre>
+    </div>
+</div>
 
-    <!-- Page wiring -->
-    <script type="module">
-        import { persistControls } from './examples-controls-store.js';
-        import { commands, contexts, products, users, orders } from './examples-data.js';
+<!-- ============================================================= -->
+<!-- AS04 · Pagination                                               -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>AS04 · Pagination</h2>
+    <p>
+        Results are split into pages of <code>page-size</code> in the browser. <kbd>←</kbd> and <kbd>→</kbd> turn pages when the
+        caret is at the edge of the input, with no new provider call. “item” returns 40 hits.
+    </p>
+    <div class="controls">
+        <span><code>page-size</code>:</span>
+        <label><input type="radio" name="as04-size" value="5"> 5</label>
+        <label><input type="radio" name="as04-size" value="8" checked> 8</label>
+        <label><input type="radio" name="as04-size" value="20"> 20</label>
+    </div>
+    <div class="demo-area">
+        <button type="button" data-open="item">“item” (40 hits)</button>
+    </div>
+</div>
 
-        function wire() {
-            const palette = document.getElementById('palette');
-            palette.commands = commands;
-            palette.contexts = contexts;
+<!-- One palette per page: it owns the global Ctrl/⌘+K listener. -->
+<web-command-palette id="palette"></web-command-palette>
 
-            const log = document.getElementById('as03-log');
-            const write = (line) => {
-                const t = new Date().toLocaleTimeString();
-                log.textContent = `${t}  ${line}\n` + (log.textContent === '—' ? '' : log.textContent);
-            };
-            let latency = 600;
+<!-- Page wiring -->
+<script type="module">
+    import { attachControlsPersistence } from '@keenmate/web-components-devkit/examples';
+    import { commands, contexts, products, users, orders } from './examples-data.js';
 
-            const pools = {
-                products: products.map((p) => ({ id: 'p' + p.id, title: p.name, subtitle: `SKU: ${p.sku} • ${p.price}`, icon: p.icon, badge: p.status })),
-                users: users.map((u) => ({ id: 'u' + u.id, title: u.name, subtitle: u.email, icon: '👤', badge: u.role })),
-                orders: orders.map((o) => ({ id: 'o' + o.id, title: `Order #${o.id}`, subtitle: `${o.customer} • ${o.total}`, icon: '🧾', badge: o.status })),
-                items: Array.from({ length: 40 }, (_, i) => ({ id: 'i' + i, title: `Item ${i + 1}`, subtitle: 'Generated result', icon: '📄' })),
-            };
+    function wire() {
+        const palette = document.getElementById('palette');
+        palette.commands = commands;
+        palette.contexts = contexts;
 
-            // A fake server, shaped like fetch(): it honours the AbortSignal.
-            palette.searchCallback = (scope, query, signal) => new Promise((resolve, reject) => {
-                const label = scope === 'global' ? 'global' : scope.contextId;
-                write(`→ ${label} "${query}"`);
-                const q = query.toLowerCase();
-                const pool = scope === 'global' ? [...pools.products, ...pools.users, ...pools.items] : pools[scope.contextId] ?? [];
-                const hits = pool.filter((r) => r.title.toLowerCase().includes(q) || (r.subtitle ?? '').toLowerCase().includes(q));
-                const timer = setTimeout(() => { write(`← ${label} "${query}": ${hits.length} hits`); resolve(hits); }, latency);
-                signal.addEventListener('abort', () => {
-                    clearTimeout(timer);
-                    write(`✕ ${label} "${query}" aborted`);
-                    reject(new DOMException('aborted', 'AbortError'));
-                }, { once: true });
-            });
+        const log = document.getElementById('as03-log');
+        const write = (line) => {
+            const t = new Date().toLocaleTimeString();
+            log.textContent = `${t}  ${line}\n` + (log.textContent === '—' ? '' : log.textContent);
+        };
+        let latency = 600;
 
-            document.querySelectorAll('[data-open]').forEach((b) =>
-                b.addEventListener('click', () => palette.openWith(b.dataset.open)));
-            document.querySelectorAll('input[name="as03-debounce"]').forEach((r) =>
-                r.addEventListener('change', (e) => { if (e.target.checked) palette.setAttribute('search-debounce', e.target.value); }));
-            document.querySelectorAll('input[name="as03-latency"]').forEach((r) =>
-                r.addEventListener('change', (e) => { if (e.target.checked) latency = Number(e.target.value); }));
-            document.querySelectorAll('input[name="as04-size"]').forEach((r) =>
-                r.addEventListener('change', (e) => { if (e.target.checked) palette.setAttribute('page-size', e.target.value); }));
+        const pools = {
+            products: products.map((p) => ({ id: 'p' + p.id, title: p.name, subtitle: `SKU: ${p.sku} • ${p.price}`, icon: p.icon, badge: p.status })),
+            users: users.map((u) => ({ id: 'u' + u.id, title: u.name, subtitle: u.email, icon: '👤', badge: u.role })),
+            orders: orders.map((o) => ({ id: 'o' + o.id, title: `Order #${o.id}`, subtitle: `${o.customer} • ${o.total}`, icon: '🧾', badge: o.status })),
+            items: Array.from({ length: 40 }, (_, i) => ({ id: 'i' + i, title: `Item ${i + 1}`, subtitle: 'Generated result', icon: '📄' })),
+        };
 
-            persistControls('async-search');
-        }
-        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
-        else wire();
-    </script>
+        // A fake server, shaped like fetch(): it honours the AbortSignal.
+        palette.searchCallback = (scope, query, signal) => new Promise((resolve, reject) => {
+            const label = scope === 'global' ? 'global' : scope.contextId;
+            write(`→ ${label} "${query}"`);
+            const q = query.toLowerCase();
+            const pool = scope === 'global' ? [...pools.products, ...pools.users, ...pools.items] : pools[scope.contextId] ?? [];
+            const hits = pool.filter((r) => r.title.toLowerCase().includes(q) || (r.subtitle ?? '').toLowerCase().includes(q));
+            const timer = setTimeout(() => { write(`← ${label} "${query}": ${hits.length} hits`); resolve(hits); }, latency);
+            signal.addEventListener('abort', () => {
+                clearTimeout(timer);
+                write(`✕ ${label} "${query}" aborted`);
+                reject(new DOMException('aborted', 'AbortError'));
+            }, { once: true });
+        });
 
-    <!-- Shared helpers LAST (after the page's own wiring). -->
-    <script type="module" src="examples-copy-link.js"></script>
-    <script type="module" src="examples-chapter-nav.js"></script>
-</body>
-</html>
+        document.querySelectorAll('[data-open]').forEach((b) =>
+            b.addEventListener('click', () => palette.openWith(b.dataset.open)));
+        document.querySelectorAll('input[name="as03-debounce"]').forEach((r) =>
+            r.addEventListener('change', (e) => { if (e.target.checked) palette.setAttribute('search-debounce', e.target.value); }));
+        document.querySelectorAll('input[name="as03-latency"]').forEach((r) =>
+            r.addEventListener('change', (e) => { if (e.target.checked) latency = Number(e.target.value); }));
+        document.querySelectorAll('input[name="as04-size"]').forEach((r) =>
+            r.addEventListener('change', (e) => { if (e.target.checked) palette.setAttribute('page-size', e.target.value); }));
+
+        attachControlsPersistence('async-search');
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
+    else wire();
+</script>

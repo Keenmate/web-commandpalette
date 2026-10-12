@@ -1,152 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web Command Palette — Examples</title>
-    <link rel="stylesheet" href="examples-shared.css">
-    <style>
-        body {
-            background: #f0f2f5;
-            min-height: 100vh;
-            padding: 2rem;
-            max-width: none;
-        }
+<meta name="kmwc:layout" content="bare">
+<meta name="kmwc:entry" content="none">
 
-        .page-container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+<!-- Header, cards, footer, version badge and the cross-page nav are all
+     rendered by the devkit from this registry + package.json#kmwc.
+     Add new pages here — they appear automatically. -->
+<script type="module">
+    import { renderExamplesIndex } from '@keenmate/web-components-devkit/examples';
 
-        .header-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 16px;
-            padding: 2.5rem 3rem;
-            margin-bottom: 2rem;
-            color: white;
-        }
-
-        .header-card h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin: 0 0 0.5rem 0;
-            color: white;
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-
-        .header-card .subtitle {
-            font-size: 1.1rem;
-            opacity: 0.9;
-            margin: 0 0 1rem 0;
-        }
-
-        .version-badge {
-            display: inline-block;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 0.35rem 0.85rem;
-            border-radius: 8px;
-            font-size: 0.875rem;
-            font-weight: 500;
-        }
-
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .card-link {
-            background: white;
-            border-radius: 12px;
-            padding: 1.75rem;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            cursor: pointer;
-            text-decoration: none;
-            color: inherit;
-            display: block;
-        }
-
-        .card-link:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-            text-decoration: none;
-        }
-
-        .card-icon {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
-        }
-
-        .card-link h2.card-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin: 0 0 0.5rem 0;
-            color: #1a202c;
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-
-        .card-description {
-            color: #64748b;
-            line-height: 1.6;
-            margin: 0;
-            font-size: 0.95rem;
-        }
-
-        .badge {
-            display: inline-block;
-            background: #f56565;
-            color: white;
-            padding: 0.15rem 0.5rem;
-            border-radius: 6px;
-            font-size: 0.65rem;
-            font-weight: 600;
-            margin-left: 0.5rem;
-            vertical-align: middle;
-            text-transform: uppercase;
-        }
-
-        footer {
-            text-align: center;
-            margin-top: 3rem;
-            color: #64748b;
-            font-size: 0.875rem;
-        }
-
-        footer a {
-            color: #667eea;
-            text-decoration: none;
-        }
-
-        footer a:hover {
-            text-decoration: underline;
-        }
-    </style>
-</head>
-<body>
-    <div class="page-container">
-        <header class="header-card">
-            <h1>Web Command Palette</h1>
-            <p class="subtitle">A framework-agnostic command palette shipped as the <code>&lt;web-command-palette&gt;</code> Web Component. It covers <code>/</code> commands with multi-step wizards, <code>:</code> scoped search, global search and keyboard navigation, and you configure it with properties, events and async callbacks.</p>
-            <span class="version-badge" id="version-badge"></span>
-        </header>
-
-        <div class="cards" id="cards"></div>
-
-        <footer>
-            <p>Created by <a href="https://github.com/keenmate" target="_blank">Keenmate s.r.o.</a> | <a href="https://github.com/keenmate/web-commandpalette" target="_blank">GitHub</a></p>
-        </footer>
-    </div>
-
-    <script>
-        // =====================================================
-        // Demo Page Registry
-        // Add new pages here - they'll appear automatically
-        // =====================================================
-        const pages = [
+    renderExamplesIndex({
+        pages: [
             {
                 href: 'examples-basic.html',
                 icon: '🧩',
@@ -184,38 +46,5 @@
                 description: 'The kitchen sink: the full pure-admin demo data set with every switch wired up and a live event log.'
             }
         ]
-
-        // =====================================================
-        // Render cards from registry
-        // =====================================================
-        function renderCards() {
-            const container = document.getElementById('cards')
-            container.innerHTML = pages.map(page => `
-                <a href="${page.href}" class="card-link">
-                    <div class="card-icon">${page.icon}</div>
-                    <h2 class="card-title">
-                        ${page.title}${page.badge ? `<span class="badge">${page.badge}</span>` : ''}
-                    </h2>
-                    <p class="card-description">${page.description}</p>
-                </a>
-            `).join('')
-        }
-
-        renderCards()
-
-        // Feed the floating jump-nav (examples-chapter-nav.js) from the same registry,
-        // so the index gets a quick "hop to any example" list — no extra data needed.
-        window.CHAPTER_NAV_ITEMS = pages.map(function (p) { return { label: p.title, href: p.href } })
-    </script>
-
-    <!-- Version badge — sourced from package.json (vite provides named JSON exports),
-         so it never drifts from the real package version. -->
-    <script type="module">
-        import { version } from './package.json'
-        const badge = document.getElementById('version-badge')
-        if (badge) badge.textContent = `v${version}`
-    </script>
-
-    <script type="module" src="examples-chapter-nav.js"></script>
-</body>
-</html>
+    });
+</script>

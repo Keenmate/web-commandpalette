@@ -43,12 +43,12 @@ test('theme gallery (TH01): each card opens its own themed instance; CSS shown m
   const bg = async (id: string) =>
     page.locator(`#${id}`).evaluate((el) => getComputedStyle(el.shadowRoot!.querySelector('.pa-command-palette__container')!).backgroundColor);
   for (const [theme, expected] of [['dark', 'rgb(30, 30, 46)'], ['neon', 'rgb(13, 2, 33)'], ['terminal', 'rgb(12, 12, 12)']] as const) {
-    await page.locator(`[data-theme="${theme}"] [data-theme-open=""]`).click();
+    await page.locator(`[data-gallery-theme="${theme}"] [data-theme-open=""]`).click();
     await expect(page.locator(`#theme-${theme} .pa-command-palette`)).toHaveClass(/--active/);
     expect(await bg(`theme-${theme}`)).toBe(expected);
     await page.keyboard.press('Escape');
   }
-  await expect(page.locator('[data-theme="material"] pre')).toContainText('#theme-material::part(input) {');
+  await expect(page.locator('[data-gallery-theme="material"] pre')).toContainText('#theme-material::part(input) {');
   // --base-font-family reaches the input (form controls don't inherit fonts on their own).
   const font = await page.locator('#theme-terminal').evaluate((el) => getComputedStyle(el.shadowRoot!.querySelector('input')!).fontFamily);
   expect(font).toContain('monospace');

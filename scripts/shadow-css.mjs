@@ -1,7 +1,8 @@
 /**
  * Build-time adapter that lets pure-admin-core's command-palette SCSS run inside
  * a shadow root WITHOUT forking it (IMPLEMENTATION_PLAN §11). Wired into Vite as
- * a PostCSS plugin and reused by `check-variable-manifest.mjs`.
+ * a Vite plugin; the build fails if a pure-admin variable survives it, and
+ * `kmwc check-vars` validates the manifest against the built bundle.
  *
  * Two rewrites, both on the compiled CSS:
  *
@@ -226,6 +227,12 @@ export async function compileShadowCss(file, defaults) {
   return { css, files: result.loadedUrls.filter((u) => u.protocol === 'file:').map((u) => fileURLToPath(u)) };
 }
 
+/** Pure-admin variables (`--pa-*` / `--pc-*`) left in compiled CSS — the adapter should have renamed or unwrapped them all. */
+export function findForeignVars(css) {
+  const code = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  return [...new Set(code.match(/--(?:pa|pc)-[a-z0-9-]+/gi) ?? [])].sort();
+}
+
 /**
  * Vite plugin: `import styles from './css/main.scss?inline'` → the adapted CSS
  * string. Bypasses Vite's own Sass importer, which applies package `exports` to
@@ -251,6 +258,9 @@ export function shadowCssPlugin() {
       defaults ??= compileDefaults();
       const { css, files } = await compileShadowCss(file, defaults);
       for (const f of files) this.addWatchFile(f);
+      // The component's namespace is --cp-* (+ the shared --base-*): no pure-admin variable may leak in.
+      const foreign = findForeignVars(css);
+      if (foreign.length) this.error(`--pa-* / --pc-* variables in the shipped CSS (must be --cp-* or --base-*): ${foreign.join(', ')}`);
       return `export default ${JSON.stringify(css)};`;
     },
   };

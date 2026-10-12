@@ -1,183 +1,159 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Commands &amp; Steps — Web Command Palette</title>
+<meta name="kmwc:title" content="Commands &amp; Steps">
+<meta name="kmwc:subtitle" content="Multi-step command wizards: static and live steps, free-text answers, conditional steps, and the two ways to display the answers so far.">
+<meta name="kmwc:body-class" content="dark-output">
 
-    <!-- Shared example styles -->
-    <link rel="stylesheet" href="examples-shared.css">
-</head>
-<body class="dark-output">
-    <div class="container">
-        <header>
-            <a href="index.html" class="back-link">← Back to Examples</a>
-            <h1>Commands &amp; Steps</h1>
-            <p class="subtitle">Multi-step command wizards: static and live steps, free-text answers, conditional steps, and the two ways to display the answers so far.</p>
-        </header>
-
-        <!-- ============================================================= -->
-        <!-- CS01 · Static steps                                             -->
-        <!-- ============================================================= -->
-        <div class="card">
-            <h2>CS01 · Static Steps</h2>
-            <p>
-                A step is <b>static</b> by default. Its options are either listed inline (<code>options</code>) or
-                fetched <b>once</b> on step entry from <code>stepOptionsCallback</code> with an empty
-                <code>query</code>. After that, typing filters in the browser with no round-trips.
-                <code>/assign</code> fetches products, then users, through the callback. <code>/go</code> uses inline options.
-            </p>
-            <div class="code-block"><pre><code>{ id: 'go', shortcut: '/go', name: 'Go to Page',
+<!-- ============================================================= -->
+<!-- CS01 · Static steps                                             -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>CS01 · Static Steps</h2>
+    <p>
+        A step is <b>static</b> by default. Its options are either listed inline (<code>options</code>) or
+        fetched <b>once</b> on step entry from <code>stepOptionsCallback</code> with an empty
+        <code>query</code>. After that, typing filters in the browser with no round-trips.
+        <code>/assign</code> fetches products, then users, through the callback. <code>/go</code> uses inline options.
+    </p>
+    <div class="code-block"><pre><code>{ id: 'go', shortcut: '/go', name: 'Go to Page',
   steps: [{ id: 'page', options: [{ label: 'Users', value: '/users' }, …] }] }</code></pre></div>
-            <div class="demo-area">
-                <button type="button" data-open="/assign ">/assign</button>
-                <button type="button" class="secondary" data-open="/go ">/go</button>
-            </div>
-        </div>
-
-        <!-- ============================================================= -->
-        <!-- CS02 · Live steps                                               -->
-        <!-- ============================================================= -->
-        <div class="card">
-            <h2>CS02 · Live Steps (<code>search: true</code>)</h2>
-            <p>
-                Mark a step <code>search: true</code> only when its options can't be listed up front.
-                <code>stepOptionsCallback({ commandId, stepId, query, selections }, signal)</code> is then
-                called on every keystroke, after the debounce. In <code>/deploy</code>, pick an environment and the branch step queries live.
-            </p>
-            <div class="demo-area">
-                <button type="button" data-open="/deploy ">/deploy</button>
-            </div>
-            <div class="output">
-                <div class="output-label">stepOptionsCallback calls</div>
-                <pre id="cs02-log">—</pre>
-            </div>
-        </div>
-
-        <!-- ============================================================= -->
-        <!-- CS03 · Free text, conditional & branching steps               -->
-        <!-- ============================================================= -->
-        <div class="card">
-            <h2>CS03 · Free Text, Conditional &amp; Branching Steps</h2>
-            <p>
-                <code>freeText: true</code> means pressing <kbd>Enter</kbd> when nothing matches submits the typed text (try
-                <code>/go /my/custom/path</code>). <code>shouldShow(selections)</code> skips a step: in <code>/report</code>,
-                “Inventory Status” has no time range, so the command completes right away. An option with its own
-                <code>steps</code> forks the wizard: <code>/assign-admin John to group Finance</code> vs
-                <code>… to site Intranet</code>.
-            </p>
-            <div class="demo-area">
-                <button type="button" data-open="/go /my/custom/path">/go /my/custom/path</button>
-                <button type="button" class="secondary" data-open="/report ">/report</button>
-                <button type="button" class="secondary" data-open="/assign-admin ">/assign-admin</button>
-            </div>
-        </div>
-
-        <!-- ============================================================= -->
-        <!-- CS04 · Display & stepping back                                 -->
-        <!-- ============================================================= -->
-        <div class="card">
-            <h2>CS04 · Display &amp; Stepping Back</h2>
-            <p>
-                With <code>display="inline"</code>, the input keeps the sentence built so far (<code>/deploy to Staging branch </code>)
-                and locks everything before your answer. With <code>display="tokens"</code>, earlier answers become removable
-                badges above an empty input. <kbd>Esc</kbd>, or <kbd>⌫</kbd> at the start of your answer,
-                goes back one step.
-            </p>
-            <div class="controls">
-                <span><code>display</code>:</span>
-                <label><input type="radio" name="cs04-display" value="inline" checked> inline</label>
-                <label><input type="radio" name="cs04-display" value="tokens"> tokens</label>
-            </div>
-            <div class="demo-area">
-                <button type="button" data-open="/deploy ">/deploy</button>
-                <button type="button" class="secondary" data-open="/assign ">/assign</button>
-            </div>
-        </div>
-
-        <!-- ============================================================= -->
-        <!-- CS05 · Instant commands & hotkeys                              -->
-        <!-- ============================================================= -->
-        <div class="card">
-            <h2>CS05 · Instant Commands &amp; Hotkeys</h2>
-            <p>
-                A command without <code>steps</code> is instant and fires <code>cp-command</code>. A wizard fires
-                <code>cp-complete</code> with <code>selections</code> (<code>{ stepId, label, value, optionId?, isFreeText }</code>).
-                With the palette closed and focus outside any field, try <kbd>g</kbd> <kbd>r</kbd> (instant) or <kbd>g</kbd> <kbd>d</kbd>.
-            </p>
-            <div class="output">
-                <div class="output-label">cp-complete / cp-command</div>
-                <pre id="cs05-log">—</pre>
-            </div>
-        </div>
+    <div class="demo-area">
+        <button type="button" data-open="/assign ">/assign</button>
+        <button type="button" class="secondary" data-open="/go ">/go</button>
     </div>
+</div>
 
-    <!-- One palette per page: it owns the global Ctrl/⌘+K listener. -->
-    <web-command-palette id="palette"></web-command-palette>
+<!-- ============================================================= -->
+<!-- CS02 · Live steps                                               -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>CS02 · Live Steps (<code>search: true</code>)</h2>
+    <p>
+        Mark a step <code>search: true</code> only when its options can't be listed up front.
+        <code>stepOptionsCallback({ commandId, stepId, query, selections }, signal)</code> is then
+        called on every keystroke, after the debounce. In <code>/deploy</code>, pick an environment and the branch step queries live.
+    </p>
+    <div class="demo-area">
+        <button type="button" data-open="/deploy ">/deploy</button>
+    </div>
+    <div class="output">
+        <div class="output-label">stepOptionsCallback calls</div>
+        <pre id="cs02-log">—</pre>
+    </div>
+</div>
 
-    <!-- Register the element (Vite dev serves the TS source). -->
-    <script type="module" src="/src/index.ts"></script>
+<!-- ============================================================= -->
+<!-- CS03 · Free text, conditional & branching steps               -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>CS03 · Free Text, Conditional &amp; Branching Steps</h2>
+    <p>
+        <code>freeText: true</code> means pressing <kbd>Enter</kbd> when nothing matches submits the typed text (try
+        <code>/go /my/custom/path</code>). <code>shouldShow(selections)</code> skips a step: in <code>/report</code>,
+        “Inventory Status” has no time range, so the command completes right away. An option with its own
+        <code>steps</code> forks the wizard: <code>/assign-admin John to group Finance</code> vs
+        <code>… to site Intranet</code>.
+    </p>
+    <div class="demo-area">
+        <button type="button" data-open="/go /my/custom/path">/go /my/custom/path</button>
+        <button type="button" class="secondary" data-open="/report ">/report</button>
+        <button type="button" class="secondary" data-open="/assign-admin ">/assign-admin</button>
+    </div>
+</div>
 
-    <!-- Page wiring -->
-    <script type="module">
-        import { persistControls } from './examples-controls-store.js';
-        import { commands, contexts, stepOptionsCallback } from './examples-data.js';
+<!-- ============================================================= -->
+<!-- CS04 · Display & stepping back                                 -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>CS04 · Display &amp; Stepping Back</h2>
+    <p>
+        With <code>display="inline"</code>, the input keeps the sentence built so far (<code>/deploy to Staging branch </code>)
+        and locks everything before your answer. With <code>display="tokens"</code>, earlier answers become removable
+        badges above an empty input. <kbd>Esc</kbd>, or <kbd>⌫</kbd> at the start of your answer,
+        goes back one step.
+    </p>
+    <div class="controls">
+        <span><code>display</code>:</span>
+        <label><input type="radio" name="cs04-display" value="inline" checked> inline</label>
+        <label><input type="radio" name="cs04-display" value="tokens"> tokens</label>
+    </div>
+    <div class="demo-area">
+        <button type="button" data-open="/deploy ">/deploy</button>
+        <button type="button" class="secondary" data-open="/assign ">/assign</button>
+    </div>
+</div>
 
-        const report = {
-            id: 'report', shortcut: '/report', aliases: ['/r'], icon: '📈', name: 'Run Report', description: 'Conditional time-range step',
-            steps: [
-                { id: 'report', placeholder: 'Select report…', options: [
-                    { id: 'sales', label: 'Product Sales', value: { id: 'sales', needsRange: true } },
-                    { id: 'inventory', label: 'Inventory Status', value: { id: 'inventory', needsRange: false } },
-                ] },
-                { id: 'range', prompt: ' for ', placeholder: 'Time range…',
-                  shouldShow: (sel) => sel[0]?.value?.needsRange === true,
-                  options: [{ label: 'Last 7 days', value: 7 }, { label: 'Last 30 days', value: 30 }, { label: 'This year', value: 365 }] },
-            ],
+<!-- ============================================================= -->
+<!-- CS05 · Instant commands & hotkeys                              -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>CS05 · Instant Commands &amp; Hotkeys</h2>
+    <p>
+        A command without <code>steps</code> is instant and fires <code>cp-command</code>. A wizard fires
+        <code>cp-complete</code> with <code>selections</code> (<code>{ stepId, label, value, optionId?, isFreeText }</code>).
+        With the palette closed and focus outside any field, try <kbd>g</kbd> <kbd>r</kbd> (instant) or <kbd>g</kbd> <kbd>d</kbd>.
+    </p>
+    <div class="output">
+        <div class="output-label">cp-complete / cp-command</div>
+        <pre id="cs05-log">—</pre>
+    </div>
+</div>
+
+<!-- One palette per page: it owns the global Ctrl/⌘+K listener. -->
+<web-command-palette id="palette"></web-command-palette>
+
+<!-- Page wiring -->
+<script type="module">
+    import { attachControlsPersistence } from '@keenmate/web-components-devkit/examples';
+    import { commands, contexts, stepOptionsCallback } from './examples-data.js';
+
+    const report = {
+        id: 'report', shortcut: '/report', aliases: ['/r'], icon: '📈', name: 'Run Report', description: 'Conditional time-range step',
+        steps: [
+            { id: 'report', placeholder: 'Select report…', options: [
+                { id: 'sales', label: 'Product Sales', value: { id: 'sales', needsRange: true } },
+                { id: 'inventory', label: 'Inventory Status', value: { id: 'inventory', needsRange: false } },
+            ] },
+            { id: 'range', prompt: ' for ', placeholder: 'Time range…',
+              shouldShow: (sel) => sel[0]?.value?.needsRange === true,
+              options: [{ label: 'Last 7 days', value: 7 }, { label: 'Last 30 days', value: 30 }, { label: 'This year', value: 365 }] },
+        ],
+    };
+
+    const assignAdmin = {
+        id: 'assign-admin', shortcut: '/assign-admin', icon: '🛡️', name: 'Assign Admin', description: 'Branches on group vs site',
+        steps: [
+            { id: 'user', placeholder: 'Select user…', options: [{ label: 'John Doe', value: 'john' }, { label: 'Jane Smith', value: 'jane' }] },
+            { id: 'target', prompt: ' to ', placeholder: 'group or site…', options: [
+                { id: 'group', label: 'group', steps: [{ id: 'group', placeholder: 'Select group…',
+                    options: [{ label: 'Finance' }, { label: 'Engineering' }, { label: 'Sales' }] }] },
+                { id: 'site', label: 'site', steps: [{ id: 'site', placeholder: 'Select site collection…',
+                    options: [{ label: 'Intranet' }, { label: 'HR Portal' }, { label: 'Projects' }] }] },
+            ] },
+        ],
+    };
+
+    function wire() {
+        const palette = document.getElementById('palette');
+        palette.commands = [...commands, report, assignAdmin];
+        palette.contexts = contexts;
+
+        const stepLog = document.getElementById('cs02-log');
+        palette.stepOptionsCallback = (ctx, signal) => {
+            stepLog.textContent = `${ctx.commandId}/${ctx.stepId} query=${JSON.stringify(ctx.query)}\n` + (stepLog.textContent === '—' ? '' : stepLog.textContent);
+            return stepOptionsCallback(ctx, signal);
         };
 
-        const assignAdmin = {
-            id: 'assign-admin', shortcut: '/assign-admin', icon: '🛡️', name: 'Assign Admin', description: 'Branches on group vs site',
-            steps: [
-                { id: 'user', placeholder: 'Select user…', options: [{ label: 'John Doe', value: 'john' }, { label: 'Jane Smith', value: 'jane' }] },
-                { id: 'target', prompt: ' to ', placeholder: 'group or site…', options: [
-                    { id: 'group', label: 'group', steps: [{ id: 'group', placeholder: 'Select group…',
-                        options: [{ label: 'Finance' }, { label: 'Engineering' }, { label: 'Sales' }] }] },
-                    { id: 'site', label: 'site', steps: [{ id: 'site', placeholder: 'Select site collection…',
-                        options: [{ label: 'Intranet' }, { label: 'HR Portal' }, { label: 'Projects' }] }] },
-                ] },
-            ],
-        };
+        const doneLog = document.getElementById('cs05-log');
+        const write = (line) => { doneLog.textContent = line + '\n\n' + (doneLog.textContent === '—' ? '' : doneLog.textContent); };
+        palette.addEventListener('cp-complete', (e) => write('cp-complete ' + JSON.stringify(e.detail, null, 2)));
+        palette.addEventListener('cp-command', (e) => write('cp-command ' + JSON.stringify(e.detail)));
 
-        function wire() {
-            const palette = document.getElementById('palette');
-            palette.commands = [...commands, report, assignAdmin];
-            palette.contexts = contexts;
+        document.querySelectorAll('[data-open]').forEach((b) =>
+            b.addEventListener('click', () => palette.openWith(b.dataset.open)));
+        document.querySelectorAll('input[name="cs04-display"]').forEach((r) =>
+            r.addEventListener('change', (e) => { if (e.target.checked) palette.display = e.target.value; }));
 
-            const stepLog = document.getElementById('cs02-log');
-            palette.stepOptionsCallback = (ctx, signal) => {
-                stepLog.textContent = `${ctx.commandId}/${ctx.stepId} query=${JSON.stringify(ctx.query)}\n` + (stepLog.textContent === '—' ? '' : stepLog.textContent);
-                return stepOptionsCallback(ctx, signal);
-            };
-
-            const doneLog = document.getElementById('cs05-log');
-            const write = (line) => { doneLog.textContent = line + '\n\n' + (doneLog.textContent === '—' ? '' : doneLog.textContent); };
-            palette.addEventListener('cp-complete', (e) => write('cp-complete ' + JSON.stringify(e.detail, null, 2)));
-            palette.addEventListener('cp-command', (e) => write('cp-command ' + JSON.stringify(e.detail)));
-
-            document.querySelectorAll('[data-open]').forEach((b) =>
-                b.addEventListener('click', () => palette.openWith(b.dataset.open)));
-            document.querySelectorAll('input[name="cs04-display"]').forEach((r) =>
-                r.addEventListener('change', (e) => { if (e.target.checked) palette.display = e.target.value; }));
-
-            persistControls('commands-steps');
-        }
-        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
-        else wire();
-    </script>
-
-    <!-- Shared helpers LAST (after the page's own wiring). -->
-    <script type="module" src="examples-copy-link.js"></script>
-    <script type="module" src="examples-chapter-nav.js"></script>
-</body>
-</html>
+        attachControlsPersistence('commands-steps');
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
+    else wire();
+</script>

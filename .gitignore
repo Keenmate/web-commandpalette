@@ -40,3 +40,5 @@ vscode.css-custom-data.json
 
 # Vite config bundling leftovers
 vite.config.ts.timestamp-*.mjs
+# kmwc
+dist-examples/

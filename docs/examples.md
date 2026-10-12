@@ -1,7 +1,7 @@
 # Examples
 
 Browse them at https://examples.web-commandpalette.keenmate.dev, or run `npm run dev` and open
-http://localhost:12300. The hub (`index.html`) links every page.
+http://localhost:12400. The hub (`index.html`) links every page.
 
 | Page | Shows |
 |---|---|
@@ -12,11 +12,11 @@ http://localhost:12300. The hub (`index.html`) links every page.
 | [`examples-theming.html`](../examples-theming.html) | Themes & sizes in one card: a seven-theme gallery (plus the unthemed default) built only from `--base-*` / `--cp-*` variables, icons and `::part()`, with `--base-rem`, size presets and the phone sheet applied to every theme. |
 | [`examples-playground.html`](../examples-playground.html) | The full pure-admin demo data with every switch and a live event log. |
 
-Shared demo data lives in [`examples-data.js`](../examples-data.js). The pages follow the Keenmate
-examples convention (`../web-editor/EXAMPLES.md`): `examples-shared.css`, `examples-chapter-nav.js`,
-`examples-copy-link.js` and `examples-controls-store.js` are copied from `web-editor`. Pages are
-built only from the shared classes and use no page CSS. Switches persist across reloads through
-`persistControls('<page-key>')`. To add a page, add one entry to the `pages` registry in `index.html`.
+Shared demo data lives in [`examples-data.js`](../examples-data.js). The site's shared layout,
+styles, chapter nav, copy-link buttons and theme switch come from
+`@keenmate/web-components-devkit`; each page is a fragment that holds only its own sections.
+Switches persist across reloads through `attachControlsPersistence('<page-key>')`. To add a page,
+add one entry to the `pages` registry in `index.html`.
 
 ## Recipes
 

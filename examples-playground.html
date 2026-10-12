@@ -1,190 +1,166 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Playground — Web Command Palette</title>
+<meta name="kmwc:title" content="Playground">
+<meta name="kmwc:subtitle" content="The full pure-admin demo data set (commands with wizards, three search contexts, async server search) with every switch wired up and a live event log.">
+<meta name="kmwc:body-class" content="dark-output">
 
-    <!-- Shared example styles -->
-    <link rel="stylesheet" href="examples-shared.css">
-</head>
-<body class="dark-output">
-    <div class="container">
-        <header>
-            <a href="index.html" class="back-link">← Back to Examples</a>
-            <h1>Playground</h1>
-            <p class="subtitle">The full pure-admin demo data set (commands with wizards, three search contexts, async server search) with every switch wired up and a live event log.</p>
-        </header>
-
-        <!-- ============================================================= -->
-        <!-- PG01 · Configuration                                            -->
-        <!-- ============================================================= -->
-        <div class="card">
-            <h2>PG01 · Configuration</h2>
-            <p>
-                Press <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>, or use <kbd>g</kbd> followed by
-                <kbd>d</kbd> / <kbd>a</kbd> / <kbd>g</kbd> / <kbd>t</kbd> / <kbd>r</kbd> (<kbd>f</kbd> for favorites). Switches apply live and are remembered across reloads.
-            </p>
-            <div class="controls">
-                <span><code>display</code>:</span>
-                <label><input type="radio" name="pg01-display" value="inline" checked> inline</label>
-                <label><input type="radio" name="pg01-display" value="tokens"> tokens</label>
-            </div>
-            <div class="controls">
-                <span><code>size</code>:</span>
-                <label><input type="radio" name="pg01-size" value="sm"> sm</label>
-                <label><input type="radio" name="pg01-size" value="" checked> default</label>
-                <label><input type="radio" name="pg01-size" value="lg"> lg</label>
-                <label><input type="radio" name="pg01-size" value="xl"> xl</label>
-            </div>
-            <div class="controls">
-                <span><code>page-size</code>:</span>
-                <label><input type="radio" name="pg01-page" value="4"> 4</label>
-                <label><input type="radio" name="pg01-page" value="8" checked> 8</label>
-                <label><input type="radio" name="pg01-page" value="16"> 16</label>
-            </div>
-            <div class="controls">
-                <span><code>mobile-presentation</code>:</span>
-                <label><input type="radio" name="pg01-presentation" value="auto" checked> auto</label>
-                <label><input type="radio" name="pg01-presentation" value="floating"> floating</label>
-                <label><input type="radio" name="pg01-presentation" value="fullscreen"> fullscreen</label>
-            </div>
-            <div class="controls">
-                <span><code>dir</code>:</span>
-                <label><input type="radio" name="pg01-dir" value="ltr" checked> ltr</label>
-                <label><input type="radio" name="pg01-dir" value="rtl"> rtl</label>
-            </div>
-            <div class="controls">
-                <span><code>search-debounce</code>:</span>
-                <label><input type="radio" name="pg01-debounce" value="0"> 0</label>
-                <label><input type="radio" name="pg01-debounce" value="150" checked> 150</label>
-                <label><input type="radio" name="pg01-debounce" value="400"> 400</label>
-            </div>
-            <div class="controls">
-                <span><code>confirmation</code>:</span>
-                <label><input type="radio" name="pg01-confirmation" value="true" checked> on</label>
-                <label><input type="radio" name="pg01-confirmation" value="false"> off</label>
-            </div>
-            <div class="controls">
-                <span><code>confirmation-duration</code>:</span>
-                <label><input type="radio" name="pg01-confirm-ms" value="800"> 800 ms</label>
-                <label><input type="radio" name="pg01-confirm-ms" value="1500" checked> 1500 ms</label>
-                <label><input type="radio" name="pg01-confirm-ms" value="3000"> 3000 ms</label>
-            </div>
-            <div class="controls">
-                <span>confirmation content:</span>
-                <label><input type="radio" name="pg01-confirm-render" value="default" checked> default</label>
-                <label><input type="radio" name="pg01-confirm-render" value="custom"> renderConfirmationCallback (+ search results)</label>
-            </div>
-            <div class="controls">
-                <span><code>usage-storage</code>:</span>
-                <label><input type="radio" name="pg01-usage" value="local" checked> local</label>
-                <label><input type="radio" name="pg01-usage" value="none"> none</label>
-            </div>
-            <div class="controls">
-                <span><code>favorites-limit</code> / <code>recent-limit</code>:</span>
-                <label><input type="radio" name="pg01-limit" value="0"> 0</label>
-                <label><input type="radio" name="pg01-limit" value="3" checked> 3</label>
-                <label><input type="radio" name="pg01-limit" value="5"> 5</label>
-            </div>
-            <div class="controls">
-                <span>shortcuts (<code>favorite-key</code> / <code>favorites-key</code> / <code>recent-key</code> / <code>favorites-hotkey</code>):</span>
-                <label><input type="radio" name="pg01-keys" value="on" checked> Ctrl+D / F / R, g f</label>
-                <label><input type="radio" name="pg01-keys" value="off"> all off</label>
-            </div>
-            <div class="demo-area">
-                <button type="button" data-open="">Open</button>
-                <button type="button" class="secondary" data-open="/">/ commands</button>
-                <button type="button" class="secondary" data-open="/deploy ">/deploy</button>
-                <button type="button" class="secondary" data-open=":">: contexts</button>
-                <button type="button" class="secondary" data-open=":products ">:products</button>
-                <button type="button" class="secondary" data-open="mac">“mac” (global)</button>
-                <button type="button" class="secondary" id="pg01-favorites">openFavorites()</button>
-                <button type="button" class="secondary" id="pg01-recent">openRecent()</button>
-            </div>
-        </div>
-
-        <!-- ============================================================= -->
-        <!-- PG02 · Event log                                                -->
-        <!-- ============================================================= -->
-        <div class="card">
-            <h2>PG02 · Event Log</h2>
-            <p>Every <code>cp-*</code> event with its <code>detail</code>, newest first.</p>
-            <div class="output">
-                <div class="output-label">Events</div>
-                <pre id="pg02-log">—</pre>
-            </div>
-        </div>
+<!-- ============================================================= -->
+<!-- PG01 · Configuration                                            -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>PG01 · Configuration</h2>
+    <p>
+        Press <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>, or use <kbd>g</kbd> followed by
+        <kbd>d</kbd> / <kbd>a</kbd> / <kbd>g</kbd> / <kbd>t</kbd> / <kbd>r</kbd> (<kbd>f</kbd> for favorites). Switches apply live and are remembered across reloads.
+    </p>
+    <div class="controls">
+        <span><code>display</code>:</span>
+        <label><input type="radio" name="pg01-display" value="inline" checked> inline</label>
+        <label><input type="radio" name="pg01-display" value="tokens"> tokens</label>
     </div>
+    <div class="controls">
+        <span><code>size</code>:</span>
+        <label><input type="radio" name="pg01-size" value="sm"> sm</label>
+        <label><input type="radio" name="pg01-size" value="" checked> default</label>
+        <label><input type="radio" name="pg01-size" value="lg"> lg</label>
+        <label><input type="radio" name="pg01-size" value="xl"> xl</label>
+    </div>
+    <div class="controls">
+        <span><code>page-size</code>:</span>
+        <label><input type="radio" name="pg01-page" value="4"> 4</label>
+        <label><input type="radio" name="pg01-page" value="8" checked> 8</label>
+        <label><input type="radio" name="pg01-page" value="16"> 16</label>
+    </div>
+    <div class="controls">
+        <span><code>mobile-presentation</code>:</span>
+        <label><input type="radio" name="pg01-presentation" value="auto" checked> auto</label>
+        <label><input type="radio" name="pg01-presentation" value="floating"> floating</label>
+        <label><input type="radio" name="pg01-presentation" value="fullscreen"> fullscreen</label>
+    </div>
+    <div class="controls">
+        <span><code>dir</code>:</span>
+        <label><input type="radio" name="pg01-dir" value="ltr" checked> ltr</label>
+        <label><input type="radio" name="pg01-dir" value="rtl"> rtl</label>
+    </div>
+    <div class="controls">
+        <span><code>search-debounce</code>:</span>
+        <label><input type="radio" name="pg01-debounce" value="0"> 0</label>
+        <label><input type="radio" name="pg01-debounce" value="150" checked> 150</label>
+        <label><input type="radio" name="pg01-debounce" value="400"> 400</label>
+    </div>
+    <div class="controls">
+        <span><code>confirmation</code>:</span>
+        <label><input type="radio" name="pg01-confirmation" value="true" checked> on</label>
+        <label><input type="radio" name="pg01-confirmation" value="false"> off</label>
+    </div>
+    <div class="controls">
+        <span><code>confirmation-duration</code>:</span>
+        <label><input type="radio" name="pg01-confirm-ms" value="800"> 800 ms</label>
+        <label><input type="radio" name="pg01-confirm-ms" value="1500" checked> 1500 ms</label>
+        <label><input type="radio" name="pg01-confirm-ms" value="3000"> 3000 ms</label>
+    </div>
+    <div class="controls">
+        <span>confirmation content:</span>
+        <label><input type="radio" name="pg01-confirm-render" value="default" checked> default</label>
+        <label><input type="radio" name="pg01-confirm-render" value="custom"> renderConfirmationCallback (+ search results)</label>
+    </div>
+    <div class="controls">
+        <span><code>usage-storage</code>:</span>
+        <label><input type="radio" name="pg01-usage" value="local" checked> local</label>
+        <label><input type="radio" name="pg01-usage" value="none"> none</label>
+    </div>
+    <div class="controls">
+        <span><code>favorites-limit</code> / <code>recent-limit</code>:</span>
+        <label><input type="radio" name="pg01-limit" value="0"> 0</label>
+        <label><input type="radio" name="pg01-limit" value="3" checked> 3</label>
+        <label><input type="radio" name="pg01-limit" value="5"> 5</label>
+    </div>
+    <div class="controls">
+        <span>shortcuts (<code>favorite-key</code> / <code>favorites-key</code> / <code>recent-key</code> / <code>favorites-hotkey</code>):</span>
+        <label><input type="radio" name="pg01-keys" value="on" checked> Ctrl+D / F / R, g f</label>
+        <label><input type="radio" name="pg01-keys" value="off"> all off</label>
+    </div>
+    <div class="demo-area">
+        <button type="button" data-open="">Open</button>
+        <button type="button" class="secondary" data-open="/">/ commands</button>
+        <button type="button" class="secondary" data-open="/deploy ">/deploy</button>
+        <button type="button" class="secondary" data-open=":">: contexts</button>
+        <button type="button" class="secondary" data-open=":products ">:products</button>
+        <button type="button" class="secondary" data-open="mac">“mac” (global)</button>
+        <button type="button" class="secondary" id="pg01-favorites">openFavorites()</button>
+        <button type="button" class="secondary" id="pg01-recent">openRecent()</button>
+    </div>
+</div>
 
-    <!-- One palette per page: it owns the global Ctrl/⌘+K listener. -->
-    <web-command-palette id="palette"></web-command-palette>
+<!-- ============================================================= -->
+<!-- PG02 · Event log                                                -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>PG02 · Event Log</h2>
+    <p>Every <code>cp-*</code> event with its <code>detail</code>, newest first.</p>
+    <div class="output">
+        <div class="output-label">Events</div>
+        <pre id="pg02-log">—</pre>
+    </div>
+</div>
 
-    <!-- Register the element (Vite dev serves the TS source). -->
-    <script type="module" src="/src/index.ts"></script>
+<!-- One palette per page: it owns the global Ctrl/⌘+K listener. -->
+<web-command-palette id="palette"></web-command-palette>
 
-    <!-- Page wiring -->
-    <script type="module">
-        import { persistControls } from './examples-controls-store.js';
-        import { commands, contexts, searchCallback, stepOptionsCallback } from './examples-data.js';
+<!-- Page wiring -->
+<script type="module">
+    import { attachControlsPersistence } from '@keenmate/web-components-devkit/examples';
+    import { commands, contexts, searchCallback, stepOptionsCallback } from './examples-data.js';
 
-        function wire() {
-            const palette = document.getElementById('palette');
-            palette.commands = commands;
-            palette.contexts = contexts;
-            palette.searchCallback = searchCallback;
-            palette.stepOptionsCallback = stepOptionsCallback;
+    function wire() {
+        const palette = document.getElementById('palette');
+        palette.commands = commands;
+        palette.contexts = contexts;
+        palette.searchCallback = searchCallback;
+        palette.stepOptionsCallback = stepOptionsCallback;
 
-            const log = document.getElementById('pg02-log');
-            for (const name of ['cp-open', 'cp-close', 'cp-select', 'cp-complete', 'cp-command', 'cp-ready']) {
-                palette.addEventListener(name, (e) => {
-                    log.textContent = `${name} ${JSON.stringify(e.detail)}\n` + (log.textContent === '—' ? '' : log.textContent);
-                });
-            }
-
-            const bindRadios = (name, apply) => document.querySelectorAll(`input[name="${name}"]`).forEach((r) =>
-                r.addEventListener('change', (e) => { if (e.target.checked) apply(e.target.value); }));
-            bindRadios('pg01-display', (v) => { palette.display = v; });
-            bindRadios('pg01-size', (v) => { palette.size = v || null; });
-            bindRadios('pg01-page', (v) => palette.setAttribute('page-size', v));
-            bindRadios('pg01-presentation', (v) => palette.setAttribute('mobile-presentation', v));
-            bindRadios('pg01-debounce', (v) => palette.setAttribute('search-debounce', v));
-            // Direction: `dir` on the element (or any ancestor / <html>) mirrors the palette.
-            bindRadios('pg01-dir', (v) => palette.setAttribute('dir', v));
-
-            // Confirmation
-            bindRadios('pg01-confirmation', (v) => palette.setAttribute('confirmation', v));
-            bindRadios('pg01-confirm-ms', (v) => palette.setAttribute('confirmation-duration', v));
-            const customConfirmation = (ctx) => {
-                if (ctx.type === 'select') return `Opening <b>${ctx.sentence}</b>…`;
-                return `<b>${ctx.commandName}</b> — ${ctx.selections.map((s) => s.label).join(' → ') || 'ran'}`;
-            };
-            bindRadios('pg01-confirm-render', (v) => { palette.renderConfirmationCallback = v === 'custom' ? customConfirmation : null; });
-
-            // Favorites + recents
-            bindRadios('pg01-usage', (v) => palette.setAttribute('usage-storage', v));
-            bindRadios('pg01-limit', (v) => { palette.setAttribute('favorites-limit', v); palette.setAttribute('recent-limit', v); });
-            bindRadios('pg01-keys', (v) => {
-                const on = v === 'on';
-                palette.setAttribute('favorite-key', on ? 'd' : '');
-                palette.setAttribute('favorites-key', on ? 'f' : '');
-                palette.setAttribute('recent-key', on ? 'r' : '');
-                palette.setAttribute('favorites-hotkey', on ? 'g f' : '');
+        const log = document.getElementById('pg02-log');
+        for (const name of ['cp-open', 'cp-close', 'cp-select', 'cp-complete', 'cp-command', 'cp-ready']) {
+            palette.addEventListener(name, (e) => {
+                log.textContent = `${name} ${JSON.stringify(e.detail)}\n` + (log.textContent === '—' ? '' : log.textContent);
             });
-            document.getElementById('pg01-favorites').addEventListener('click', () => palette.openFavorites());
-            document.getElementById('pg01-recent').addEventListener('click', () => palette.openRecent());
-
-            document.querySelectorAll('[data-open]').forEach((b) =>
-                b.addEventListener('click', () => palette.openWith(b.dataset.open)));
-
-            persistControls('playground');
         }
-        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
-        else wire();
-    </script>
 
-    <!-- Shared helpers LAST (after the page's own wiring). -->
-    <script type="module" src="examples-copy-link.js"></script>
-    <script type="module" src="examples-chapter-nav.js"></script>
-</body>
-</html>
+        const bindRadios = (name, apply) => document.querySelectorAll(`input[name="${name}"]`).forEach((r) =>
+            r.addEventListener('change', (e) => { if (e.target.checked) apply(e.target.value); }));
+        bindRadios('pg01-display', (v) => { palette.display = v; });
+        bindRadios('pg01-size', (v) => { palette.size = v || null; });
+        bindRadios('pg01-page', (v) => palette.setAttribute('page-size', v));
+        bindRadios('pg01-presentation', (v) => palette.setAttribute('mobile-presentation', v));
+        bindRadios('pg01-debounce', (v) => palette.setAttribute('search-debounce', v));
+        // Direction: `dir` on the element (or any ancestor / <html>) mirrors the palette.
+        bindRadios('pg01-dir', (v) => palette.setAttribute('dir', v));
+
+        // Confirmation
+        bindRadios('pg01-confirmation', (v) => palette.setAttribute('confirmation', v));
+        bindRadios('pg01-confirm-ms', (v) => palette.setAttribute('confirmation-duration', v));
+        const customConfirmation = (ctx) => {
+            if (ctx.type === 'select') return `Opening <b>${ctx.sentence}</b>…`;
+            return `<b>${ctx.commandName}</b> — ${ctx.selections.map((s) => s.label).join(' → ') || 'ran'}`;
+        };
+        bindRadios('pg01-confirm-render', (v) => { palette.renderConfirmationCallback = v === 'custom' ? customConfirmation : null; });
+
+        // Favorites + recents
+        bindRadios('pg01-usage', (v) => palette.setAttribute('usage-storage', v));
+        bindRadios('pg01-limit', (v) => { palette.setAttribute('favorites-limit', v); palette.setAttribute('recent-limit', v); });
+        bindRadios('pg01-keys', (v) => {
+            const on = v === 'on';
+            palette.setAttribute('favorite-key', on ? 'd' : '');
+            palette.setAttribute('favorites-key', on ? 'f' : '');
+            palette.setAttribute('recent-key', on ? 'r' : '');
+            palette.setAttribute('favorites-hotkey', on ? 'g f' : '');
+        });
+        document.getElementById('pg01-favorites').addEventListener('click', () => palette.openFavorites());
+        document.getElementById('pg01-recent').addEventListener('click', () => palette.openRecent());
+
+        document.querySelectorAll('[data-open]').forEach((b) =>
+            b.addEventListener('click', () => palette.openWith(b.dataset.open)));
+
+        attachControlsPersistence('playground');
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
+    else wire();
+</script>

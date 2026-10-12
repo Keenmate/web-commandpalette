@@ -9,12 +9,13 @@ function trackErrors(page: Page): string[] {
   return errors;
 }
 
+// The hub, header and chapter nav are rendered by the devkit examples kit (kmwc-* classes).
 test('hub renders one card per registered page plus the version badge', async ({ page }) => {
   const errors = trackErrors(page);
   await page.goto('/');
-  await expect(page.locator('.card-link')).toHaveCount(PAGES.length);
-  for (const name of PAGES) await expect(page.locator(`.card-link[href="${name}.html"]`)).toHaveCount(1);
-  await expect(page.locator('#version-badge')).toHaveText(/^v\d/);
+  await expect(page.locator('.kmwc-index__card')).toHaveCount(PAGES.length);
+  for (const name of PAGES) await expect(page.locator(`.kmwc-index__card[href="${name}.html"]`)).toHaveCount(1);
+  await expect(page.locator('[data-kmwc-version]')).toHaveText(/^v\d/);
   expect(errors).toEqual([]);
 });
 
@@ -23,12 +24,12 @@ for (const name of PAGES) {
   test(`${name}.html opens without errors`, async ({ page }) => {
     const errors = trackErrors(page);
     await page.goto(`/${name}.html`);
-    // Shared skeleton: white gradient header with a back link, numbered card sections.
+    // Devkit layout: header with a back link, numbered card sections.
     await expect(page.locator('.container > header .back-link')).toHaveAttribute('href', 'index.html');
     const cards = await page.locator('.container > .card > h2').count();
     expect(cards).toBeGreaterThanOrEqual(1);
     // The shared chapter nav only builds itself when there's more than one section to jump between.
-    if (cards > 1) await expect(page.locator('.chapter-nav')).toBeAttached();
+    if (cards > 1) await expect(page.locator('.kmwc-chapter-nav')).toBeAttached();
     // The page's main palette (the theming page also has gallery instances).
     const host = page.locator('web-command-palette#palette');
     await page.waitForFunction(() => !!customElements.get('web-command-palette'));
