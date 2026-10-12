@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   by `kmwc sync` (vitest targets moved to `Makefile.local`). The library output is unchanged:
   `dist/web-commandpalette.js`, `.umd.js` and `index.d.ts`.
 - **Vite 7** (from 5) and **Vitest 3** (from 2).
-- **Dev port 12400** (examples image 12410), the repo's block in the KeenMate component registry.
+- **Dev port 12400** (examples image 12410), the repo's block in the Keenmate component registry.
   It was 12300, which belongs to web-treeview.
 - **Example pages are fragments.** The devkit layout adds the head, header and back link, and
   the kit adds the shared styles, chapter nav, copy-link buttons, a light / dark / auto theme
