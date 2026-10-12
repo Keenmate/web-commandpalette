@@ -1,6 +1,6 @@
 {
   "name": "@keenmate/web-commandpalette",
-  "version": "0.1.0-dev",
+  "version": "1.0.0-rc01",
   "description": "Framework-agnostic command-palette web component — modes, multi-step commands, scoped + global search, keyboard nav; configured via properties, events, and async callbacks.",
   "type": "module",
   "main": "./dist/web-commandpalette.umd.js",
@@ -81,12 +81,12 @@
     "url": "https://github.com/keenmate/web-commandpalette/issues"
   },
   "peerDependencies": {
-    "@keenmate/web-components-core": "^1.0.0-rc11"
+    "@keenmate/web-components-core": "^1.0.0-rc12"
   },
   "devDependencies": {
     "@custom-elements-manifest/analyzer": "^0.11.0",
     "@keenmate/pure-admin-core": "3.3.0-rc06",
-    "@keenmate/web-components-core": "1.0.0-rc11",
+    "@keenmate/web-components-core": "1.0.0-rc12",
     "@playwright/test": "^1.60.0",
     "custom-element-jet-brains-integration": "^1.7.0",
     "custom-element-vs-code-integration": "^1.5.0",

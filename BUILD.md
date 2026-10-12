@@ -13,8 +13,8 @@ npm run package          # build + npm pack
 The same tasks are available through `make` (run `make` to list them): `make dev`, `make build`,
 `make test`, `make kill-port` (frees ports 12300–12305), `make publish-dry`, `make publish-rc`
 (the `rc` dist-tag; `latest` is untouched) and `make publish` (`latest`). The publish targets ask
-for confirmation and always clean and rebuild `dist/` first. A pre-release version (`x.y.z-dev`,
-`-rcNN`) must go out through `publish-rc`, because npm rejects it without a dist-tag.
+for confirmation and always clean and rebuild `dist/` first. A pre-release version (`x.y.z-rcNN`)
+must go out through `publish-rc`, because npm rejects it without a dist-tag.
 
 Single tests: `npx vitest run test/unit/palette.test.ts`, `npx vitest run -t "context search"`,
 `npx playwright test e2e/wizard.spec.ts`.
