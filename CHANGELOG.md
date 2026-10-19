@@ -5,10 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0-rc02] - 2026-10-12
+## [1.0.0-rc02] - 2026-10-19
 
 ### Changed
 
+- **The palette owns its CSS.** pure-admin's palette is being replaced by this component, so it
+  no longer compiles pure-admin-core's `_command-palette.scss`. The CSS is plain CSS in `src/css/`
+  (the web-multiselect layout: `variables` / `component` / `overrides` layers). The
+  `@keenmate/pure-admin-core`, `sass` and `postcss` dev dependencies and `scripts/shadow-css.mjs`
+  are gone. Unused core rules (shortcut-help dialog, loaders, badge sizes / palette colors) are no
+  longer shipped, so the UMD bundle is about 10 kB smaller.
+- **Reads `@keenmate/base-css-variables` 2.0.** `--base-primary-*` (was `--base-accent-*`),
+  `--base-input-text-color` (was `--base-input-color`), `--base-on-<role>-text-color` (was
+  `--base-text-on-<role>` / `--base-text-color-on-accent`). A theme that sets only the 2.0 names
+  (pure-admin 3.3 / pure-css 2.0) now recolours the palette; before, the accent stayed sky blue.
+- **`--cp-*` knobs are declared on `:host`** (each reads a `--base-*` token with a fallback), like
+  `--ms-*`. Set a `--cp-*` on the element (`web-command-palette { --cp-width: 680px }`); a
+  `--cp-*` set only on an ancestor no longer reaches the palette. `--base-*` on `:root` or any
+  ancestor works as before.
+- **The search input is a control:** its outline (and the fullscreen close button's) is
+  `--base-input-border` (was the divider), with `--base-input-border-focus` and the shared focus
+  halo `--base-input-box-shadow-focus`. The placeholder is `--base-input-placeholder-color`
+  (no extra opacity).
+- **Rows use the shared item states:** hover is `--base-hover-bg` (was a 5% primary tint), the
+  active row is `--base-highlighted-bg` (the same tint as a selected web-multiselect option or a
+  highlighted tree row). The query highlight follows the primary color (was a fixed `#0ea5e9`).
+- **The backdrop is `--base-overlay-bg`**, the plain badge is the secondary role
+  (`--base-secondary-color` / `--base-on-secondary-text-color`), keycaps default to
+  `--base-font-family`, and spacing, weights, durations and the input height read
+  `--base-space-*`, `--base-font-weight-*`, `--base-duration-*` / `--base-ease-*` and
+  `--base-input-size-lg-height`.
+- **Standalone dark mode:** the fallbacks are `light-dark()` pairs, and `[data-theme]` /
+  `data-bs-theme` / `.dark` set `color-scheme` on the host (was a light palette on a dark page
+  without a theme).
+- New `--cp-*` knobs (all listed in the manifest): colors (`--cp-accent-color`, `--cp-bg`,
+  `--cp-text-color-1…3`, `--cp-border-color`, …), input (`--cp-input-*`), badges
+  (`--cp-badge-*`), `--cp-z-index`, `--cp-rem`, plus the type / spacing / motion scale.
 - **Moved onto `@keenmate/web-components-devkit`.** The Vite and Playwright configs are the
   devkit presets (`defineComponentConfig` / `definePlaywrightConfig`), configured once in
   `package.json#kmwc`. `Dockerfile`, `nginx.conf`, `Makefile` and `.dockerignore` are generated

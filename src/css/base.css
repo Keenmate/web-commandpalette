@@ -1,0 +1,80 @@
+/* ==============================================================================
+   BASE — what a page's global stylesheet would provide, but never reaches
+   inside a shadow root: box sizing, [hidden], fonts, the icon primitive.
+   ============================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* Form controls don't inherit fonts on their own. */
+.pa-command-palette {
+  font-family: var(--cp-font-family);
+}
+
+.pa-command-palette input,
+.pa-command-palette button {
+  font-family: inherit;
+}
+
+/* The masked-icon primitive: a glyph painted in currentColor through a CSS mask.
+   Each glyph is a --cp-icon-* variable (variables.css), so any of them can be
+   replaced with a url(...). */
+.pa-icon {
+  display: inline-block;
+  inline-size: var(--cp-icon-size, 1em);
+  block-size: var(--cp-icon-size, 1em);
+  flex-shrink: 0;
+  background-color: currentColor;
+  -webkit-mask: var(--_cp-icon-src, none) no-repeat center / contain;
+          mask: var(--_cp-icon-src, none) no-repeat center / contain;
+}
+
+.pa-icon--x {
+  --_cp-icon-src: var(--cp-icon-close);
+}
+
+.cp-icon--check {
+  --_cp-icon-src: var(--cp-icon-check);
+}
+
+.cp-icon--star {
+  --_cp-icon-src: var(--cp-icon-star);
+}
+
+.cp-icon--star-filled {
+  --_cp-icon-src: var(--cp-icon-star-filled);
+}
+
+/* Inline SVG icons handed in as data. */
+.pa-command-palette__item-icon svg {
+  inline-size: 1em;
+  block-size: 1em;
+}
+
+/* Visually-hidden live region for screen-reader announcements. */
+.cp-sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Bidi: in an RTL palette, Latin command text ("/deploy to Staging") keeps its own
+   order. Rendered runs are wrapped in <bdi>; the input orders its text by content
+   while staying aligned to the inline start of the (RTL) palette. */
+.pa-command-palette__input,
+.pa-command-palette__input::placeholder {
+  unicode-bidi: plaintext;
+}

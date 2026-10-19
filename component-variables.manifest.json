@@ -2,17 +2,12 @@
   "$schema": "https://raw.githubusercontent.com/keenmate/schemas/main/component-variables.schema.json",
   "component": "@keenmate/web-commandpalette",
   "prefix": "cp",
-  "note": "The palette CSS is pure-admin-core's own partial, adapted at build time: the component reads only its own --cp-* knobs and the shared --base-* variables (pure-admin's --pc-* / --pa-* layer is resolved to its --base-* fallbacks). Nothing is declared inside the shadow root, so set any of them on :root, an ancestor or the element itself.",
+  "note": "The palette ships its own plain CSS (src/css/*.css, multiselect-style layers). Every --cp-* knob is declared on :host and reads the shared --base-* contract (@keenmate/base-css-variables 2.0) with an inline fallback, so a :root theme reaches it; set --cp-* on the element itself.",
   "baseVariables": [
-    {
-      "name": "base-accent-color",
-      "required": true,
-      "usage": "Accent: active row tint, focus ring, highlight, primary badge, spinner"
-    },
     {
       "name": "base-border-color",
       "required": false,
-      "usage": "Dividers (search row, footer, sections) and keycap borders"
+      "usage": "Dividers (search row, sections, footer, pagination) and keycap borders"
     },
     {
       "name": "base-border-radius-md",
@@ -25,94 +20,39 @@
       "usage": "Row / keycap / badge corner radius (unitless multiplier of the rem unit)"
     },
     {
-      "name": "base-color-1",
+      "name": "base-border-width",
       "required": false,
-      "usage": "Palette colour 1 (pa-badge--color-1)"
+      "usage": "Stroke width of every border"
     },
     {
-      "name": "base-color-1-text",
+      "name": "base-danger-color",
       "required": false,
-      "usage": "Text on palette colour 1"
+      "usage": "danger badge background"
     },
     {
-      "name": "base-color-2",
+      "name": "base-duration-fast",
       "required": false,
-      "usage": "Palette colour 2 (pa-badge--color-2)"
+      "usage": "Hover / focus transitions"
     },
     {
-      "name": "base-color-2-text",
+      "name": "base-duration-medium",
       "required": false,
-      "usage": "Text on palette colour 2"
+      "usage": "Confirmation collapse"
     },
     {
-      "name": "base-color-3",
+      "name": "base-duration-normal",
       "required": false,
-      "usage": "Palette colour 3 (pa-badge--color-3)"
+      "usage": "Open animation"
     },
     {
-      "name": "base-color-3-text",
+      "name": "base-ease-out",
       "required": false,
-      "usage": "Text on palette colour 3"
+      "usage": "Easing of the border / color transitions"
     },
     {
-      "name": "base-color-4",
+      "name": "base-ease-standard",
       "required": false,
-      "usage": "Palette colour 4 (pa-badge--color-4)"
-    },
-    {
-      "name": "base-color-4-text",
-      "required": false,
-      "usage": "Text on palette colour 4"
-    },
-    {
-      "name": "base-color-5",
-      "required": false,
-      "usage": "Palette colour 5 (pa-badge--color-5)"
-    },
-    {
-      "name": "base-color-5-text",
-      "required": false,
-      "usage": "Text on palette colour 5"
-    },
-    {
-      "name": "base-color-6",
-      "required": false,
-      "usage": "Palette colour 6 (pa-badge--color-6)"
-    },
-    {
-      "name": "base-color-6-text",
-      "required": false,
-      "usage": "Text on palette colour 6"
-    },
-    {
-      "name": "base-color-7",
-      "required": false,
-      "usage": "Palette colour 7 (pa-badge--color-7)"
-    },
-    {
-      "name": "base-color-7-text",
-      "required": false,
-      "usage": "Text on palette colour 7"
-    },
-    {
-      "name": "base-color-8",
-      "required": false,
-      "usage": "Palette colour 8 (pa-badge--color-8)"
-    },
-    {
-      "name": "base-color-8-text",
-      "required": false,
-      "usage": "Text on palette colour 8"
-    },
-    {
-      "name": "base-color-9",
-      "required": false,
-      "usage": "Palette colour 9 (pa-badge--color-9)"
-    },
-    {
-      "name": "base-color-9-text",
-      "required": false,
-      "usage": "Text on palette colour 9"
+      "usage": "Easing of the animations"
     },
     {
       "name": "base-font-family",
@@ -145,9 +85,29 @@
       "usage": "Meta text, keycaps, footer hints, context pill (default 1.2)"
     },
     {
-      "name": "base-icon-close",
+      "name": "base-font-weight-medium",
       "required": false,
-      "usage": "✕ glyph (chained by --cp-icon-close)"
+      "usage": "Row titles, scope pill"
+    },
+    {
+      "name": "base-font-weight-semibold",
+      "required": false,
+      "usage": "Headings, query highlight, keycaps"
+    },
+    {
+      "name": "base-highlighted-bg",
+      "required": false,
+      "usage": "Active row (the keyboard cursor) background — the shared item-state tint"
+    },
+    {
+      "name": "base-highlighted-text-color",
+      "required": false,
+      "usage": "Active row text"
+    },
+    {
+      "name": "base-hover-bg",
+      "required": false,
+      "usage": "Row hover (the neutral hover overlay)"
     },
     {
       "name": "base-icon-check",
@@ -155,24 +115,119 @@
       "usage": "✓ glyph (chained by --cp-icon-check)"
     },
     {
-      "name": "base-input-bg",
+      "name": "base-icon-close",
       "required": false,
-      "usage": "Search input background"
+      "usage": "✕ glyph (chained by --cp-icon-close)"
     },
     {
-      "name": "base-input-color",
+      "name": "base-info-color",
       "required": false,
-      "usage": "Search input text colour"
+      "usage": "info badge background"
+    },
+    {
+      "name": "base-input-bg",
+      "required": false,
+      "usage": "Search input and close-button background"
+    },
+    {
+      "name": "base-input-border",
+      "required": false,
+      "usage": "Search input / close-button border"
+    },
+    {
+      "name": "base-input-border-color",
+      "required": false,
+      "usage": "Search input / close-button outline (fallback chain)"
+    },
+    {
+      "name": "base-input-border-focus",
+      "required": false,
+      "usage": "Search input focus border"
+    },
+    {
+      "name": "base-input-border-hover",
+      "required": false,
+      "usage": "Close-button hover border"
+    },
+    {
+      "name": "base-input-box-shadow-focus",
+      "required": false,
+      "usage": "Search input focus halo"
+    },
+    {
+      "name": "base-input-placeholder-color",
+      "required": false,
+      "usage": "Search input placeholder"
+    },
+    {
+      "name": "base-input-shadow-color-focus",
+      "required": false,
+      "usage": "Focus halo tone (fallback chain)"
+    },
+    {
+      "name": "base-input-size-lg-height",
+      "required": false,
+      "usage": "Search input and close-button height (unitless multiplier of the rem unit)"
+    },
+    {
+      "name": "base-input-text-color",
+      "required": false,
+      "usage": "Search input text"
     },
     {
       "name": "base-main-bg",
-      "required": true,
-      "usage": "Dialog surface background"
+      "required": false,
+      "usage": "Dialog surface (also the input fallback)"
     },
     {
-      "name": "base-page-bg",
+      "name": "base-on-danger-text-color",
       "required": false,
-      "usage": "Light badge/button surface"
+      "usage": "Text on the danger badge"
+    },
+    {
+      "name": "base-on-info-text-color",
+      "required": false,
+      "usage": "Text on the info badge"
+    },
+    {
+      "name": "base-on-primary-text-color",
+      "required": false,
+      "usage": "Text on the primary badge"
+    },
+    {
+      "name": "base-on-secondary-text-color",
+      "required": false,
+      "usage": "Plain / secondary badge text"
+    },
+    {
+      "name": "base-on-success-text-color",
+      "required": false,
+      "usage": "Text on the success badge"
+    },
+    {
+      "name": "base-on-warning-text-color",
+      "required": false,
+      "usage": "Text on the warning badge"
+    },
+    {
+      "name": "base-overlay-bg",
+      "required": false,
+      "usage": "Backdrop scrim"
+    },
+    {
+      "name": "base-primary-bg-subtle",
+      "required": false,
+      "usage": "Primary tint: scope pill, row icon box (and the active row when --base-highlighted-bg is absent)"
+    },
+    {
+      "name": "base-primary-bg-subtle-hover",
+      "required": false,
+      "usage": "Query-match highlight background"
+    },
+    {
+      "name": "base-primary-color",
+      "required": true,
+      "usage": "Accent: focus border, scope pill, row icons, query highlight, primary badge, spinner, star, ✓ and countdown"
     },
     {
       "name": "base-rem",
@@ -180,13 +235,53 @@
       "usage": "Size unit for every rem-based dimension (default 10px; pure-admin hosts set 1rem)"
     },
     {
+      "name": "base-secondary-color",
+      "required": false,
+      "usage": "Plain / secondary badge background"
+    },
+    {
+      "name": "base-shadow-color",
+      "required": false,
+      "usage": "Dialog shadow tone"
+    },
+    {
+      "name": "base-space-2xl",
+      "required": false,
+      "usage": "Spacing step: empty / loading padding (unitless multiplier of the rem unit)"
+    },
+    {
+      "name": "base-space-base",
+      "required": false,
+      "usage": "Spacing step: footer gap, narrow-window offset (unitless multiplier of the rem unit)"
+    },
+    {
+      "name": "base-space-sm",
+      "required": false,
+      "usage": "Spacing step: the main padding (unitless multiplier of the rem unit)"
+    },
+    {
+      "name": "base-space-xl",
+      "required": false,
+      "usage": "Spacing step: narrow-window side margin (unitless multiplier of the rem unit)"
+    },
+    {
+      "name": "base-space-xs",
+      "required": false,
+      "usage": "Spacing step (unitless multiplier of the rem unit)"
+    },
+    {
       "name": "base-subtle-bg",
       "required": false,
       "usage": "Keycap background"
     },
     {
+      "name": "base-success-color",
+      "required": false,
+      "usage": "success badge background"
+    },
+    {
       "name": "base-text-color-1",
-      "required": true,
+      "required": false,
       "usage": "Primary text (titles, input, keycaps)"
     },
     {
@@ -195,32 +290,29 @@
       "usage": "Secondary text (meta lines, hints, headings)"
     },
     {
-      "name": "base-text-color-on-accent",
+      "name": "base-text-color-3",
       "required": false,
-      "usage": "Text on accent (primary badge)"
+      "usage": "Favorite star (off)"
     },
     {
-      "name": "base-text-on-danger",
+      "name": "base-warning-color",
       "required": false,
-      "usage": "Text on danger badge"
-    },
-    {
-      "name": "base-text-on-info",
-      "required": false,
-      "usage": "Text on info badge"
-    },
-    {
-      "name": "base-text-on-success",
-      "required": false,
-      "usage": "Text on success badge"
-    },
-    {
-      "name": "base-text-on-warning",
-      "required": false,
-      "usage": "Text on warning badge"
+      "usage": "warning badge background"
     }
   ],
   "componentVariables": [
+    {
+      "name": "cp-accent-color",
+      "usage": "Accent of this palette (default --base-primary-color)"
+    },
+    {
+      "name": "cp-accent-color-light",
+      "usage": "Primary tint: scope pill, row icon box"
+    },
+    {
+      "name": "cp-accent-color-light-hover",
+      "usage": "Stronger primary tint (query highlight)"
+    },
     {
       "name": "cp-backdrop-bg",
       "usage": "Backdrop colour"
@@ -230,8 +322,128 @@
       "usage": "Backdrop filter (default blur(4px); set none to disable)"
     },
     {
+      "name": "cp-badge-bg",
+      "usage": "Plain / secondary badge background"
+    },
+    {
+      "name": "cp-badge-color",
+      "usage": "Plain / secondary badge text"
+    },
+    {
+      "name": "cp-badge-danger-bg",
+      "usage": "danger badge background"
+    },
+    {
+      "name": "cp-badge-danger-color",
+      "usage": "danger badge text"
+    },
+    {
+      "name": "cp-badge-info-bg",
+      "usage": "info badge background"
+    },
+    {
+      "name": "cp-badge-info-color",
+      "usage": "info badge text"
+    },
+    {
+      "name": "cp-badge-primary-bg",
+      "usage": "primary badge background"
+    },
+    {
+      "name": "cp-badge-primary-color",
+      "usage": "primary badge text"
+    },
+    {
+      "name": "cp-badge-success-bg",
+      "usage": "success badge background"
+    },
+    {
+      "name": "cp-badge-success-color",
+      "usage": "success badge text"
+    },
+    {
+      "name": "cp-badge-warning-bg",
+      "usage": "warning badge background"
+    },
+    {
+      "name": "cp-badge-warning-color",
+      "usage": "warning badge text"
+    },
+    {
+      "name": "cp-bg",
+      "usage": "Dialog surface"
+    },
+    {
+      "name": "cp-border",
+      "usage": "Divider shorthand"
+    },
+    {
+      "name": "cp-border-color",
+      "usage": "Divider color"
+    },
+    {
+      "name": "cp-border-radius-md",
+      "usage": "Corner radius (--base-border-radius-md × --cp-rem)"
+    },
+    {
+      "name": "cp-border-radius-sm",
+      "usage": "Corner radius (--base-border-radius-sm × --cp-rem)"
+    },
+    {
+      "name": "cp-border-width",
+      "usage": "Stroke width"
+    },
+    {
       "name": "cp-confirm-min-height",
-      "usage": "Minimum height of the dialog while it shows the one-line confirmation (the shrink animates down to it). Default 16 × --base-rem"
+      "usage": "Minimum height of the dialog while it shows the one-line confirmation (the shrink animates down to it). Default 16 × --cp-rem"
+    },
+    {
+      "name": "cp-container-bg",
+      "usage": "Dialog background"
+    },
+    {
+      "name": "cp-container-box-shadow",
+      "usage": "Dialog shadow"
+    },
+    {
+      "name": "cp-easing",
+      "usage": "Easing (--base-ease-standard)"
+    },
+    {
+      "name": "cp-easing-out",
+      "usage": "Easing for border / color transitions (--base-ease-out)"
+    },
+    {
+      "name": "cp-font-family",
+      "usage": "Font of the palette (default --base-font-family, else inherited)"
+    },
+    {
+      "name": "cp-font-size-2xs",
+      "usage": "Type scale step (--base-font-size-2xs × --cp-rem)"
+    },
+    {
+      "name": "cp-font-size-base",
+      "usage": "Type scale step (--base-font-size-base × --cp-rem)"
+    },
+    {
+      "name": "cp-font-size-lg",
+      "usage": "Type scale step (--base-font-size-lg × --cp-rem)"
+    },
+    {
+      "name": "cp-font-size-sm",
+      "usage": "Type scale step (--base-font-size-sm × --cp-rem)"
+    },
+    {
+      "name": "cp-font-size-xs",
+      "usage": "Type scale step (--base-font-size-xs × --cp-rem)"
+    },
+    {
+      "name": "cp-font-weight-medium",
+      "usage": "Font weight (--base-font-weight-medium)"
+    },
+    {
+      "name": "cp-font-weight-semibold",
+      "usage": "Font weight (--base-font-weight-semibold)"
     },
     {
       "name": "cp-highlight-bg",
@@ -242,12 +454,16 @@
       "usage": "Text colour of the <mark> query highlight"
     },
     {
-      "name": "cp-icon-close",
-      "usage": "✕ glyph (token remove, fullscreen close): any url(...). Falls back to --base-icon-close, then an inline Lucide SVG"
+      "name": "cp-hover-bg",
+      "usage": "Neutral hover overlay"
     },
     {
       "name": "cp-icon-check",
       "usage": "✓ glyph of the confirmation. Falls back to --base-icon-check, then an inline Lucide SVG"
+    },
+    {
+      "name": "cp-icon-close",
+      "usage": "✕ glyph (token remove, fullscreen close): any url(...). Falls back to --base-icon-close, then an inline Lucide SVG"
     },
     {
       "name": "cp-icon-size",
@@ -262,12 +478,60 @@
       "usage": "★ glyph (favorite toggle, starred). Inline Lucide SVG fallback"
     },
     {
+      "name": "cp-input-bg",
+      "usage": "Search input background"
+    },
+    {
+      "name": "cp-input-border",
+      "usage": "Search input / close-button border"
+    },
+    {
+      "name": "cp-input-border-color",
+      "usage": "Search input outline color"
+    },
+    {
+      "name": "cp-input-border-focus",
+      "usage": "Search input focus border"
+    },
+    {
+      "name": "cp-input-border-hover",
+      "usage": "Close-button hover border"
+    },
+    {
+      "name": "cp-input-box-shadow-focus",
+      "usage": "Search input focus halo"
+    },
+    {
+      "name": "cp-input-color",
+      "usage": "Search input text"
+    },
+    {
+      "name": "cp-input-height",
+      "usage": "Search input / close-button height"
+    },
+    {
+      "name": "cp-input-placeholder-color",
+      "usage": "Placeholder color"
+    },
+    {
       "name": "cp-item-active-bg",
       "usage": "Active (keyboard) row background"
     },
     {
+      "name": "cp-item-active-color",
+      "usage": "Active row text"
+    },
+    {
       "name": "cp-item-hover-bg",
       "usage": "Row background on hover"
+    },
+    {
+      "name": "cp-item-icon-bg",
+      "usage": "Row icon box background"
+    },
+    {
+      "name": "cp-item-icon-color",
+      "usage": "Row icon color"
     },
     {
       "name": "cp-key-bg",
@@ -290,8 +554,16 @@
       "usage": "Keycap text colour"
     },
     {
+      "name": "cp-loading-veil-bg",
+      "usage": "Veil over results while a refresh loads"
+    },
+    {
       "name": "cp-offset-top",
       "usage": "Distance of the floating dialog from the top of the viewport"
+    },
+    {
+      "name": "cp-rem",
+      "usage": "Size unit of this palette only (default var(--base-rem, 10px))"
     },
     {
       "name": "cp-results-max-height",
@@ -318,8 +590,68 @@
       "usage": "Results scrollbar width (WebKit/older Chromium; Firefox and Chromium 121+ draw a thin bar). Default 8px"
     },
     {
+      "name": "cp-shadow-color",
+      "usage": "Shadow tone"
+    },
+    {
+      "name": "cp-space-2xl",
+      "usage": "Spacing step (--base-space-2xl × --cp-rem)"
+    },
+    {
+      "name": "cp-space-base",
+      "usage": "Spacing step (--base-space-base × --cp-rem)"
+    },
+    {
+      "name": "cp-space-sm",
+      "usage": "Spacing step (--base-space-sm × --cp-rem)"
+    },
+    {
+      "name": "cp-space-xl",
+      "usage": "Spacing step (--base-space-xl × --cp-rem)"
+    },
+    {
+      "name": "cp-space-xs",
+      "usage": "Spacing step (--base-space-xs × --cp-rem)"
+    },
+    {
+      "name": "cp-subtle-bg",
+      "usage": "Recessed surface (keycaps)"
+    },
+    {
+      "name": "cp-text-color-1",
+      "usage": "Primary text"
+    },
+    {
+      "name": "cp-text-color-2",
+      "usage": "Secondary text"
+    },
+    {
+      "name": "cp-text-color-3",
+      "usage": "Tertiary text (star off)"
+    },
+    {
+      "name": "cp-text-color-on-accent",
+      "usage": "Text on the accent"
+    },
+    {
+      "name": "cp-transition-fast",
+      "usage": "Duration (--base-duration-fast)"
+    },
+    {
+      "name": "cp-transition-medium",
+      "usage": "Duration (--base-duration-medium)"
+    },
+    {
+      "name": "cp-transition-normal",
+      "usage": "Duration (--base-duration-normal)"
+    },
+    {
       "name": "cp-width",
       "usage": "Dialog max width (presets: size=\"sm|lg|xl\")"
+    },
+    {
+      "name": "cp-z-index",
+      "usage": "Stacking of the overlay (default 10500, above every --base-z-* tier)"
     }
   ]
 }

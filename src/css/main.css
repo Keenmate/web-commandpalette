@@ -1,0 +1,27 @@
+/* ==============================================================================
+   COMMAND PALETTE — MAIN ENTRY POINT
+   ==============================================================================
+   Cascade layer order (later = higher priority):
+     variables  — :host { --cp-* } declarations (each reads a --base-* token)
+     component  — base + feature rules
+     overrides  — dark mode / per-instance signals
+
+   Consumer override contract:
+   - Any unlayered consumer rule beats every rule in these layers.
+   - A :root --base-* declaration reaches every --cp-* token.
+   - A --cp-* override goes on the element: web-command-palette { --cp-… }
+*/
+
+@layer variables, component, overrides;
+
+@import url('./variables.css')   layer(variables);
+@import url('./base.css')        layer(component);
+@import url('./dialog.css')      layer(component);
+@import url('./search.css')      layer(component);
+@import url('./results.css')     layer(component);
+@import url('./footer.css')      layer(component);
+@import url('./badges.css')      layer(component);
+@import url('./confirm.css')     layer(component);
+@import url('./animations.css')  layer(component);
+
+@import url('./dark-mode.css')   layer(overrides);

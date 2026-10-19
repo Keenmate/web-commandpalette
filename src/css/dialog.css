@@ -1,0 +1,152 @@
+/* ==============================================================================
+   DIALOG — overlay, backdrop, container, size presets, phone fullscreen sheet
+   ============================================================================== */
+
+.pa-command-palette {
+  position: fixed;
+  inset: 0;
+  z-index: var(--cp-z-index);
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: var(--cp-offset-top);
+}
+
+.pa-command-palette--active {
+  display: flex;
+}
+
+/* Size presets (the `size` attribute): width and results height together. */
+.pa-command-palette--sm {
+  --cp-width: calc(48 * var(--cp-rem));
+  --cp-results-max-height: calc(28.8 * var(--cp-rem));
+}
+
+.pa-command-palette--lg {
+  --cp-width: calc(76.8 * var(--cp-rem));
+  --cp-results-max-height: calc(51.2 * var(--cp-rem));
+}
+
+.pa-command-palette--xl {
+  --cp-width: calc(89.6 * var(--cp-rem));
+  --cp-results-max-height: calc(64 * var(--cp-rem));
+}
+
+.pa-command-palette__backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: var(--cp-backdrop-bg);
+  backdrop-filter: var(--cp-backdrop-filter);
+  animation: cp-fade-in var(--cp-transition-normal) var(--cp-easing);
+}
+
+.pa-command-palette__container {
+  position: relative;
+  width: 100%;
+  max-width: var(--cp-width);
+  background-color: var(--cp-container-bg);
+  border-radius: var(--cp-border-radius-md);
+  box-shadow: var(--cp-container-box-shadow);
+  animation: cp-slide-down var(--cp-transition-normal) var(--cp-easing);
+  overflow: hidden;
+}
+
+/* Narrow (desktop) windows keep the floating dialog, just closer to the edges. */
+@media (max-width: 768px) {
+  .pa-command-palette {
+    padding-top: var(--cp-space-base);
+  }
+
+  .pa-command-palette__container {
+    max-width: calc(100% - var(--cp-space-xl));
+  }
+
+  .pa-command-palette__results {
+    max-height: 60vh;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Phone fullscreen sheet (mobile-presentation): a touch-primary phone gets a
+   full-viewport sheet above the on-screen keyboard; a narrow desktop window
+   keeps the floating dialog. Mirrors web-multiselect's fullscreen overlay.
+   -------------------------------------------------------------------------- */
+.pa-command-palette__fullscreen-bar {
+  display: none;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cp-space-sm);
+  padding: calc(var(--cp-space-sm) + env(safe-area-inset-top)) var(--cp-space-sm) var(--cp-space-sm);
+  border-bottom: var(--cp-border);
+}
+
+.pa-command-palette__fullscreen-title {
+  font-size: calc(1.5 * var(--cp-rem));
+  font-weight: var(--cp-font-weight-semibold);
+  color: var(--cp-text-color-1);
+}
+
+/* A control, so it takes the input outline, not the divider. */
+.pa-command-palette__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--cp-input-height);
+  height: var(--cp-input-height);
+  padding: 0;
+  border: var(--cp-input-border);
+  border-radius: var(--cp-border-radius-md);
+  background-color: var(--cp-input-bg);
+  color: var(--cp-text-color-1);
+  cursor: pointer;
+  transition: border-color var(--cp-transition-fast) var(--cp-easing-out);
+}
+
+.pa-command-palette__close:hover {
+  border: var(--cp-input-border-hover);
+}
+
+.pa-command-palette--fullscreen {
+  padding: 0;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.pa-command-palette--fullscreen .pa-command-palette__backdrop {
+  display: none;
+}
+
+.pa-command-palette--fullscreen .pa-command-palette__container {
+  position: fixed;
+  top: 0;
+  inset-inline-start: 0;
+  width: 100vw;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  border-radius: 0;
+  box-shadow: none;
+  animation: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.pa-command-palette--fullscreen .pa-command-palette__fullscreen-bar {
+  display: flex;
+}
+
+.pa-command-palette--fullscreen .pa-command-palette__search {
+  flex: 0 0 auto;
+}
+
+.pa-command-palette--fullscreen .pa-command-palette__results {
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: none;
+}
+
+.pa-command-palette--fullscreen .pa-command-palette__footer {
+  flex: 0 0 auto;
+  padding-bottom: calc(var(--cp-space-sm) + env(safe-area-inset-bottom));
+}

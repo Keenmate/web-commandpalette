@@ -91,16 +91,13 @@
   },
   "devDependencies": {
     "@custom-elements-manifest/analyzer": "^0.11.0",
-    "@keenmate/pure-admin-core": "3.3.0-rc06",
     "@keenmate/web-components-core": "1.0.0-rc12",
     "@keenmate/web-components-devkit": "^1.0.0-rc01",
     "@playwright/test": "^1.60.0",
     "custom-element-jet-brains-integration": "^1.7.0",
     "custom-element-vs-code-integration": "^1.5.0",
     "happy-dom": "^15.11.7",
-    "postcss": "^8.5.29",
     "rimraf": "^5.0.5",
-    "sass": "^1.80.0",
     "typescript": "^5.3.3",
     "vite": "^7.1.0",
     "vitest": "^3.2.4"

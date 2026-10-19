@@ -1,0 +1,33 @@
+/* ==============================================================================
+   DARK MODE — framework class + per-instance signal handling
+   ==============================================================================
+   Sets `color-scheme` on the host when the page signals dark / light through a
+   framework class or a per-instance attribute. Every --cp-* fallback in
+   variables.css is a `light-dark()` pair, so flipping `color-scheme` picks the
+   right branch without touching any --base-* value (overriding --base-* on
+   :host would shadow the page's theme). Same pattern as web-multiselect.
+
+   Signals:
+     Framework theme class on an ancestor: [data-theme], [data-bs-theme], .dark / .light
+     Per-instance attribute on the host:   [data-theme="dark" | "light"] (wins)
+   ============================================================================== */
+
+:host-context([data-theme="dark"]),
+:host-context([data-bs-theme="dark"]),
+:host-context(.dark) {
+  color-scheme: dark;
+}
+
+:host-context([data-theme="light"]),
+:host-context([data-bs-theme="light"]),
+:host-context(.light) {
+  color-scheme: light;
+}
+
+:host([data-theme="dark"]) {
+  color-scheme: dark;
+}
+
+:host([data-theme="light"]) {
+  color-scheme: light;
+}

@@ -1,5 +1,5 @@
 <meta name="kmwc:title" content="Theming &amp; Presentation">
-<meta name="kmwc:subtitle" content="The palette is styled by pure-admin-core's own CSS. Theme it with <code>--base-*</code> and <code>--cp-*</code> variables, scale it with <code>--base-rem</code>, and pick a size preset or the phone sheet.">
+<meta name="kmwc:subtitle" content="The palette reads the shared <code>--base-*</code> variables. Theme it with those and its <code>--cp-*</code> knobs, scale it with <code>--base-rem</code>, and pick a size preset or the phone sheet.">
 <meta name="kmwc:body-class" content="dark-output">
 
 <!-- TH01 theme gallery. These rules ARE the example (EXAMPLES.md §5 exception): each one
@@ -10,13 +10,13 @@
     #theme-dark {
         --base-main-bg: #1e1e2e;
         --base-input-bg: #181825;
-        --base-input-color: #cdd6f4;
+        --base-input-text-color: #cdd6f4;
         --base-text-color-1: #cdd6f4;
         --base-text-color-2: #a6adc8;
         --base-border-color: #313244;
         --base-subtle-bg: #313244;
-        --base-accent-color: #cba6f7;
-        --base-text-color-on-accent: #1e1e2e;
+        --base-primary-color: #cba6f7;
+        --base-on-primary-text-color: #1e1e2e;
         --cp-item-active-bg: rgba(203, 166, 247, 0.15);
         --cp-item-hover-bg: rgba(203, 166, 247, 0.08);
         --cp-highlight-bg: rgba(203, 166, 247, 0.25);
@@ -33,13 +33,13 @@
     #theme-neon {
         --base-main-bg: #0d0221;
         --base-input-bg: #1a0533;
-        --base-input-color: #00fff9;
+        --base-input-text-color: #00fff9;
         --base-text-color-1: #00fff9;
         --base-text-color-2: #ff6ec7;
         --base-border-color: #ff00ff;
         --base-subtle-bg: #2a0845;
-        --base-accent-color: #ff00ff;
-        --base-text-color-on-accent: #0d0221;
+        --base-primary-color: #ff00ff;
+        --base-on-primary-text-color: #0d0221;
         --cp-item-active-bg: rgba(255, 0, 255, 0.25);
         --cp-highlight-bg: transparent;
         --cp-highlight-text: #fffb00;
@@ -61,7 +61,7 @@
     /* Corporate — square-ish, one brand colour, no blur */
     #theme-corporate {
         --base-font-family: "Helvetica Neue", Arial, sans-serif;
-        --base-accent-color: #bb0a30;
+        --base-primary-color: #bb0a30;
         --base-border-radius-md: 0.2;
         --base-border-radius-sm: 0.1;
         --base-text-color-1: #1a1a1a;
@@ -83,7 +83,7 @@
 
     /* Soft — big radius, pastel pink, circled check */
     #theme-soft {
-        --base-accent-color: #ec4899;
+        --base-primary-color: #ec4899;
         --base-border-radius-md: 2.4;
         --base-border-radius-sm: 1.2;
         --base-main-bg: #fff7fb;
@@ -109,8 +109,8 @@
         --cp-key-font-family: "Courier New", Courier, monospace;
         --base-border-radius-md: 0;
         --base-border-radius-sm: 0;
-        --base-accent-color: #000000;
-        --base-text-color-on-accent: #ffffff;
+        --base-primary-color: #000000;
+        --base-on-primary-text-color: #ffffff;
         --base-text-color-1: #000000;
         --base-text-color-2: #000000;
         --base-border-color: #000000;
@@ -137,13 +137,13 @@
         --cp-key-font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
         --base-main-bg: #0c0c0c;
         --base-input-bg: #0c0c0c;
-        --base-input-color: #33ff66;
+        --base-input-text-color: #33ff66;
         --base-text-color-1: #33ff66;
         --base-text-color-2: #1f9e3f;
         --base-border-color: #1f6e33;
         --base-subtle-bg: #0f2a17;
-        --base-accent-color: #33ff66;
-        --base-text-color-on-accent: #0c0c0c;
+        --base-primary-color: #33ff66;
+        --base-on-primary-text-color: #0c0c0c;
         --base-border-radius-md: 0;
         --base-border-radius-sm: 0;
         --cp-item-active-bg: rgba(51, 255, 102, 0.12);
@@ -165,7 +165,7 @@
     /* Material — elevation, underlined input, bookmarks instead of stars */
     #theme-material {
         --base-font-family: Roboto, "Segoe UI", system-ui, sans-serif;
-        --base-accent-color: #3f51b5;
+        --base-primary-color: #3f51b5;
         --base-border-radius-md: 0.4;
         --base-border-color: #e0e0e0;
         --cp-item-active-bg: rgba(63, 81, 181, 0.08);
@@ -201,14 +201,14 @@
         wizard and the confirmation, and <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>D</kbd> for the star icon.
     </p>
     <p>
-        The rules here are scoped to one instance (<code>#theme-neon</code>). Nothing is <em>declared</em> inside the
-        shadow root, so the same rules on <code>:root</code> or any ancestor theme every palette on the page, and
-        anything you don't set falls back to pure-admin-core's default.
+        The rules here are scoped to one instance (<code>#theme-neon</code>). <code>--base-*</code> rules work on
+        <code>:root</code> or any ancestor too, and theme every palette on the page; <code>--cp-*</code> knobs are declared on
+        the element, so set those on the element itself. Anything you don't set falls back to the Corporate default.
     </p>
     <p>
         The size switches below apply to <b>every</b> palette here, so any theme can be tried at any size.
-        <code>--base-rem</code> scales everything: inside the shadow root every <code>Nrem</code> is compiled to
-        <code>calc(N * var(--base-rem, 10px))</code> (on a pure-admin page set <code>--base-rem: 1rem</code> to follow the
+        <code>--base-rem</code> scales everything: every size inside the shadow root is
+        <code>calc(N * var(--cp-rem))</code>, and <code>--cp-rem</code> is <code>var(--base-rem, 10px)</code> (on a pure-admin page set <code>--base-rem: 1rem</code> to follow the
         root font size). <code>size</code> presets set width and results height together; for anything else use
         <code>--cp-width</code>, <code>--cp-results-max-height</code> and <code>--cp-offset-top</code>.
         <code>mobile-presentation="auto"</code> gives touch phones a fullscreen sheet above the on-screen keyboard;
@@ -236,7 +236,7 @@
     <div class="card-grid" style="--grid-min: 340px">
         <div class="demo-card">
             <h3>Default</h3>
-            <p>No theme at all: pure-admin-core's own defaults (this page's main palette, <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>).</p>
+            <p>No theme at all: the built-in defaults (this page's main palette, <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>).</p>
             <div class="demo-area">
                 <button type="button" data-open="">Open</button>
                 <button type="button" class="secondary" data-open="/deploy ">/deploy</button>

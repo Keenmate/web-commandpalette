@@ -1,0 +1,30 @@
+/* ==============================================================================
+   FOOTER — keyboard hints and keycaps
+   ============================================================================== */
+
+.pa-command-palette__footer {
+  border-top: var(--cp-border);
+  padding: var(--cp-space-sm);
+  display: flex;
+  gap: var(--cp-space-base);
+  font-size: var(--cp-font-size-xs);
+  color: var(--cp-text-color-2);
+}
+
+.pa-command-palette__hint {
+  display: flex;
+  align-items: center;
+  gap: var(--cp-space-xs);
+}
+
+.pa-command-palette__key {
+  padding: 2px var(--cp-space-xs);
+  background-color: var(--cp-key-bg);
+  color: var(--cp-key-text);
+  border: var(--cp-border);
+  border-radius: var(--cp-border-radius-sm);
+  font-family: var(--cp-key-font-family);
+  font-weight: var(--cp-key-font-weight);
+  font-size: var(--cp-key-font-size);
+  line-height: 1;
+}

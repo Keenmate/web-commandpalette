@@ -1,0 +1,176 @@
+/* ==============================================================================
+   CSS CUSTOM PROPERTIES (:host level)
+   ==============================================================================
+   Every --cp-* knob is declared here, on :host, and reads the shared --base-*
+   contract (@keenmate/base-css-variables 2.0) with an inline fallback, so:
+   - a theme on :root (pure-admin, or base-variables.css) reaches the palette
+     through the --base-* variables, which pierce the shadow root;
+   - a --cp-* override goes on the element itself (or a rule that matches it):
+       web-command-palette { --cp-width: 680px; --cp-item-active-bg: #fce7f3; }
+   - without any theme, the fallbacks give the Corporate look in light and dark.
+
+   `color-scheme` is inherited, never declared here: every fallback is a
+   `light-dark()` pair that follows the page (see dark-mode.css for the
+   framework-class / per-instance signals).
+   ============================================================================== */
+
+:host {
+  display: contents;
+
+  /* ==========================================================================
+     BASE SIZING UNIT
+     ==========================================================================
+     Every size is `calc(<multiplier> * var(--cp-rem))`. Bridges to the shared
+     --base-rem knob; 10px without a base layer.
+     Pure Admin: --base-rem is 1rem (html { font-size: 10px }).
+     Custom: set --base-rem (or --cp-rem for this component only). */
+  --cp-rem: var(--base-rem, 10px);
+
+  /* ==========================================================================
+     COLORS
+     ========================================================================== */
+
+  /* Accent (the primary role) */
+  --cp-accent-color: var(--base-primary-color, #0ea5e9);
+  --cp-accent-color-light: var(--base-primary-bg-subtle, light-dark(color-mix(in srgb, var(--cp-accent-color) 10%, transparent), color-mix(in srgb, var(--cp-accent-color) 20%, transparent)));
+  --cp-accent-color-light-hover: var(--base-primary-bg-subtle-hover, light-dark(color-mix(in srgb, var(--cp-accent-color) 15%, transparent), color-mix(in srgb, var(--cp-accent-color) 30%, transparent)));
+  --cp-text-color-on-accent: var(--base-on-primary-text-color, #ffffff);
+
+  /* Text levels: 1 = body, 2 = muted labels, 3 = icons / metadata */
+  --cp-text-color-1: var(--base-text-color-1, light-dark(#334155, #f1f5f9));
+  --cp-text-color-2: var(--base-text-color-2, color-mix(in srgb, var(--cp-text-color-1) 75%, var(--cp-bg)));
+  --cp-text-color-3: var(--base-text-color-3, color-mix(in srgb, var(--cp-text-color-1) 55%, var(--cp-bg)));
+
+  /* Surfaces */
+  --cp-bg: var(--base-main-bg, light-dark(#ffffff, #1e293b));
+  --cp-subtle-bg: var(--base-subtle-bg, light-dark(#f1f5f9, #334155));
+  --cp-hover-bg: var(--base-hover-bg, color-mix(in srgb, var(--cp-text-color-1) 8%, transparent));
+
+  /* Borders: --cp-border-color is the quiet divider (search row, sections, footer,
+     keycaps); controls (the input, the close button) use the stronger
+     --cp-input-border-color, like every other Keenmate field. */
+  --cp-border-width: var(--base-border-width, 1px);
+  --cp-border-color: var(--base-border-color, light-dark(#e2e8f0, #334155));
+  --cp-border: var(--cp-border-width) solid var(--cp-border-color);
+
+  /* Shadow tone shared with pure-admin and the other components */
+  --cp-shadow-color: var(--base-shadow-color, light-dark(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.4)));
+
+  /* ==========================================================================
+     TYPOGRAPHY
+     ========================================================================== */
+  --cp-font-family: var(--base-font-family, inherit);
+  --cp-font-size-2xs: calc(var(--base-font-size-2xs, 1) * var(--cp-rem));
+  --cp-font-size-xs: calc(var(--base-font-size-xs, 1.2) * var(--cp-rem));
+  --cp-font-size-sm: calc(var(--base-font-size-sm, 1.4) * var(--cp-rem));
+  --cp-font-size-base: calc(var(--base-font-size-base, 1.6) * var(--cp-rem));
+  --cp-font-size-lg: calc(var(--base-font-size-lg, 1.8) * var(--cp-rem));
+  --cp-font-weight-medium: var(--base-font-weight-medium, 500);
+  --cp-font-weight-semibold: var(--base-font-weight-semibold, 600);
+
+  /* ==========================================================================
+     SPACING / RADIUS / MOTION
+     ========================================================================== */
+  --cp-space-xs: calc(var(--base-space-xs, 0.4) * var(--cp-rem));
+  --cp-space-sm: calc(var(--base-space-sm, 0.8) * var(--cp-rem));
+  --cp-space-base: calc(var(--base-space-base, 1.6) * var(--cp-rem));
+  --cp-space-xl: calc(var(--base-space-xl, 3.2) * var(--cp-rem));
+  --cp-space-2xl: calc(var(--base-space-2xl, 4.8) * var(--cp-rem));
+
+  --cp-border-radius-sm: calc(var(--base-border-radius-sm, 0.4) * var(--cp-rem));
+  --cp-border-radius-md: calc(var(--base-border-radius-md, 0.6) * var(--cp-rem));
+
+  --cp-transition-fast: var(--base-duration-fast, 0.1s);
+  --cp-transition-normal: var(--base-duration-normal, 0.15s);
+  --cp-transition-medium: var(--base-duration-medium, 0.25s);
+  --cp-easing: var(--base-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
+  --cp-easing-out: var(--base-ease-out, cubic-bezier(0, 0, 0.2, 1));
+
+  /* ==========================================================================
+     DIALOG
+     ========================================================================== */
+  /* Above every --base-z-* tier (modal 7000 … tooltip 9000): the palette is a
+     global modal that must cover open dropdowns and toasts. */
+  --cp-z-index: 10500;
+  --cp-width: calc(60.8 * var(--cp-rem));
+  --cp-results-max-height: calc(38.4 * var(--cp-rem));
+  --cp-offset-top: calc(12.8 * var(--cp-rem));
+  --cp-container-bg: var(--cp-bg);
+  --cp-container-box-shadow: 0 calc(1.6 * var(--cp-rem)) calc(4.8 * var(--cp-rem)) var(--cp-shadow-color);
+  --cp-backdrop-bg: var(--base-overlay-bg, rgba(30, 41, 59, 0.5));
+  --cp-backdrop-filter: blur(4px);
+
+  /* ==========================================================================
+     SEARCH INPUT
+     ========================================================================== */
+  --cp-input-height: calc(var(--base-input-size-lg-height, 3.8) * var(--cp-rem));
+  --cp-input-bg: var(--base-input-bg, var(--cp-bg));
+  --cp-input-color: var(--base-input-text-color, var(--cp-text-color-1));
+  --cp-input-border-color: var(--base-input-border-color, light-dark(color-mix(in srgb, var(--cp-text-color-1) 45%, var(--cp-bg)), color-mix(in srgb, var(--cp-text-color-1) 35%, var(--cp-bg))));
+  --cp-input-border: var(--base-input-border, var(--cp-border-width) solid var(--cp-input-border-color));
+  --cp-input-border-hover: var(--base-input-border-hover, var(--cp-border-width) solid var(--cp-accent-color));
+  --cp-input-border-focus: var(--base-input-border-focus, var(--cp-border-width) solid var(--cp-accent-color));
+  --cp-input-box-shadow-focus: var(--base-input-box-shadow-focus, 0 0 0 3px var(--base-input-shadow-color-focus, color-mix(in srgb, var(--cp-accent-color) 5%, transparent)));
+  --cp-input-placeholder-color: var(--base-input-placeholder-color, color-mix(in srgb, var(--cp-text-color-1) 40%, var(--cp-bg)));
+
+  /* ==========================================================================
+     RESULTS
+     ==========================================================================
+     Hover = the neutral hover overlay every Keenmate list uses; the active row
+     (the keyboard cursor, where Enter goes) = the shared highlighted tint. */
+  --cp-item-hover-bg: var(--cp-hover-bg);
+  --cp-item-active-bg: var(--base-highlighted-bg, var(--cp-accent-color-light));
+  --cp-item-active-color: var(--base-highlighted-text-color, currentColor);
+  --cp-item-icon-bg: var(--cp-accent-color-light);
+  --cp-item-icon-color: var(--cp-accent-color);
+  --cp-highlight-bg: var(--cp-accent-color-light-hover);
+  --cp-highlight-text: var(--cp-accent-color);
+  --cp-loading-veil-bg: color-mix(in srgb, var(--cp-bg) 70%, transparent);
+
+  /* Scrollbar of the results list (like web-multiselect's --ms-scrollbar-*) */
+  --cp-scrollbar-width: 8px;
+  --cp-scrollbar-track-bg: transparent;
+  --cp-scrollbar-thumb-bg: var(--cp-border-color);
+  --cp-scrollbar-thumb-bg-hover: var(--cp-text-color-2);
+  --cp-scrollbar-thumb-border-radius: var(--cp-border-radius-sm);
+
+  /* ==========================================================================
+     FOOTER KEYCAPS
+     ========================================================================== */
+  --cp-key-bg: var(--cp-subtle-bg);
+  --cp-key-text: var(--cp-text-color-1);
+  --cp-key-font-family: var(--cp-font-family);
+  --cp-key-font-size: var(--cp-font-size-xs);
+  --cp-key-font-weight: var(--cp-font-weight-semibold);
+
+  /* ==========================================================================
+     BADGES (command tokens, result badges)
+     ==========================================================================
+     The plain badge is the neutral secondary role; `badge-variant` picks a role. */
+  --cp-badge-bg: var(--base-secondary-color, #6c757d);
+  --cp-badge-color: var(--base-on-secondary-text-color, #ffffff);
+  --cp-badge-primary-bg: var(--cp-accent-color);
+  --cp-badge-primary-color: var(--cp-text-color-on-accent);
+  --cp-badge-success-bg: var(--base-success-color, #10b981);
+  --cp-badge-success-color: var(--base-on-success-text-color, #ffffff);
+  --cp-badge-warning-bg: var(--base-warning-color, #f59e0b);
+  --cp-badge-warning-color: var(--base-on-warning-text-color, #ffffff);
+  --cp-badge-danger-bg: var(--base-danger-color, #ef4444);
+  --cp-badge-danger-color: var(--base-on-danger-text-color, #ffffff);
+  --cp-badge-info-bg: var(--base-info-color, #06b6d4);
+  --cp-badge-info-color: var(--base-on-info-text-color, #ffffff);
+
+  /* ==========================================================================
+     CONFIRMATION
+     ========================================================================== */
+  --cp-confirm-min-height: calc(16 * var(--cp-rem));
+
+  /* ==========================================================================
+     ICONS — masked glyphs in currentColor; set any of these to a url(...)
+     ========================================================================== */
+  --cp-icon-close: var(--base-icon-close, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M18 6 6 18'/><path d='m6 6 12 12'/></svg>"));
+  --cp-icon-check: var(--base-icon-check, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6 9 17l-5-5'/></svg>"));
+  /* No shared base glyph exists for the favorite star. */
+  --cp-icon-star: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z'/></svg>");
+  --cp-icon-star-filled: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z'/></svg>");
+}

@@ -1,0 +1,50 @@
+/* ==============================================================================
+   ANIMATIONS — keyframes, the loading spinner, reduced motion
+   ============================================================================== */
+
+@keyframes cp-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes cp-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cp-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Logical size, so the bar drains toward the inline start in LTR and RTL alike. */
+@keyframes cp-confirm-countdown {
+  from { inline-size: 100%; }
+  to { inline-size: 0; }
+}
+
+/* The "Searching…" spinner. */
+.pa-spinner {
+  display: inline-block;
+  width: calc(1.6 * var(--cp-rem));
+  height: calc(1.6 * var(--cp-rem));
+  border: 2px solid transparent;
+  border-top-color: var(--cp-accent-color);
+  border-radius: 50%;
+  animation: cp-spin 1s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cp-confirm__progress {
+    animation: none;
+  }
+
+  .cp-confirming .pa-command-palette__container {
+    transition: none;
+  }
+}

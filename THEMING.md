@@ -2,8 +2,8 @@
 
 See **[docs/theming.md](./docs/theming.md)** (shipped with the package).
 
-In short: the palette CSS is pure-admin-core's own `_command-palette.scss`; every variable it reads
-falls back to core's default, so set `--base-*` or `--cp-*` on `:root` (or any
-ancestor) to theme it, and `--base-rem` to scale it. The machine-readable list is
+In short: every `--cp-*` knob is declared on `:host` and reads a shared `--base-*` variable with a
+fallback, so set `--base-*` on `:root` (or any ancestor) to theme it, `--cp-*` on the element to
+tune it, and `--base-rem` to scale it. The machine-readable list is
 [`component-variables.manifest.json`](./component-variables.manifest.json), kept honest by
 `npm run check:vars`.

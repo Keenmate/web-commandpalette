@@ -4,7 +4,7 @@ import { load, open, palette } from './fixtures';
 const style = (loc: ReturnType<typeof palette>['container'], prop: string) =>
   loc.evaluate((el, p) => getComputedStyle(el).getPropertyValue(p), prop);
 
-test('unthemed: core defaults apply via var() fallbacks at a 10px rem', async ({ page }) => {
+test('unthemed: the --cp-* fallbacks apply at a 10px rem', async ({ page }) => {
   await load(page);
   const p = palette(page);
   await open(page);
@@ -18,7 +18,7 @@ test('a host theme on :root pierces the shadow DOM (--base-* + --base-rem)', asy
   const p = palette(page);
   await open(page);
   expect(await style(p.container, 'max-width')).toBe(`${60.8 * 16}px`);
-  // The active row's accent-tinted context pill follows --base-accent-color.
+  // The active row's accent-tinted context pill follows --base-primary-color.
   await p.input.fill('/');
   expect(await style(p.context, 'color')).toBe('rgb(255, 0, 128)');
 });
@@ -62,4 +62,27 @@ test('themes & sizes: the size switches apply to every palette, themed ones incl
   await expect(page.locator('#theme-neon')).toHaveAttribute('size', 'lg');
   await expect(page.locator('#palette')).toHaveAttribute('size', 'lg');
   expect(await page.locator('#theme-terminal').evaluate((el) => (el as HTMLElement).style.getPropertyValue('--base-rem'))).toBe('12px');
+});
+
+test('base-css-variables 2.0: control outline, focus halo, active row and hover read the shared tokens', async ({ page }) => {
+  await load(page);
+  const p = palette(page);
+  await p.host.evaluate((el) => {
+    const s = (el as HTMLElement).style;
+    s.setProperty('--base-input-border-color', 'rgb(1, 2, 3)');
+    s.setProperty('--base-border-color', 'rgb(9, 9, 9)');
+    s.setProperty('--base-input-box-shadow-focus', 'rgb(4, 5, 6) 0px 0px 0px 3px');
+    s.setProperty('--base-highlighted-bg', 'rgb(7, 8, 9)');
+    s.setProperty('--base-hover-bg', 'rgb(10, 11, 12)');
+  });
+  await open(page);
+  // The input is a control: the stronger outline, not the divider (it holds focus
+  // while open, so read the resting border from the token it uses).
+  expect((await style(p.host, '--cp-input-border')).trim()).toBe('1px solid rgb(1, 2, 3)');
+  await expect.poll(() => style(p.input, 'box-shadow')).toBe('rgb(4, 5, 6) 0px 0px 0px 3px');
+  // The keyboard cursor row is the highlighted tint; hover is the neutral overlay.
+  await expect.poll(() => style(p.active.first(), 'background-color')).toBe('rgb(7, 8, 9)');
+  const other = p.items.nth(1);
+  await other.hover();
+  await expect.poll(() => style(other, 'background-color')).toBe('rgb(10, 11, 12)');
 });

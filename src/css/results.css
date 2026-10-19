@@ -1,0 +1,250 @@
+/* ==============================================================================
+   RESULTS — the list: home sections, rows, empty / loading states, pagination,
+   favorites, scrollbar
+   ============================================================================== */
+
+.pa-command-palette__results {
+  max-height: min(var(--cp-results-max-height), max(calc(16 * var(--cp-rem)), 100dvh - var(--cp-offset-top) - calc(12 * var(--cp-rem))));
+  overflow-y: auto;
+  padding: var(--cp-space-sm) 0;
+  position: relative;
+  /* Firefox, and Chromium 121+ (which then ignores ::-webkit-scrollbar) */
+  scrollbar-width: thin;
+  scrollbar-color: var(--cp-scrollbar-thumb-bg) var(--cp-scrollbar-track-bg);
+}
+
+.pa-command-palette__results::-webkit-scrollbar {
+  width: var(--cp-scrollbar-width);
+}
+
+.pa-command-palette__results::-webkit-scrollbar-track {
+  background: var(--cp-scrollbar-track-bg);
+}
+
+.pa-command-palette__results::-webkit-scrollbar-thumb {
+  background: var(--cp-scrollbar-thumb-bg);
+  border-radius: var(--cp-scrollbar-thumb-border-radius);
+}
+
+.pa-command-palette__results::-webkit-scrollbar-thumb:hover {
+  background: var(--cp-scrollbar-thumb-bg-hover);
+}
+
+/* A refresh while results are already shown: veil them instead of clearing. */
+.pa-command-palette__results--loading::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: var(--cp-loading-veil-bg);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* --------------------------------------------------------------------------
+   Home (empty query): Favorites / Recent / … sections
+   -------------------------------------------------------------------------- */
+.pa-command-palette__home {
+  padding: var(--cp-space-sm) 0;
+}
+
+.pa-command-palette__home-section:not(:first-child) {
+  border-top: var(--cp-border);
+  margin-top: var(--cp-space-xs);
+  padding-top: var(--cp-space-xs);
+}
+
+.pa-command-palette__home-heading {
+  padding: var(--cp-space-xs) var(--cp-space-sm);
+  font-size: var(--cp-font-size-2xs);
+  font-weight: var(--cp-font-weight-semibold);
+  color: var(--cp-text-color-2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Capped sections: heading text + "+N · Ctrl F" at the end. */
+.cp-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5em;
+}
+
+.cp-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-transform: none;
+  letter-spacing: normal;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.cp-more:hover {
+  opacity: 1;
+  color: var(--cp-accent-color);
+}
+
+/* --------------------------------------------------------------------------
+   Empty / loading
+   -------------------------------------------------------------------------- */
+.pa-command-palette__empty {
+  padding: var(--cp-space-2xl) var(--cp-space-sm);
+  text-align: center;
+  color: var(--cp-text-color-2);
+  font-size: var(--cp-font-size-sm);
+}
+
+.pa-command-palette__loader {
+  padding: var(--cp-space-2xl) var(--cp-space-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cp-space-sm);
+  color: var(--cp-text-color-2);
+  font-size: var(--cp-font-size-sm);
+}
+
+/* --------------------------------------------------------------------------
+   Rows
+   -------------------------------------------------------------------------- */
+.pa-command-palette__item {
+  padding: var(--cp-space-sm);
+  cursor: pointer;
+  transition: background-color var(--cp-transition-fast) var(--cp-easing);
+  display: flex;
+  align-items: center;
+  gap: var(--cp-space-sm);
+}
+
+.pa-command-palette__item:hover {
+  background-color: var(--cp-item-hover-bg);
+}
+
+/* The keyboard cursor (where Enter goes). */
+.pa-command-palette__item--active {
+  background-color: var(--cp-item-active-bg);
+  color: var(--cp-item-active-color);
+}
+
+.pa-command-palette__item-icon {
+  flex-shrink: 0;
+  width: calc(3.2 * var(--cp-rem));
+  height: calc(3.2 * var(--cp-rem));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--cp-item-icon-bg);
+  color: var(--cp-item-icon-color);
+  border-radius: var(--cp-border-radius-sm);
+  font-size: var(--cp-font-size-sm);
+}
+
+.pa-command-palette__item-icon svg {
+  width: calc(1.8 * var(--cp-rem));
+  height: calc(1.8 * var(--cp-rem));
+}
+
+.pa-command-palette__item-icon .pa-icon {
+  --cp-icon-size: calc(1.8 * var(--cp-rem));
+}
+
+/* Icon-font glyphs (<i class="…">) */
+.pa-command-palette__item-icon i {
+  font-size: var(--cp-font-size-lg);
+  line-height: 1;
+}
+
+.pa-command-palette__item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.pa-command-palette__item-title {
+  font-size: var(--cp-font-size-sm);
+  font-weight: var(--cp-font-weight-medium);
+  color: var(--cp-text-color-1);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The matched part of the query. */
+.pa-command-palette__item-title mark {
+  background-color: var(--cp-highlight-bg);
+  color: var(--cp-highlight-text);
+  font-weight: var(--cp-font-weight-semibold);
+  padding: 0 2px;
+  border-radius: var(--cp-border-radius-sm);
+}
+
+.pa-command-palette__item-meta {
+  font-size: var(--cp-font-size-xs);
+  color: var(--cp-text-color-2);
+  margin: 0;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pa-command-palette__shortcut {
+  display: flex;
+  align-items: center;
+  gap: var(--cp-space-xs);
+  flex-shrink: 0;
+}
+
+/* Favorite star: faint on hover / active rows, solid accent when starred. */
+.cp-star {
+  flex-shrink: 0;
+  margin-inline-start: 0.4em;
+  padding: 0 0.2em;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 1.1em;
+  line-height: 0;
+  color: var(--cp-text-color-3);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.pa-command-palette__item:hover .cp-star,
+.pa-command-palette__item--active .cp-star,
+.cp-star:focus-visible {
+  opacity: 0.6;
+}
+
+.cp-star--on,
+.pa-command-palette__item:hover .cp-star--on,
+.pa-command-palette__item--active .cp-star--on {
+  color: var(--cp-accent-color);
+  opacity: 1;
+}
+
+.cp-star:hover {
+  opacity: 1;
+}
+
+/* Touch has no hover: keep stars visible. */
+@media (hover: none) {
+  .cp-star {
+    opacity: 0.5;
+  }
+}
+
+/* "Page 2 of 5" under paged results. */
+.pa-command-palette__pagination {
+  padding: var(--cp-space-xs) var(--cp-space-sm);
+  text-align: center;
+  font-size: var(--cp-font-size-xs);
+  color: var(--cp-text-color-2);
+  border-top: var(--cp-border);
+}

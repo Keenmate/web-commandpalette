@@ -36,15 +36,10 @@ Single tests: `npx vitest run test/unit/palette.test.ts`, `npx vitest run -t "co
 
 ## The CSS pipeline
 
-`src/css/main.scss` `@use`s core's partials straight out of `node_modules/@keenmate/pure-admin-core`.
-`scripts/shadow-css.mjs` compiles it with Sass (a Vite plugin — Vite's own Sass importer rejects the
-bare `@import`s inside core because of package `exports`) and adapts the output to the shadow root:
-fallback-less `var(--x)` reads get core's defaults as fallbacks, and `rem` becomes
-`calc(N * var(--base-rem, 10px))`. The build fails if a `--pa-*` / `--pc-*` variable survives the
-adapter. `npm run check:vars` (`kmwc check-vars`, `consumed` mode) validates the manifest against
-the built bundle, so it runs after `vite build`.
-
-To pick up a new core palette: bump `@keenmate/pure-admin-core`, rebuild, run `check:vars`.
+Plain CSS in `src/css/`, no preprocessor: `main.css` `@import`s the files into the `variables`,
+`component` and `overrides` layers, and `web-component.ts` imports `main.css?inline`, which Vite
+inlines into the bundle. `npm run check:vars` (`kmwc check-vars`, `consumed` mode) validates the
+manifest against the built bundle, so it runs after `vite build`.
 
 ## Examples site image
 

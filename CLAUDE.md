@@ -105,19 +105,15 @@ those rules are the example. Controls sit in `.controls` and are saved with
 
 ### CSS pipeline (non-obvious)
 
-`src/css/main.scss` `@use`s pure-admin-core's partials by relative path into `node_modules`
-(never copied). `scripts/shadow-css.mjs` compiles it with plain Sass through a Vite plugin
-(`shadowCssPlugin`) — Vite's own Sass importer can't be used because it applies package `exports`
-to bare `@import`s inside core. The PostCSS step then (1) injects core's theme defaults as
-`var()` **fallbacks** rather than declarations, so a host theme on `:root` is never shadowed, and
-(2) rewrites `Nrem` → `calc(N * var(--base-rem, 10px))` because pure-admin assumes a 10px root.
-It also (3) maps scale font sizes to `--base-font-size-*`, and (4) enforces the component's own
-namespace: core's `--pa-command-palette-*` / `--pa-icon-*` become `--cp-*` (`--_cp-*` = private),
-every other `--pc-*` / `--pa-*` read is replaced by its `--base-*` fallback, and the navbar
-search-pill rules are dropped. **The shipped CSS reads only `--cp-*` and `--base-*`** — never add
-a `--pa-*` / `--pc-*` read in `src/css`; icons are `--cp-icon-*` → `--base-icon-*` → inline SVG.
-The plugin fails the build if a `--pa-*` / `--pc-*` variable survives, and `kmwc check-vars`
-reads the built bundle.
+Plain CSS, multiselect-style: `src/css/main.css` imports the files into three layers —
+`variables` (`variables.css`: every `--cp-*` knob on `:host`, each `var(--base-*, <fallback>)`),
+`component` (base, dialog, search, results, footer, badges, confirm, animations) and `overrides`
+(`dark-mode.css`: only `color-scheme` from framework classes / `[data-theme]`). `web-component.ts`
+imports `main.css?inline`. **The CSS reads only `--cp-*` and `--base-*`** (2.0 names) — never a
+`--pa-*` / `--pc-*`. Sizes are `calc(<n> * var(--cp-rem))`; fallbacks are `light-dark()` pairs.
+Never declare a `--base-*` on `:host` (it would shadow the page's theme). Class names stay
+`pa-command-palette__*` (the markup is pure-admin's palette markup). `kmwc check-vars --strict`
+validates the manifest against the built bundle.
 
 ## Invariants that are easy to break
 

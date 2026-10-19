@@ -1,35 +1,38 @@
 # Theming
 
-The palette's CSS **is** pure-admin-core's `_command-palette.scss`, compiled into the shadow root
-(plus core's badge and spinner primitives). It is never copied: a rebuild re-pulls core's partial.
+The palette ships its own plain CSS (`src/css/*.css`, the same layout as web-multiselect),
+inlined into the shadow root.
 
 ## Two namespaces: `--cp-*` and `--base-*`
 
-The component is independent: it reads **only** its own `--cp-*` knobs and the shared Keenmate
-`--base-*` variables. Core's rules read pure-admin's layers (`--pc-*`, `--pa-*`); at build time
-(`scripts/shadow-css.mjs`) the palette's own `--pa-command-palette-*` knobs are renamed to `--cp-*`,
-and every other pure-admin read is resolved to its `--base-*` fallback:
+The component reads **only** its own `--cp-*` knobs and the shared Keenmate `--base-*` variables
+(`@keenmate/base-css-variables` 2.0). Every `--cp-*` knob is declared on `:host` and reads a
+`--base-*` token, with an inline fallback for a page without one:
 
 ```css
-/* core:      background-color: var(--pa-modal-content-bg);                */
-/* compiled:  background-color: var(--base-main-bg, #ffffff);               */
-/* core:      background: var(--pa-command-palette-item-active-bg);         */
-/* compiled:  background-color: var(--cp-item-active-bg, rgba(14, 165, 233, 0.1)); */
+:host {
+  --cp-accent-color: var(--base-primary-color, #0ea5e9);
+  --cp-item-active-bg: var(--base-highlighted-bg, var(--cp-accent-color-light));
+}
 ```
 
-Nothing is *declared* inside the component, so:
+So:
 
-- **a pure-admin page** themes the palette through the `--base-*` variables it already defines;
-- **any page** can theme it through `--base-*`, or the `--cp-*` knobs, on `:root`, any ancestor or
-  the element itself;
-- **an unthemed page** gets core's light defaults.
+- **a pure-admin page** (or any page loading `base-variables.css`) themes the palette through the
+  `--base-*` variables it already defines, on `:root` or any ancestor;
+- **a `--cp-*` override** goes on the element itself, or a rule that matches it:
+  `web-command-palette { --cp-width: 680px; }` (a `--cp-*` set only on an ancestor is shadowed by
+  the `:host` default);
+- **an unthemed page** gets the Corporate look, light or dark (the fallbacks are `light-dark()`
+  pairs, following the page's `color-scheme`).
 
 (`--_cp-*` names are private plumbing — don't set them.)
 
 ## Sizing: `--base-rem`
 
-pure-admin sizes everything in 10px rems. Inside a shadow root `rem` would resolve against the
-host page's root (often 16px), so every `Nrem` is compiled to `calc(N * var(--base-rem, 10px))`.
+Every size is `calc(<multiplier> * var(--cp-rem))`, and `--cp-rem` is `var(--base-rem, 10px)`.
+pure-admin sizes everything in 10px rems; a plain `rem` inside the shadow root would resolve
+against the host page's root (often 16px).
 
 | Host | Set |
 |---|---|
@@ -81,7 +84,7 @@ the default `--base-rem`).
 
 The full list of `--base-*` variables the palette reads is in
 [`component-variables.manifest.json`](../component-variables.manifest.json) (validated against the
-compiled CSS by `npm run check:vars`).
+built bundle by `npm run check:vars`).
 
 ## Example: dark
 
@@ -89,12 +92,12 @@ compiled CSS by `npm run check:vars`).
 html.dark {
   --base-main-bg: #1e1e2e;
   --base-input-bg: #181825;
-  --base-input-color: #cdd6f4;
+  --base-input-text-color: #cdd6f4;
   --base-text-color-1: #cdd6f4;
   --base-text-color-2: #a6adc8;
   --base-border-color: #313244;
   --base-subtle-bg: #313244;
-  --base-accent-color: #cba6f7;
+  --base-primary-color: #cba6f7;
   --cp-item-active-bg: rgba(203, 166, 247, 0.15);
 }
 ```

@@ -49,7 +49,7 @@ import {
   type SelectEventDetail,
   type StepOptionsCallback,
 } from './types';
-import styles from './css/main.scss?inline';
+import styles from './css/main.css?inline';
 
 const isPlainObject = (v: unknown): v is Record<string, string> => typeof v === 'object' && v !== null && !Array.isArray(v);
 

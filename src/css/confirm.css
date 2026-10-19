@@ -1,0 +1,81 @@
+/* ==============================================================================
+   CONFIRMATION — for `confirmation-duration` ms after a command ran, the dialog
+   collapses to one line (✓, what ran, "Done", a countdown bar) instead of vanishing
+   ============================================================================== */
+
+.cp-confirming .pa-command-palette__fullscreen-bar,
+.cp-confirming .pa-command-palette__search,
+.cp-confirming .pa-command-palette__results,
+.cp-confirming .pa-command-palette__footer {
+  display: none;
+}
+
+/* The dialog keeps a minimum height and the element animates the shrink to it
+   (inline `height`, see #showConfirmation), so the collapse never snaps. */
+.cp-confirming .pa-command-palette__container {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: height var(--cp-transition-medium) var(--cp-easing);
+}
+
+.cp-confirm {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: flex-start;
+  gap: calc(1 * var(--cp-rem));
+  min-block-size: var(--cp-confirm-min-height);
+  padding: var(--cp-space-sm) calc(2.4 * var(--cp-rem));
+  overflow: hidden;
+  color: var(--cp-text-color-1);
+  font-size: var(--cp-font-size-base);
+  cursor: pointer;
+  outline: none;
+}
+
+.cp-confirm[hidden] {
+  display: none;
+}
+
+/* A plain ✓ in the accent color, sized to the text (a mask: `color` paints it). */
+.cp-confirm__check {
+  inline-size: 1.1em;
+  block-size: 1.1em;
+  color: var(--cp-accent-color);
+}
+
+.cp-confirm__body {
+  flex: 0 1 auto;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cp-confirm__command,
+.cp-confirm__prompt {
+  color: var(--cp-text-color-2);
+}
+
+.cp-confirm__answer {
+  font-weight: var(--cp-font-weight-semibold);
+}
+
+/* Same font, size and baseline as the sentence, just muted. */
+.cp-confirm__title {
+  flex-shrink: 0;
+  color: var(--cp-text-color-2);
+}
+
+.cp-confirm__progress {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-end: 0;
+  block-size: 2px;
+  inline-size: 100%;
+  background: var(--cp-accent-color);
+  opacity: 0.4;
+  animation: cp-confirm-countdown linear forwards;
+}

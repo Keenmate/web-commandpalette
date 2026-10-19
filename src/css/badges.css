@@ -1,0 +1,51 @@
+/* ==============================================================================
+   BADGES — command tokens in the input and result badges (`badge` /
+   `badge-variant` on an item). The plain badge is the neutral secondary role.
+   ============================================================================== */
+
+.pa-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cp-space-xs);
+  padding: var(--cp-space-xs) var(--cp-space-sm);
+  background-color: var(--cp-badge-bg);
+  color: var(--cp-badge-color);
+  font-size: var(--cp-font-size-xs);
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: var(--cp-border-radius-md);
+  border: var(--cp-border-width) solid transparent;
+  transition: background-color var(--cp-transition-fast) var(--cp-easing-out), color var(--cp-transition-fast) var(--cp-easing-out);
+}
+
+.pa-badge--secondary {
+  background-color: var(--cp-badge-bg);
+  color: var(--cp-badge-color);
+}
+
+.pa-badge--primary {
+  background-color: var(--cp-badge-primary-bg);
+  color: var(--cp-badge-primary-color);
+}
+
+.pa-badge--success {
+  background-color: var(--cp-badge-success-bg);
+  color: var(--cp-badge-success-color);
+}
+
+.pa-badge--warning {
+  background-color: var(--cp-badge-warning-bg);
+  color: var(--cp-badge-warning-color);
+}
+
+.pa-badge--danger {
+  background-color: var(--cp-badge-danger-bg);
+  color: var(--cp-badge-danger-color);
+}
+
+.pa-badge--info {
+  background-color: var(--cp-badge-info-bg);
+  color: var(--cp-badge-info-color);
+}

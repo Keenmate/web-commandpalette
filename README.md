@@ -14,7 +14,7 @@ React, Blazor, Phoenix LiveView) stay thin adapters instead of re-implementing t
 
 Reads the shared `--base-*` variables from the page (pure-admin, or
 [`@keenmate/theme-designer`](https://theme-designer.keenmate.dev)), with its own `--cp-*` knobs on
-top; the CSS is pure-admin-core's palette, compiled into the shadow root.
+top; the CSS is the component's own (plain CSS in the shadow root).
 
 **Headline features:**
 
@@ -38,7 +38,7 @@ top; the CSS is pure-admin-core's palette, compiled into the shadow root.
 
 - **A confirmation instead of a vanishing dialog** — When a command runs, the dialog used to disappear at once, which left users unsure anything had happened. It now shrinks, with an animation, to a one-line summary like ✓ `/deploy to Staging branch main` Done for `confirmation-duration` ms (default 1500). The `cp-complete` / `cp-command` event still fires immediately. Turn it off with `confirmation="false"`, or replace or skip it per run with `renderConfirmationCallback`.
 
-- **Theming on the shared `--base-*` variables, plus its own `--cp-*` knobs** — The CSS is pure-admin-core's palette, compiled into the shadow root. It reads only the shared `--base-*` variables and the component's `--cp-*` knobs, and the build fails if a `--pa-*` / `--pc-*` read slips through. Font sizes follow `--base-font-size-*` and the font follows `--base-font-family`. Sizing scales with `--base-rem` and `size="sm|lg|xl"`. Icons (check, close, star) and the results scrollbar can be themed through `--cp-icon-*` and `--cp-scrollbar-*`. Shadow parts expose `palette`, `container`, `input`, `results` and `footer`. The examples site has a theme gallery with seven styles and size switches.
+- **Theming on the shared `--base-*` variables, plus its own `--cp-*` knobs** — The CSS is the component's own plain CSS, inlined into the shadow root. It reads only the shared `--base-*` variables (`@keenmate/base-css-variables` 2.0) and the component's `--cp-*` knobs. Font sizes follow `--base-font-size-*` and the font follows `--base-font-family`. Sizing scales with `--base-rem` and `size="sm|lg|xl"`. Icons (check, close, star) and the results scrollbar can be themed through `--cp-icon-*` and `--cp-scrollbar-*`. Shadow parts expose `palette`, `container`, `input`, `results` and `footer`. The examples site has a theme gallery with seven styles and size switches.
 
 - **RTL, i18n and a phone sheet** — `dir="rtl"` on the element or any ancestor mirrors the layout, which uses logical CSS throughout. It also swaps ←/→ paging and isolates mixed-direction text, so `/deploy …` keeps its order inside Hebrew or Arabic UI. Every visible and announced string comes from the `labels` map. On touch phones, `mobile-presentation="auto"` turns the dialog into a fullscreen sheet that stays above the on-screen keyboard.
 
@@ -156,9 +156,8 @@ Details — single tests, the CSS pipeline, publishing, the example-site image �
 | Service | `src/keyboard.ts`, `src/filter.ts`, `src/icons.ts` | global hotkeys + input key map, filtering, icon rendering |
 | Side | `src/types.ts`, `src/logger.ts`, `src/css/` | public types, logging, shadow-root CSS |
 
-The palette CSS is pure-admin-core's `_command-palette.scss`, compiled by
-`scripts/shadow-css.mjs` into the shadow root and adapted to read only `--cp-*` and `--base-*`
-(never forked — a rebuild re-pulls core).
+The palette CSS is plain CSS in `src/css/` (`main.css` imports the layers: variables → component →
+overrides), inlined into the shadow root. It reads only `--cp-*` and `--base-*`.
 
 ## License
 

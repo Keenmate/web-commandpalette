@@ -457,6 +457,11 @@ against core; this component becomes the new reference, so it MUST agree with th
 
 ### CSS — genuine single-source from core (do NOT fork)
 
+> **Superseded (2026-10-19).** pure-admin's own palette is being removed in favour of this
+> component, so the component now **owns** its CSS: plain CSS in `src/css/` (web-multiselect
+> layout), `--cp-*` knobs on `:host` reading the `@keenmate/base-css-variables` 2.0 tokens. The
+> core devDependency and the Sass / PostCSS adapter are gone. The notes below are the original plan.
+
 - Create `src/css/main.scss` that compiles **core's own partial**:
   ```scss
   @import '@keenmate/pure-admin-core/src/scss/variables/index';

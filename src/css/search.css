@@ -1,0 +1,99 @@
+/* ==============================================================================
+   SEARCH — the input row: command tokens, the input, the scope pill
+   ============================================================================== */
+
+.pa-command-palette__search {
+  position: relative;
+  border-bottom: var(--cp-border);
+  padding: var(--cp-space-sm);
+}
+
+.pa-command-palette__tokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cp-space-xs);
+  align-items: center;
+  margin-bottom: var(--cp-space-sm);
+}
+
+.pa-command-palette__tokens:empty {
+  display: none;
+  margin-bottom: 0;
+}
+
+.pa-command-palette__tokens .pa-badge {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+}
+
+.pa-command-palette__tokens .pa-badge__remove {
+  margin-inline-start: var(--cp-space-xs);
+  padding: 0 var(--cp-space-xs);
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1.2em;
+  line-height: 1;
+  opacity: 0.7;
+  transition: opacity var(--cp-transition-fast) var(--cp-easing);
+}
+
+.pa-command-palette__tokens .pa-badge__remove:hover {
+  opacity: 1;
+}
+
+.pa-command-palette__token-prompt {
+  font-size: var(--cp-font-size-xs);
+  color: var(--cp-text-color-2);
+  font-style: italic;
+}
+
+.pa-command-palette__input-wrapper {
+  position: relative;
+}
+
+.pa-command-palette__input {
+  width: 100%;
+  height: var(--cp-input-height);
+  padding: var(--cp-space-sm);
+  font-size: var(--cp-font-size-base);
+  border: var(--cp-input-border);
+  border-radius: var(--cp-border-radius-md);
+  background-color: var(--cp-input-bg);
+  color: var(--cp-input-color);
+  outline: none;
+  transition: border-color var(--cp-transition-fast) var(--cp-easing-out), box-shadow var(--cp-transition-fast) var(--cp-easing-out);
+}
+
+.pa-command-palette__input:focus {
+  border: var(--cp-input-border-focus);
+  box-shadow: var(--cp-input-box-shadow-focus);
+}
+
+/* The placeholder color is already the faint text level — no extra opacity. */
+.pa-command-palette__input::placeholder {
+  color: var(--cp-input-placeholder-color);
+  opacity: 1;
+}
+
+/* The scope pill (": Users") at the input's inline end. */
+.pa-command-palette__context {
+  position: absolute;
+  inset-inline-end: var(--cp-space-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--cp-font-size-xs);
+  color: var(--cp-accent-color);
+  font-weight: var(--cp-font-weight-medium);
+  padding: var(--cp-space-xs) var(--cp-space-sm);
+  background-color: var(--cp-accent-color-light);
+  border-radius: var(--cp-border-radius-sm);
+  opacity: 0;
+  transition: opacity var(--cp-transition-fast) var(--cp-easing);
+}
+
+.pa-command-palette__context--visible {
+  opacity: 1;
+}
