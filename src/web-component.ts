@@ -78,9 +78,9 @@ const INPUTS: readonly InputDef[] = [
     description: 'Upsert one favorite/recent entry (by `entry.key`) — called on every use and every star toggle when `loadUsageCallback` is set.' },
 
   // ── Attributes ───────────────────────────────────────────────────────────
-  { configKey: 'display', attribute: 'display', converter: toEnum(['inline', 'tokens'] as const, { default: 'inline' }), reflect: true, on: 'update',
+  { configKey: 'display', attribute: 'display', converter: toEnum(['inline', 'tokens'] as const, { default: 'inline' }), shouldReflect: true, on: 'update',
     description: 'Wizard display: `inline` keeps the accumulated sentence in the input (`/assign iPad to `, prefix locked); `tokens` shows prior answers as removable badges above an empty input.' },
-  { configKey: 'size', attribute: 'size', converter: toEnum(['sm', 'lg', 'xl'] as const, { shouldNullOnInvalid: true }), reflect: true, on: 'update',
+  { configKey: 'size', attribute: 'size', converter: toEnum(['sm', 'lg', 'xl'] as const, { shouldNullOnInvalid: true }), shouldReflect: true, on: 'update',
     description: 'Width/height preset (`sm` | `lg` | `xl`). Unset = default. For arbitrary sizes set `--cp-width` / `--cp-results-max-height`.' },
   { configKey: 'pageSize', attribute: 'page-size', converter: toInt({ min: 1, default: 8 }), on: 'update',
     description: 'Search results per page (←/→ to page). Default 8.' },
@@ -92,7 +92,7 @@ const INPUTS: readonly InputDef[] = [
     description: 'After a wizard completes or an instant command runs, collapse the dialog to one line for `confirmation-duration` ms showing what ran (✓ `/deploy to Staging branch main` · Done) instead of vanishing. The effect event still fires immediately; `cp-close` follows when it goes. Any key or click dismisses it. `confirmation="false"` turns it off.' },
   { configKey: 'confirmationDuration', attribute: 'confirmation-duration', converter: toInt({ min: 0, default: 1500 }), on: 'none',
     description: 'How long the confirmation stays (ms). Default 1500; `0` turns it off.' },
-  { configKey: 'usageStorage', attribute: 'usage-storage', converter: toEnum(['local', 'none'] as const, { default: 'local' }), reflect: true, on: 'update',
+  { configKey: 'usageStorage', attribute: 'usage-storage', converter: toEnum(['local', 'none'] as const, { default: 'local' }), shouldReflect: true, on: 'update',
     description: 'Favorites + recents. `local` (default) keeps them in `localStorage` under `usage-key` — or in the host, via `loadUsageCallback` / `saveUsageCallback`, when those are set; `none` turns stars and the Favorites/Recent sections off.' },
   { configKey: 'usageKey', attribute: 'usage-key', converter: toText({ default: 'web-commandpalette:usage' }), on: 'update',
     description: '`localStorage` key for favorites/recents. Put the user id in it (`cp:usage:42`) so users sharing a browser never see each other’s.' },
@@ -110,7 +110,7 @@ const INPUTS: readonly InputDef[] = [
     description: "`g <letter>` sequence that opens the palette on the favorites list from anywhere (while closed, not typing). Default `g f`; `''` disables. A command with the same `hotkey` wins." },
   { configKey: 'recentHotkey', attribute: 'recent-hotkey', converter: toText({ isNullable: true }), on: 'none',
     description: '`g <letter>` sequence that opens the palette on the recent list. Off by default (e.g. `g h`).' },
-  { configKey: 'mobilePresentation', attribute: 'mobile-presentation', converter: toEnum(['auto', 'floating', 'fullscreen'] as const, { default: 'auto' }), reflect: true, on: 'update',
+  { configKey: 'mobilePresentation', attribute: 'mobile-presentation', converter: toEnum(['auto', 'floating', 'fullscreen'] as const, { default: 'auto' }), shouldReflect: true, on: 'update',
     description: '`auto` (default) opens a fullscreen sheet on touch phones and the floating dialog elsewhere (a narrow desktop window stays floating); `floating` / `fullscreen` force one.' },
 
   // ── Reserved bridge hooks (wired by @keenmate/keen-web-commandpalette) ─────
@@ -402,7 +402,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents> {
     });
     input.addEventListener('compositionend', () => this.#machine.setInput(input.value));
     input.addEventListener('keydown', (e) => {
-      if (handleInputKeydown(e, this.#machine, input, this.#keys(), this.isRTL)) this.log.INTERACTION.trace('key', e.key);
+      if (handleInputKeydown(e, this.#machine, input, this.#keys(), this.isRtl)) this.log.INTERACTION.trace('key', e.key);
     });
 
     // Keep focus in the input while clicking rows/tokens.
@@ -509,7 +509,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents> {
 
   protected override disconnect(): void {
     this.close();
-    this.#overlay?.dispose();
+    this.#overlay?.destroy();
     this.#overlay = null;
     connected.delete(this);
     if (keyOwner === this) {

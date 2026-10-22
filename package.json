@@ -91,7 +91,7 @@
   },
   "devDependencies": {
     "@custom-elements-manifest/analyzer": "^0.11.0",
-    "@keenmate/web-components-core": "1.0.0-rc12",
+    "@keenmate/web-components-core": "file:../web-components-core",
     "@keenmate/web-components-devkit": "^1.0.0-rc01",
     "@playwright/test": "^1.60.0",
     "custom-element-jet-brains-integration": "^1.7.0",
