@@ -1,29 +1,36 @@
 /* ==============================================================================
-   DARK MODE — framework class + per-instance signal handling
+   DARK MODE — page signal + per-instance override (same as web-multiselect)
    ==============================================================================
-   Sets `color-scheme` on the host when the page signals dark / light through a
-   framework class or a per-instance attribute. Every --cp-* fallback in
-   variables.css is a `light-dark()` pair, so flipping `color-scheme` picks the
-   right branch without touching any --base-* value (overriding --base-* on
-   :host would shadow the page's theme). Same pattern as web-multiselect.
+   Every `--cp-*` color fallback in variables.css is a `light-dark(<light>, <dark>)`
+   pair, so this file only flips `color-scheme` on the host and the right branch
+   resolves. It never redeclares `--cp-*` / `--base-*` values — that would shadow
+   the page's own `--base-*` theme inside the shadow root.
 
-   Signals:
-     Framework theme class on an ancestor: [data-theme], [data-bs-theme], .dark / .light
-     Per-instance attribute on the host:   [data-theme="dark" | "light"] (wins)
+   Signals, lowest → highest:
+     - No signal: the host inherits the page's `color-scheme` (no rule here).
+       There is deliberately NO `prefers-color-scheme` rule, so the component
+       always matches the page. A page that wants to follow the OS declares
+       `html { color-scheme: light dark }` once; every component follows it, live.
+     - Page / theme-source signal: `data-theme`, `data-bs-theme`, `.dark` /
+       `.light` on <html> then <body>, the element named by `theme-source`, or
+       `setThemeMode()`. Detected once per page by @keenmate/web-components-core
+       (re-detected when those attributes / classes change) and mirrored onto
+       the host as `data-context-theme`. Replaces `:host-context()`, which
+       Firefox doesn't support and Safari only partly.
+     - Per-instance attribute on the host: `<web-command-palette data-theme="dark|light">`.
+       Declared last, so it wins.
    ============================================================================== */
 
-:host-context([data-theme="dark"]),
-:host-context([data-bs-theme="dark"]),
-:host-context(.dark) {
+/* Page / theme-source signal */
+:host([data-context-theme="dark"]) {
   color-scheme: dark;
 }
 
-:host-context([data-theme="light"]),
-:host-context([data-bs-theme="light"]),
-:host-context(.light) {
+:host([data-context-theme="light"]) {
   color-scheme: light;
 }
 
+/* Per-instance attribute — declared last, wins */
 :host([data-theme="dark"]) {
   color-scheme: dark;
 }
