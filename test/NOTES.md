@@ -65,3 +65,21 @@ then lies: it says open while the palette is closed); `el.setAttribute('open', '
 **Suggested fix:** an `isOpen`/`open` input (`toBool`, `on: 'none'`) whose setter
 calls `open()` / `close()`, guarded against the reflection loop; or stop reflecting
 and document `open` as read-only state.
+
+## 5. `page-size` changed while open doesn't re-page the current results
+
+**Where:** `src/web-component.ts` `update()` → `'pageSize' in partial` →
+`this.#engine.refresh()`; `PaletteEngine.refresh()` (`src/palette.ts`) only rebuilds
+the idle home screen and the `/` / `:` lists — not global search, context search or
+a step's options.
+
+**Symptom:** open, search "many" (20 hits, "Page 1 of 3"), set `page-size="10"` —
+the list stays at 8 per page / "Page 1 of 3" until the next keystroke. The input is
+declared `on: 'update'`, so the change is meant to be live.
+
+**Repro:** `e2e/attributes.spec.ts` "page-size changed while open re-pages the
+current results" — `test.fail(true, 'NOTES.md #5')`.
+
+**Suggested fix:** on a `pageSize` change, re-slice the current full result list
+(the engine keeps all results for client-side paging) and clamp the page index,
+e.g. a `pageSizeChanged()` engine method alongside `displayChanged()`.

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>e2e fixture — groups</title>
+</head>
+<body>
+  <input id="outside" placeholder="outside input">
+  <web-command-palette id="palette"></web-command-palette>
+
+  <script type="module">
+    import { setupStandard, ready } from './fixture-common.js';
+    const el = setupStandard('groups');
+    // Results interleave groups; ungrouped rows keep their (bucket) place.
+    el.searchCallback = ({ term }) => [
+      { id: 'a', title: `${term} doc A`, group: 'Docs' },
+      { id: 'b', title: `${term} person B`, group: 'People' },
+      { id: 'c', title: `${term} doc C`, group: 'Docs' },
+      { id: 'd', title: `${term} loose D` },
+      { id: 'e', title: `${term} person E`, group: 'People' },
+    ];
+    ready();
+  </script>
+</body>
+</html>

@@ -50,9 +50,9 @@ Known bugs are in `test/NOTES.md`.
 | Esc / Backspace step back | ✓ | `keyboard.spec.ts` | `keyboard.html` |
 | Mode-aware footer hints | ✓ | `keyboard.spec.ts` | `keyboard.html` |
 | Tab selects like Enter | ✓ | `keyboard.spec.ts` | `keyboard.html` |
-| `open-key` remap / `''` disables | ✗ | | |
-| `favorite-key` / `favorites-key` / `recent-key` remap | △ | `usage.spec.ts` (`favorites-key=""` only) | `usage.html` |
-| `favorites-hotkey` / `recent-hotkey` sequences | △ | `usage.spec.ts` (`g f` only) | `usage.html` |
+| `open-key` remap / `''` disables | ✓ | `hotkeys.spec.ts` | `hotkeys.html` |
+| `favorite-key` / `favorites-key` / `recent-key` remap | ✓ | `hotkeys.spec.ts`, `usage.spec.ts` | `hotkeys.html`, `usage.html` |
+| `favorites-hotkey` / `recent-hotkey` sequences (+ `''`, command shortcut wins) | ✓ | `hotkeys.spec.ts`, `usage.spec.ts` | `hotkeys.html`, `usage.html` |
 
 ## 4. Search
 
@@ -67,7 +67,7 @@ Known bugs are in `test/NOTES.md`.
 | Rejecting / throwing provider → usable palette (CP-2: no error UI) | ✓ | `search-async.spec.ts` | `search-async.html` |
 | Loader / `results--loading` while pending | ✓ | `search-async.spec.ts` | `search-async.html` |
 | `search-debounce` (0 vs 500, superseded during debounce) | ✓ | `search-async.spec.ts` | `search-async.html` |
-| Per-context `searchCallback` / per-step `getOptionsCallback` override | △ | `usage.spec.ts` (step-level picker) | `usage.html` |
+| Per-context `searchCallback` / per-step `getOptionsCallback` override | ✓ | `providers.spec.ts` | `providers.html` |
 | Aliases (`/d `, `:p `) | △ | `wizard.spec.ts`, `keyboard.spec.ts` | |
 
 ## 5. Wizard (command steps)
@@ -88,8 +88,8 @@ Known bugs are in `test/NOTES.md`.
 | Any key dismisses; Ctrl+K opens fresh | ✓ | `confirmation.spec.ts` | `confirmation.html` |
 | `confirmation="false"` | ✓ | `confirmation.spec.ts` | `confirmation.html` |
 | `renderConfirmationCallback` custom / `false` | ✓ | `confirmation.spec.ts` | `confirmation.html` |
-| `confirmation-duration="0"` | ✗ | | |
-| Select confirmation with custom render | ✗ | | |
+| `confirmation-duration` (`0` + custom) | ✓ | `confirmation.spec.ts` | `confirmation.html` |
+| Select: none by default, custom render when the callback returns content | ✓ | `confirmation.spec.ts` | `confirmation.html` |
 
 ## 7. Favorites / recents (usage)
 
@@ -100,9 +100,9 @@ Known bugs are in `test/NOTES.md`.
 | Ctrl+D / star toggle favorites | ✓ | `usage.spec.ts` | `usage.html` |
 | `usage-storage="none"` | ✓ | `usage.spec.ts` | `usage.html` |
 | Ctrl+F / Ctrl+R full lists | ✓ | `usage.spec.ts` | `usage.html` |
-| `favorites-limit` / `recent-limit` | ✗ | | |
-| `usage-key` isolation + live switch | ✗ | | |
-| `loadUsageCallback` / `saveUsageCallback` (CP-3) | ✗ | | |
+| `favorites-limit` / `recent-limit` (`1` → "+N", `0` hides) | ✓ | `usage-limits.spec.ts` | `usage-limits.html` |
+| `usage-key` isolation + live switch | ✓ | `usage-limits.spec.ts` | `usage-limits.html` |
+| `loadUsageCallback` (async) / `saveUsageCallback({ entry })`; save-without-load (CP-3, current behaviour) | ✓ | `usage-host.spec.ts` | `usage-host.html` |
 
 ## 8. Interaction model (core `/actions`)
 
@@ -117,12 +117,12 @@ Known bugs are in `test/NOTES.md`.
 | Feature | Status | Spec | Fixture |
 | --- | :-: | --- | --- |
 | `size` presets | ✓ | `theming.spec.ts` | `theming.html` |
-| `page-size` (+ live change) | ✗ | | |
-| Attribute removal resets to default | ✗ | | |
-| `labels` (custom + live reassignment) | ✗ | | |
-| Command `group` headings | ✗ | | |
-| Multiple instances: hotkey ownership + hand-over | ✗ | | |
-| DOM move while open closes cleanly (D1 / CP-1) | ✗ | | |
+| `page-size` (+ live change: NOTES #5, `test.fail`) | △ | `attributes.spec.ts` | `attributes.html` |
+| Attribute removal resets to default (`page-size`, `display`, `size`, `usage-storage`) | ✓ | `attributes.spec.ts` | `attributes.html` |
+| `labels` (custom, English fallback, live reassignment) | ✓ | `labels.spec.ts` | `labels.html` |
+| Result `group` headings (first-appearance order) | ✓ | `groups.spec.ts` | `groups.html` |
+| Multiple instances: hotkey ownership + hand-over | ✓ | `multi-instance.spec.ts` | `multi-instance.html` |
+| DOM move while open closes cleanly (D1 / CP-1); no rebuild | ✓ | `lifecycle.spec.ts` | `lifecycle.html` |
 | Logging silent by default | ✗ | | |
 
 ## 10. Presentation / theming / RTL

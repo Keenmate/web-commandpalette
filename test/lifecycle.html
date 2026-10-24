@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>e2e fixture — lifecycle (DOM move)</title>
+</head>
+<body>
+  <input id="outside" placeholder="outside input">
+  <div id="slot-a"><web-command-palette id="palette" confirmation="false"></web-command-palette></div>
+  <div id="slot-b"></div>
+
+  <script type="module">
+    import { setupStandard, ready } from './fixture-common.js';
+    const el = setupStandard('lifecycle');
+    // Move the palette to the other slot (a reorder / re-parent: disconnect → connect).
+    window.move = () => {
+      const target = el.parentElement.id === 'slot-a' ? 'slot-b' : 'slot-a';
+      document.getElementById(target).appendChild(el);
+    };
+    ready();
+  </script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>e2e fixture — providers</title>
+</head>
+<body>
+  <input id="outside" placeholder="outside input">
+  <web-command-palette id="palette"></web-command-palette>
+
+  <script type="module">
+    import { setupStandard, ready } from './fixture-common.js';
+    const el = setupStandard('providers');
+    // The element-level providers (setupStandard) + per-context / per-step overrides.
+    window.own = { search: [], options: [] };
+    el.contexts = [
+      ...el.contexts,
+      { id: 'tickets', trigger: ':tickets', text: 'Tickets', searchCallback: ({ scope, term }) => {
+        window.own.search.push({ scope, term });
+        return [{ id: 't1', title: `Ticket ${term}` }];
+      } },
+    ];
+    el.commands = [
+      ...el.commands,
+      { id: 'assign', trigger: '/assign', text: 'Assign', steps: [
+        { id: 'who', getOptionsCallback: ({ commandId, stepId, term }) => {
+          window.own.options.push({ commandId, stepId, term });
+          return [{ text: 'Own option 1' }, { text: 'Own option 2' }];
+        } },
+        { id: 'branch', prompt: ' on ', isLiveSearch: true },
+      ] },
+    ];
+    ready();
+  </script>
+</body>
+</html>

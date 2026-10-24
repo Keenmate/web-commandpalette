@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>e2e fixture — usage-host</title>
+</head>
+<body>
+  <input id="outside" placeholder="outside input">
+  <web-command-palette id="palette" confirmation="false"></web-command-palette>
+
+  <script type="module">
+    import { setupStandard, ready } from './fixture-common.js';
+    const el = setupStandard('usage-host');
+    // Host persistence: an async load (50 ms) and an upsert log. Seeded from window.seed.
+    window.saved = [];
+    window.loads = 0;
+    window.useHost = (seed = []) => {
+      el.saveUsageCallback = ({ entry }) => { window.saved.push(JSON.parse(JSON.stringify(entry))); };
+      el.loadUsageCallback = () => { window.loads++; return new Promise((r) => setTimeout(() => r(seed), 50)); };
+    };
+    ready();
+  </script>
+</body>
+</html>

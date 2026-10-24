@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>e2e fixture — multiple instances</title>
+</head>
+<body>
+  <web-command-palette id="first" confirmation="false"></web-command-palette>
+  <web-command-palette id="second" confirmation="false"></web-command-palette>
+
+  <script type="module">
+    import { recordEvents, ready } from './fixture-common.js';
+    for (const id of ['first', 'second']) {
+      const el = document.getElementById(id);
+      recordEvents(el, 'multi');
+      el.commands = [{ id: `${id}-cmd`, trigger: `/${id}`, shortcut: 'g x', text: `${id} command` }];
+    }
+    ready();
+  </script>
+</body>
+</html>

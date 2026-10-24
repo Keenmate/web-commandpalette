@@ -72,3 +72,42 @@ test('renderConfirmationCallback: custom content, or false to skip', async ({ pa
   await page.keyboard.press('Enter');
   await expect(p.root).not.toHaveClass(/--active/, { timeout: 300 });
 });
+
+test('confirmation-duration="0" closes right away; a custom duration holds the line that long', async ({ page }) => {
+  const p = palette(page);
+  await p.host.evaluate((el) => el.setAttribute('confirmation-duration', '0'));
+  await open(page);
+  await page.keyboard.type('/reload');
+  await page.keyboard.press('Enter');
+  await expect(p.root).not.toHaveClass(/--active/, { timeout: 300 });
+  await expect(panel(page)).toBeHidden();
+
+  await p.host.evaluate((el) => el.setAttribute('confirmation-duration', '400'));
+  await open(page);
+  await page.keyboard.type('/reload');
+  await page.keyboard.press('Enter');
+  await expect(panel(page)).toBeVisible();
+  await expect(p.root).not.toHaveClass(/--active/, { timeout: 1500 });
+});
+
+test('a search-result select gets no confirmation by default, a custom one when the callback returns content', async ({ page }) => {
+  const p = palette(page);
+  await open(page);
+  await p.input.fill('ipad');
+  await expect(p.titles.first()).toHaveText('Global ipad 0');
+  await page.keyboard.press('Enter');
+  await expect(p.root).not.toHaveClass(/--active/, { timeout: 300 });
+
+  await p.host.evaluate((el) => {
+    (el as unknown as { renderConfirmationCallback: unknown }).renderConfirmationCallback = (ctx: { type: string; sentence: string; item?: { id: string } }) =>
+      ctx.type === 'select' ? `<span class="custom-select">Opened ${ctx.sentence} (${ctx.item?.id})</span>` : null;
+  });
+  await open(page);
+  await p.input.fill('ipad');
+  await expect(p.titles.first()).toHaveText('Global ipad 0');
+  await page.keyboard.press('Enter');
+  await expect(panel(page).locator('.custom-select')).toHaveText('Opened Global ipad 0 (Global-0)');
+  const names = (await events(page)).map((e) => e.name);
+  expect(names.filter((n) => n === 'select')).toHaveLength(2);
+  await expect(p.root).not.toHaveClass(/--active/, { timeout: 3000 });
+});
