@@ -34,11 +34,11 @@ Known bugs are in `test/NOTES.md`.
 | Feature | Status | Spec | Fixture |
 | --- | :-: | --- | --- |
 | `openWith(query)` | ✓ | `basic.spec.ts` | `basic.html` |
-| `open` / `close` / `toggle` / `isOpen`, one event each | ✗ | | |
-| `reset()` returns home while open | ✗ | | |
-| `openFavorites()` / `openRecent()` | ✗ | | |
-| `commands` / `contexts` reassignment + `setCommands` / `setContexts` while open | ✗ | | |
-| `<web-command-palette open>` attribute (CP-4) | ✗ | | |
+| `open` / `close` / `toggle` / `isOpen`, one event each; focus restored | ✓ | `api.spec.ts` | `api.html` |
+| `reset()` returns home while open | ✓ | `api.spec.ts` | `api.html` |
+| `openFavorites()` / `openRecent()` | ✓ | `api.spec.ts` | `api.html` |
+| `commands` / `contexts` reassignment + `setCommands` / `setContexts` while open | ✓ | `api.spec.ts` | `api.html` |
+| `open` attribute opens/closes (CP-4, `test.fail`) | ✗ | `api.spec.ts` | `api.html` |
 | `el.controller` facade, ctx `controller` / `element` | ✓ | `interaction-model.spec.ts` | `interaction-model.html` |
 
 ## 3. Keyboard
@@ -63,10 +63,10 @@ Known bugs are in `test/NOTES.md`.
 | Global search: local matches with no `searchCallback` | ✓ | `search.spec.ts` | `search.html` |
 | Global search: local first, then provider hits (debounced) | ✓ | `search.spec.ts` | `search.html` |
 | List modes filter client-side | ✓ | `search.spec.ts` | `search.html` |
-| Race: superseded request aborted, late result dropped | ✗ | | |
-| Rejecting provider → usable palette (CP-2) | ✗ | | |
-| Loader / `results--loading` while pending | ✗ | | |
-| `search-debounce` | ✗ | | |
+| Race: superseded request aborted, late result dropped; close aborts | ✓ | `search-async.spec.ts` | `search-async.html` |
+| Rejecting / throwing provider → usable palette (CP-2: no error UI) | ✓ | `search-async.spec.ts` | `search-async.html` |
+| Loader / `results--loading` while pending | ✓ | `search-async.spec.ts` | `search-async.html` |
+| `search-debounce` (0 vs 500, superseded during debounce) | ✓ | `search-async.spec.ts` | `search-async.html` |
 | Per-context `searchCallback` / per-step `getOptionsCallback` override | △ | `usage.spec.ts` (step-level picker) | `usage.html` |
 | Aliases (`/d `, `:p `) | △ | `wizard.spec.ts`, `keyboard.spec.ts` | |
 

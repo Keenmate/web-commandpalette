@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>e2e fixture — async search</title>
+</head>
+<body>
+  <web-command-palette id="palette"></web-command-palette>
+
+  <script type="module">
+    import { commands, contexts, recordEvents, ready } from './fixture-common.js';
+    const el = document.getElementById('palette');
+    recordEvents(el, 'search-async');
+    el.commands = commands();
+    el.contexts = contexts();
+
+    // Test knobs: per-term latency (ms, default 20), terms that reject / throw.
+    window.delays = {};
+    window.rejectTerms = [];
+    window.throwTerms = [];
+    // Every provider call: { term, scope, at } + its AbortSignal by call index.
+    window.calls = [];
+    window.signals = [];
+    el.searchCallback = ({ scope, term, signal }) => {
+      window.calls.push({ term, scope, at: performance.now() });
+      window.signals.push(signal);
+      if (window.throwTerms.includes(term)) throw new Error(`sync failure for ${term}`);
+      const ms = window.delays[term] ?? 20;
+      return new Promise((resolve, reject) => setTimeout(() => {
+        if (window.rejectTerms.includes(term)) reject(new Error(`provider failed for ${term}`));
+        else resolve([0, 1].map((i) => ({ id: `${term}-${i}`, title: `${term} hit ${i}` })));
+      }, ms));
+    };
+    ready();
+  </script>
+</body>
+</html>
