@@ -57,7 +57,7 @@
 .pa-command-palette__input {
   width: 100%;
   height: var(--cp-input-height);
-  padding: var(--cp-space-sm);
+  padding: 0 var(--cp-input-padding-h);
   font-size: var(--cp-font-size-base);
   border: var(--cp-input-border);
   border-radius: var(--cp-border-radius-md);

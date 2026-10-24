@@ -64,6 +64,8 @@
         --base-primary-color: #bb0a30;
         --base-border-radius-md: 0.2;
         --base-border-radius-sm: 0.1;
+        --base-main-bg: #ffffff;
+        --base-input-bg: #ffffff;
         --base-text-color-1: #1a1a1a;
         --base-text-color-2: #6b6b6b;
         --base-border-color: #d9d9d9;
@@ -111,9 +113,12 @@
         --base-border-radius-sm: 0;
         --base-primary-color: #000000;
         --base-on-primary-text-color: #ffffff;
+        --base-main-bg: #ffffff;
+        --base-input-bg: #ffffff;
         --base-text-color-1: #000000;
         --base-text-color-2: #000000;
         --base-border-color: #000000;
+        --base-input-border-color: #000000;
         --cp-item-active-bg: #ffeb3b;
         --cp-item-hover-bg: #fff59d;
         --cp-highlight-bg: #000000;
@@ -202,7 +207,7 @@
     </p>
     <p>
         The rules here are scoped to one instance (<code>#theme-neon</code>). <code>--base-*</code> rules work on
-        <code>:root</code> or any ancestor too, and theme every palette on the page; <code>--cp-*</code> knobs are declared on
+        <code>:root</code> too, and theme every palette on the page; <code>--cp-*</code> knobs are declared on
         the element, so set those on the element itself. Anything you don't set falls back to the Corporate default.
     </p>
     <p>

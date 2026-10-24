@@ -15,7 +15,7 @@
   text-align: center;
   white-space: nowrap;
   vertical-align: baseline;
-  border-radius: var(--cp-border-radius-md);
+  border-radius: var(--cp-badge-border-radius);
   border: var(--cp-border-width) solid transparent;
   transition: background-color var(--cp-transition-fast) var(--cp-easing-out), color var(--cp-transition-fast) var(--cp-easing-out);
 }

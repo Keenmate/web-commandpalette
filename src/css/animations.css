@@ -40,7 +40,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cp-confirm__progress {
+  .cp-confirm__progress,
+  .pa-command-palette__backdrop,
+  .pa-command-palette__container {
     animation: none;
   }
 

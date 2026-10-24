@@ -12,14 +12,18 @@ The component reads **only** its own `--cp-*` knobs and the shared Keenmate `--b
 ```css
 :host {
   --cp-accent-color: var(--base-primary-color, #0ea5e9);
-  --cp-item-active-bg: var(--base-highlighted-bg, var(--cp-accent-color-light));
+  --cp-item-active-outline: var(--base-focused-outline, 1px solid var(--cp-accent-color));
 }
 ```
 
 So:
 
 - **a pure-admin page** (or any page loading `base-variables.css`) themes the palette through the
-  `--base-*` variables it already defines, on `:root` or any ancestor;
+  `--base-*` variables it already defines. Set them on `:root`. On an ancestor, only the *input*
+  tokens (`--base-primary-color`, `--base-main-bg`, `--base-text-color-1`, …) take effect there;
+  the *derived* ones (tints, hover, borders, the focus halo) are calculated where they are declared
+  — `:root`, `[data-theme]` or `.base-scope` — so put a re-themed subtree on a
+  `class="base-scope"` (or `data-theme`) element to have them recalculate;
 - **a `--cp-*` override** goes on the element itself, or a rule that matches it:
   `web-command-palette { --cp-width: 680px; }` (a `--cp-*` set only on an ancestor is shadowed by
   the `:host` default);
@@ -42,14 +46,13 @@ against the host page's root (often 16px).
 ## Font sizes: `--base-font-size-*`
 
 Every font size sits on the shared type scale — unitless multipliers of `--base-rem`, the same
-contract web-multiselect uses. Core compiles its scale to plain numbers, so the build maps each
-step back to its variable: `calc(var(--base-font-size-sm, 1.4) * var(--base-rem, 10px))`.
+contract web-multiselect uses: `calc(var(--base-font-size-sm, 1.4) * var(--cp-rem))`.
 
 | Variable (default) | Used for |
 |---|---|
-| `--base-font-size-base` (1.6) | The search input and its placeholder |
+| `--base-font-size-base` (1.6) | The search input and its placeholder, the confirmation line |
 | `--base-font-size-sm` (1.4) | Row titles, empty / loading text |
-| `--base-font-size-xs` (1.2) | Meta lines, keycaps, footer hints, the context pill |
+| `--base-font-size-xs` (1.2) | Meta lines, keycaps, footer hints, the context pill, badges, token prompt, pagination |
 | `--base-font-size-2xs` (1) | Section headings |
 | `--base-font-size-lg` (1.8) | Icon-font glyphs (`<i>`) in the row icon box |
 
@@ -61,7 +64,7 @@ reads it).
 
 The palette uses `--base-font-family` if set, else the page's font — the input and buttons
 included (form controls don't inherit fonts on their own, so the component tells them to).
-Keycaps keep a system UI stack by default; `--cp-key-font-family` changes them.
+Keycaps use the same font by default; `--cp-key-font-family` changes them.
 
 ## Palette knobs
 
@@ -88,6 +91,8 @@ built bundle by `npm run check:vars`).
 
 ## Example: dark
 
+`--base-*` goes on `:root` / a theme scope; `--cp-*` knobs go on the element:
+
 ```css
 html.dark {
   --base-main-bg: #1e1e2e;
@@ -98,7 +103,9 @@ html.dark {
   --base-border-color: #313244;
   --base-subtle-bg: #313244;
   --base-primary-color: #cba6f7;
-  --cp-item-active-bg: rgba(203, 166, 247, 0.15);
+}
+html.dark web-command-palette {
+  --cp-item-active-bg: rgba(203, 166, 247, 0.15); /* add a fill under the cursor outline */
 }
 ```
 
@@ -110,10 +117,16 @@ chains to the shared `--base-icon-*` glyph where one exists, then to an inline L
 
 | Variable | Glyph | Chain |
 |---|---|---|
-| `--cp-icon-close` | ✕ token remove, fullscreen close | → `--base-icon-close` → Lucide `x` |
+| `--cp-icon-close` | ✕ fullscreen close | → `--base-icon-close` → Lucide `x` |
+| `--cp-icon-remove` | ✕ take a command token out | → `--base-icon-remove` → `--cp-icon-close` |
 | `--cp-icon-check` | ✓ confirmation | → `--base-icon-check` → Lucide `check` |
 | `--cp-icon-star` / `--cp-icon-star-filled` | ☆ / ★ favorite toggle | → Lucide `star` (outline / filled) |
-| `--cp-icon-size` | size of the masked glyphs | default `1em` |
+| `--cp-icon-<name>` | an item `icon: '<name>'` | → `--base-icon-<name>` (search, settings, user, bell, edit, delete, add, copy, save, …) |
+| `--cp-icon-size` | size of a masked glyph | default `1em` (row icons are 1.8 × `--cp-rem`) |
+
+An item icon given by **name** draws the shared `--base-icon-<name>` glyph; a name outside the
+contract draws nothing (icon-font classes can't reach inside the shadow root — pass an inline
+`<svg>` or an emoji instead).
 
 ```css
 web-command-palette {

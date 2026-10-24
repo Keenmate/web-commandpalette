@@ -215,7 +215,7 @@ function tokensHtml(tokens: TokenView[] | null, labels: Labels): string {
           return (
             `<span class="pa-badge"><bdi>${escapeHtml(t.label)}</bdi>` +
             `<button type="button" class="pa-badge__remove" data-token="${t.index}" aria-label="${escapeHtml(labels.removeToken.replace('{name}', t.label))}">` +
-            `<span class="pa-icon pa-icon--x" aria-hidden="true"></span></button></span>`
+            `<span class="pa-icon pa-icon--remove" aria-hidden="true"></span></button></span>`
           );
       }
     })

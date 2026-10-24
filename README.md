@@ -123,12 +123,18 @@ events and `--cp-*` CSS variables — generated from the component's source on e
 
 ## Browser support
 
-Modern evergreen browsers with native `customElements`, Shadow DOM, CSS `color-mix()` and
-dynamic viewport units:
+Modern evergreen browsers with native `customElements`, Shadow DOM, CSS `color-mix()`,
+`light-dark()` and dynamic viewport units (the `@keenmate/base-css-variables` themes also use
+relative color syntax):
 
-- Chrome / Edge 111+
-- Firefox 113+
-- Safari 16.2+
+- Chrome / Edge 123+
+- Firefox 128+
+- Safari 17.5+
+
+Dark mode follows the page signal (`.dark`, `[data-theme]`, `[data-bs-theme]` on `<html>` / `<body>`,
+or a `theme-source` element), detected by `@keenmate/web-components-core` and mirrored onto the host
+as `data-context-theme`, so it works in every engine. To follow the OS, declare
+`html { color-scheme: light dark }` on the page.
 
 No polyfills are shipped.
 

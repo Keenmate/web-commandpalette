@@ -45,6 +45,7 @@
   width: 100%;
   max-width: var(--cp-width);
   background-color: var(--cp-container-bg);
+  color: var(--cp-text-color-1);
   border-radius: var(--cp-border-radius-md);
   box-shadow: var(--cp-container-box-shadow);
   animation: cp-slide-down var(--cp-transition-normal) var(--cp-easing);
@@ -61,9 +62,7 @@
     max-width: calc(100% - var(--cp-space-xl));
   }
 
-  .pa-command-palette__results {
-    max-height: 60vh;
-  }
+  /* The results cap lives in results.css (it must come after the base max-height). */
 }
 
 /* --------------------------------------------------------------------------

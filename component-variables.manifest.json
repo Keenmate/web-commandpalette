@@ -12,12 +12,12 @@
     {
       "name": "base-border-radius-md",
       "required": false,
-      "usage": "Container corner radius (unitless multiplier of the rem unit)"
+      "usage": "Corner radius of the container, search input, close button and badges (unitless multiplier of the rem unit)"
     },
     {
       "name": "base-border-radius-sm",
       "required": false,
-      "usage": "Row / keycap / badge corner radius (unitless multiplier of the rem unit)"
+      "usage": "Small corner radius: scope pill, row icon box, query highlight, keycaps, scrollbar thumb (unitless multiplier of the rem unit)"
     },
     {
       "name": "base-border-width",
@@ -53,6 +53,21 @@
       "name": "base-ease-standard",
       "required": false,
       "usage": "Easing of the animations"
+    },
+    {
+      "name": "base-focused-bg",
+      "required": false,
+      "usage": "Active row (the keyboard cursor) background — the shared focused item state (default transparent)"
+    },
+    {
+      "name": "base-focused-outline",
+      "required": false,
+      "usage": "Active row outline, drawn inset"
+    },
+    {
+      "name": "base-focused-text-color",
+      "required": false,
+      "usage": "Active row title color (default unchanged)"
     },
     {
       "name": "base-font-family",
@@ -95,29 +110,154 @@
       "usage": "Headings, query highlight, keycaps"
     },
     {
-      "name": "base-highlighted-bg",
-      "required": false,
-      "usage": "Active row (the keyboard cursor) background — the shared item-state tint"
-    },
-    {
-      "name": "base-highlighted-text-color",
-      "required": false,
-      "usage": "Active row text"
-    },
-    {
       "name": "base-hover-bg",
       "required": false,
       "usage": "Row hover (the neutral hover overlay)"
     },
     {
+      "name": "base-icon-add",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('add'); override with --cp-icon-add"
+    },
+    {
+      "name": "base-icon-bell",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('bell'); override with --cp-icon-bell"
+    },
+    {
+      "name": "base-icon-caret-down",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('caret-down'); override with --cp-icon-caret-down"
+    },
+    {
+      "name": "base-icon-caret-up",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('caret-up'); override with --cp-icon-caret-up"
+    },
+    {
       "name": "base-icon-check",
       "required": false,
-      "usage": "✓ glyph (chained by --cp-icon-check)"
+      "usage": "✓ glyph: the confirmation, `check` icon name (chained by --cp-icon-check)"
+    },
+    {
+      "name": "base-icon-chevron",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('chevron'); override with --cp-icon-chevron"
+    },
+    {
+      "name": "base-icon-clear",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('clear'); override with --cp-icon-clear"
     },
     {
       "name": "base-icon-close",
       "required": false,
-      "usage": "✕ glyph (chained by --cp-icon-close)"
+      "usage": "✕ glyph: fullscreen close button, `close` / `x` icon names (chained by --cp-icon-close)"
+    },
+    {
+      "name": "base-icon-collapse",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('collapse'); override with --cp-icon-collapse"
+    },
+    {
+      "name": "base-icon-copy",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('copy'); override with --cp-icon-copy"
+    },
+    {
+      "name": "base-icon-danger",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('danger'); override with --cp-icon-danger"
+    },
+    {
+      "name": "base-icon-delete",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('delete'); override with --cp-icon-delete"
+    },
+    {
+      "name": "base-icon-download",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('download'); override with --cp-icon-download"
+    },
+    {
+      "name": "base-icon-edit",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('edit'); override with --cp-icon-edit"
+    },
+    {
+      "name": "base-icon-ellipsis",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('ellipsis'); override with --cp-icon-ellipsis"
+    },
+    {
+      "name": "base-icon-expand",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('expand'); override with --cp-icon-expand"
+    },
+    {
+      "name": "base-icon-external-link",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('external-link'); override with --cp-icon-external-link"
+    },
+    {
+      "name": "base-icon-filter",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('filter'); override with --cp-icon-filter"
+    },
+    {
+      "name": "base-icon-indeterminate",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('indeterminate'); override with --cp-icon-indeterminate"
+    },
+    {
+      "name": "base-icon-info",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('info'); override with --cp-icon-info"
+    },
+    {
+      "name": "base-icon-link",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('link'); override with --cp-icon-link"
+    },
+    {
+      "name": "base-icon-refresh",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('refresh'); override with --cp-icon-refresh"
+    },
+    {
+      "name": "base-icon-remove",
+      "required": false,
+      "usage": "✕ on a command token (take it out; chained by --cp-icon-remove)"
+    },
+    {
+      "name": "base-icon-save",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('save'); override with --cp-icon-save"
+    },
+    {
+      "name": "base-icon-search",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('search'); override with --cp-icon-search"
+    },
+    {
+      "name": "base-icon-settings",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('settings'); override with --cp-icon-settings"
+    },
+    {
+      "name": "base-icon-success",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('success'); override with --cp-icon-success"
+    },
+    {
+      "name": "base-icon-user",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('user'); override with --cp-icon-user"
+    },
+    {
+      "name": "base-icon-warning",
+      "required": false,
+      "usage": "Glyph for an item icon given by name ('warning'); override with --cp-icon-warning"
     },
     {
       "name": "base-info-color",
@@ -210,6 +350,11 @@
       "usage": "Text on the warning badge"
     },
     {
+      "name": "base-outline-width",
+      "required": false,
+      "usage": "Width of the active-row outline (its inset offset follows it)"
+    },
+    {
       "name": "base-overlay-bg",
       "required": false,
       "usage": "Backdrop scrim"
@@ -226,7 +371,7 @@
     },
     {
       "name": "base-primary-color",
-      "required": true,
+      "required": false,
       "usage": "Accent: focus border, scope pill, row icons, query highlight, primary badge, spinner, star, ✓ and countdown"
     },
     {
@@ -298,12 +443,17 @@
       "name": "base-warning-color",
       "required": false,
       "usage": "warning badge background"
+    },
+    {
+      "name": "base-z-popover",
+      "required": false,
+      "usage": "Stacking: the palette sits one step above popovers"
     }
   ],
   "componentVariables": [
     {
       "name": "cp-accent-color",
-      "usage": "Accent of this palette (default --base-primary-color)"
+      "usage": "Solid accent (focus border fallback, scope pill text, row icons, star, spinner); the tints follow --base-primary-bg-subtle"
     },
     {
       "name": "cp-accent-color-light",
@@ -324,6 +474,10 @@
     {
       "name": "cp-badge-bg",
       "usage": "Plain / secondary badge background"
+    },
+    {
+      "name": "cp-badge-border-radius",
+      "usage": "Badge corner radius"
     },
     {
       "name": "cp-badge-color",
@@ -458,16 +612,112 @@
       "usage": "Neutral hover overlay"
     },
     {
+      "name": "cp-icon-add",
+      "usage": "Glyph for the 'add' item icon name (default --base-icon-add)"
+    },
+    {
+      "name": "cp-icon-bell",
+      "usage": "Glyph for the 'bell' item icon name (default --base-icon-bell)"
+    },
+    {
+      "name": "cp-icon-caret-down",
+      "usage": "Glyph for the 'caret-down' item icon name (default --base-icon-caret-down)"
+    },
+    {
+      "name": "cp-icon-caret-up",
+      "usage": "Glyph for the 'caret-up' item icon name (default --base-icon-caret-up)"
+    },
+    {
       "name": "cp-icon-check",
       "usage": "✓ glyph of the confirmation. Falls back to --base-icon-check, then an inline Lucide SVG"
+    },
+    {
+      "name": "cp-icon-chevron",
+      "usage": "Glyph for the 'chevron' item icon name (default --base-icon-chevron)"
+    },
+    {
+      "name": "cp-icon-clear",
+      "usage": "Glyph for the 'clear' item icon name (default --base-icon-clear)"
     },
     {
       "name": "cp-icon-close",
       "usage": "✕ glyph (token remove, fullscreen close): any url(...). Falls back to --base-icon-close, then an inline Lucide SVG"
     },
     {
+      "name": "cp-icon-collapse",
+      "usage": "Glyph for the 'collapse' item icon name (default --base-icon-collapse)"
+    },
+    {
+      "name": "cp-icon-copy",
+      "usage": "Glyph for the 'copy' item icon name (default --base-icon-copy)"
+    },
+    {
+      "name": "cp-icon-danger",
+      "usage": "Glyph for the 'danger' item icon name (default --base-icon-danger)"
+    },
+    {
+      "name": "cp-icon-delete",
+      "usage": "Glyph for the 'delete' item icon name (default --base-icon-delete)"
+    },
+    {
+      "name": "cp-icon-download",
+      "usage": "Glyph for the 'download' item icon name (default --base-icon-download)"
+    },
+    {
+      "name": "cp-icon-edit",
+      "usage": "Glyph for the 'edit' item icon name (default --base-icon-edit)"
+    },
+    {
+      "name": "cp-icon-ellipsis",
+      "usage": "Glyph for the 'ellipsis' item icon name (default --base-icon-ellipsis)"
+    },
+    {
+      "name": "cp-icon-expand",
+      "usage": "Glyph for the 'expand' item icon name (default --base-icon-expand)"
+    },
+    {
+      "name": "cp-icon-external-link",
+      "usage": "Glyph for the 'external-link' item icon name (default --base-icon-external-link)"
+    },
+    {
+      "name": "cp-icon-filter",
+      "usage": "Glyph for the 'filter' item icon name (default --base-icon-filter)"
+    },
+    {
+      "name": "cp-icon-indeterminate",
+      "usage": "Glyph for the 'indeterminate' item icon name (default --base-icon-indeterminate)"
+    },
+    {
+      "name": "cp-icon-info",
+      "usage": "Glyph for the 'info' item icon name (default --base-icon-info)"
+    },
+    {
+      "name": "cp-icon-link",
+      "usage": "Glyph for the 'link' item icon name (default --base-icon-link)"
+    },
+    {
+      "name": "cp-icon-refresh",
+      "usage": "Glyph for the 'refresh' item icon name (default --base-icon-refresh)"
+    },
+    {
+      "name": "cp-icon-remove",
+      "usage": "✕ on a command token (default --base-icon-remove)"
+    },
+    {
+      "name": "cp-icon-save",
+      "usage": "Glyph for the 'save' item icon name (default --base-icon-save)"
+    },
+    {
+      "name": "cp-icon-search",
+      "usage": "Glyph for the 'search' item icon name (default --base-icon-search)"
+    },
+    {
+      "name": "cp-icon-settings",
+      "usage": "Glyph for the 'settings' item icon name (default --base-icon-settings)"
+    },
+    {
       "name": "cp-icon-size",
-      "usage": "Size of the masked glyphs (default 1em)"
+      "usage": "Size of a masked icon (default 1em; row icons are 1.8 × --cp-rem)"
     },
     {
       "name": "cp-icon-star",
@@ -476,6 +726,18 @@
     {
       "name": "cp-icon-star-filled",
       "usage": "★ glyph (favorite toggle, starred). Inline Lucide SVG fallback"
+    },
+    {
+      "name": "cp-icon-success",
+      "usage": "Glyph for the 'success' item icon name (default --base-icon-success)"
+    },
+    {
+      "name": "cp-icon-user",
+      "usage": "Glyph for the 'user' item icon name (default --base-icon-user)"
+    },
+    {
+      "name": "cp-icon-warning",
+      "usage": "Glyph for the 'warning' item icon name (default --base-icon-warning)"
     },
     {
       "name": "cp-input-bg",
@@ -487,7 +749,7 @@
     },
     {
       "name": "cp-input-border-color",
-      "usage": "Search input outline color"
+      "usage": "Search input outline color when no --base-input-border is defined (a theme sets that shorthand)"
     },
     {
       "name": "cp-input-border-focus",
@@ -510,6 +772,10 @@
       "usage": "Search input / close-button height"
     },
     {
+      "name": "cp-input-padding-h",
+      "usage": "Search input inline padding (no vertical padding: the height centres the text)"
+    },
+    {
       "name": "cp-input-placeholder-color",
       "usage": "Placeholder color"
     },
@@ -519,7 +785,11 @@
     },
     {
       "name": "cp-item-active-color",
-      "usage": "Active row text"
+      "usage": "Active row title color (--base-focused-text-color)"
+    },
+    {
+      "name": "cp-item-active-outline",
+      "usage": "Active row outline (--base-focused-outline), drawn inset"
     },
     {
       "name": "cp-item-hover-bg",
@@ -539,7 +809,7 @@
     },
     {
       "name": "cp-key-font-family",
-      "usage": "Keycap font (default: a system UI stack, independent of --base-font-family)"
+      "usage": "Footer keycap font (default the palette font, --cp-font-family)"
     },
     {
       "name": "cp-key-font-size",
@@ -562,6 +832,10 @@
       "usage": "Distance of the floating dialog from the top of the viewport"
     },
     {
+      "name": "cp-outline-width",
+      "usage": "Outline width (--base-outline-width)"
+    },
+    {
       "name": "cp-rem",
       "usage": "Size unit of this palette only (default var(--base-rem, 10px))"
     },
@@ -579,7 +853,7 @@
     },
     {
       "name": "cp-scrollbar-thumb-border-radius",
-      "usage": "Results scrollbar thumb radius (WebKit). Default 4px"
+      "usage": "Results scrollbar thumb radius (default --cp-border-radius-sm)"
     },
     {
       "name": "cp-scrollbar-track-bg",
@@ -651,7 +925,7 @@
     },
     {
       "name": "cp-z-index",
-      "usage": "Stacking of the overlay (default 10500, above every --base-z-* tier)"
+      "usage": "Stacking of the overlay: one step above --base-z-popover (10500 without the base layer)"
     }
   ]
 }

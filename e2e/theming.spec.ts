@@ -64,7 +64,7 @@ test('themes & sizes: the size switches apply to every palette, themed ones incl
   expect(await page.locator('#theme-terminal').evaluate((el) => (el as HTMLElement).style.getPropertyValue('--base-rem'))).toBe('12px');
 });
 
-test('base-css-variables 2.0: control outline, focus halo, active row and hover read the shared tokens', async ({ page }) => {
+test('base-css-variables 2.0: control outline, focus halo, focused cursor row and hover read the shared tokens', async ({ page }) => {
   await load(page);
   const p = palette(page);
   await p.host.evaluate((el) => {
@@ -72,7 +72,8 @@ test('base-css-variables 2.0: control outline, focus halo, active row and hover 
     s.setProperty('--base-input-border-color', 'rgb(1, 2, 3)');
     s.setProperty('--base-border-color', 'rgb(9, 9, 9)');
     s.setProperty('--base-input-box-shadow-focus', 'rgb(4, 5, 6) 0px 0px 0px 3px');
-    s.setProperty('--base-highlighted-bg', 'rgb(7, 8, 9)');
+    s.setProperty('--base-focused-outline', '2px solid rgb(7, 8, 9)');
+    s.setProperty('--base-outline-width', '2px');
     s.setProperty('--base-hover-bg', 'rgb(10, 11, 12)');
   });
   await open(page);
@@ -80,9 +81,31 @@ test('base-css-variables 2.0: control outline, focus halo, active row and hover 
   // while open, so read the resting border from the token it uses).
   expect((await style(p.host, '--cp-input-border')).trim()).toBe('1px solid rgb(1, 2, 3)');
   await expect.poll(() => style(p.input, 'box-shadow')).toBe('rgb(4, 5, 6) 0px 0px 0px 3px');
-  // The keyboard cursor row is the highlighted tint; hover is the neutral overlay.
-  await expect.poll(() => style(p.active.first(), 'background-color')).toBe('rgb(7, 8, 9)');
+  // The keyboard cursor row is the FOCUSED item state: no fill, an inset outline.
+  const active = p.active.first();
+  await expect.poll(() => style(active, 'background-color')).toBe('rgba(0, 0, 0, 0)');
+  expect(await style(active, 'outline')).toBe('rgb(7, 8, 9) solid 2px');
+  expect(await style(active, 'outline-offset')).toBe('-2px');
+  // Hover is the neutral overlay — on another row, and under the outline on the cursor row.
   const other = p.items.nth(1);
   await other.hover();
   await expect.poll(() => style(other, 'background-color')).toBe('rgb(10, 11, 12)');
+  await active.hover();
+  await expect.poll(() => style(active, 'background-color')).toBe('rgb(10, 11, 12)');
+  expect(await style(active, 'outline')).toBe('rgb(7, 8, 9) solid 2px');
+});
+
+test('item icons by name draw the shared --base-icon-* glyph; unknown names draw nothing', async ({ page }) => {
+  await load(page);
+  const p = palette(page);
+  await p.host.evaluate((el) => {
+    (el as HTMLElement).style.setProperty('--base-icon-search', 'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22/%3E")');
+    const span = document.createElement('span');
+    span.innerHTML = '<span class="pa-icon pa-icon--search"></span><span class="pa-icon pa-icon--no-such-icon"></span>';
+    el.shadowRoot!.appendChild(span);
+  });
+  const mask = (cls: string) =>
+    p.host.evaluate((el, c) => getComputedStyle(el.shadowRoot!.querySelector(`.pa-icon--${c}`)!).maskImage, cls);
+  expect(await mask('search')).toContain('data:image/svg+xml');
+  expect(await mask('no-such-icon')).toContain('linear-gradient');
 });

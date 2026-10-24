@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Search placeholder falls back to text step 3** (`--cp-text-color-1` 55% into the surface, was
+  40%), matching `@keenmate/base-css-variables` 2.0.0-rc03, which moved
+  `--base-input-placeholder-color` to `--base-text-color-3`.
+
 - **The palette owns its CSS.** pure-admin's palette is being replaced by this component, so it
   no longer compiles pure-admin-core's `_command-palette.scss`. The CSS is plain CSS in `src/css/`
   (the web-multiselect layout: `variables` / `component` / `overrides` layers). The
@@ -27,9 +31,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `--base-input-border` (was the divider), with `--base-input-border-focus` and the shared focus
   halo `--base-input-box-shadow-focus`. The placeholder is `--base-input-placeholder-color`
   (no extra opacity).
-- **Rows use the shared item states:** hover is `--base-hover-bg` (was a 5% primary tint), the
-  active row is `--base-highlighted-bg` (the same tint as a selected web-multiselect option or a
-  highlighted tree row). The query highlight follows the primary color (was a fixed `#0ea5e9`).
+- **Rows use the shared item states:** the active row (the keyboard cursor) is the *focused*
+  state — no fill, an inset `--base-focused-outline` (was a 10% primary fill), the same cursor as
+  a focused web-multiselect option or tree row. Hover is `--base-hover-bg` (was a 5% primary
+  tint) and also shows under the outline when the pointer is on the active row. The query
+  highlight follows the primary color (was a fixed `#0ea5e9`). `--cp-item-active-bg` still adds
+  a fill if you want one.
+- **Item icons by name draw the shared glyphs:** `icon: 'search'` (or `settings`, `user`, `bell`,
+  `edit`, `delete`, …) renders `--base-icon-<name>`, overridable per name with
+  `--cp-icon-<name>`. A name with no glyph renders nothing (was a solid square). The ✕ on a
+  command token reads `--base-icon-remove` (new `--cp-icon-remove`).
+- **Search input has no vertical padding** (`--cp-input-padding-h` inline only), like
+  pure-admin's inputs: the fixed height centres the text, so taller theme fonts no longer clip.
+- **Stacking follows `--base-z-*`:** `--cp-z-index` is one step above `--base-z-popover`, so the
+  palette covers open dropdowns and popovers while toasts and tooltips stay above it (10500
+  without the base layer). `--cp-badge-border-radius` is a new knob.
 - **The backdrop is `--base-overlay-bg`**, the plain badge is the secondary role
   (`--base-secondary-color` / `--base-on-secondary-text-color`), keycaps default to
   `--base-font-family`, and spacing, weights, durations and the input height read
@@ -37,7 +53,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `--base-input-size-lg-height`.
 - **Standalone dark mode:** the fallbacks are `light-dark()` pairs, and `[data-theme]` /
   `data-bs-theme` / `.dark` set `color-scheme` on the host (was a light palette on a dark page
-  without a theme).
+  without a theme). The page signals (`.dark`, `[data-theme]`, `[data-bs-theme]` on `<html>` /
+  `<body>`, or a `theme-source` element) come from `@keenmate/web-components-core`'s theme
+  context, mirrored as `data-context-theme`, so they work in every engine (was
+  `:host-context()`, Chromium only).
+
 - New `--cp-*` knobs (all listed in the manifest): colors (`--cp-accent-color`, `--cp-bg`,
   `--cp-text-color-1…3`, `--cp-border-color`, …), input (`--cp-input-*`), badges
   (`--cp-badge-*`), `--cp-z-index`, `--cp-rem`, plus the type / spacing / motion scale.
@@ -59,9 +79,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **The examples site is a Vite multi-page build** (`npm run build:examples` → `dist-examples/`),
   which the image serves. It replaces the `sed` rewrites of `/src/index.ts` and the version badge.
 - **`check:vars` is `kmwc check-vars`** against the built bundle (`consumed` mode), so it now runs
-  after `vite build`. The `--pa-*` / `--pc-*` leak guard moved into the shadow-CSS plugin and
-  fails the build itself.
+  after `vite build`.
 - `custom-elements` added to the package keywords.
+
+### Fixed
+
+- The narrow-window `max-height: 60vh` results cap applies again, and reduced motion also
+  stops the open animations.
 
 ### Removed
 

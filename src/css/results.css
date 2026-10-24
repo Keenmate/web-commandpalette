@@ -126,9 +126,21 @@
   background-color: var(--cp-item-hover-bg);
 }
 
-/* The keyboard cursor (where Enter goes). */
+/* The keyboard cursor (where Enter goes): the focused item state — an inset outline
+   (offset = minus its width, so a thicker outline stays inside the row). */
 .pa-command-palette__item--active {
   background-color: var(--cp-item-active-bg);
+  outline: var(--cp-item-active-outline);
+  outline-offset: calc(-1 * var(--cp-outline-width));
+}
+
+/* Pointer on the cursor row: the hover fill shows under the outline. */
+.pa-command-palette__item--active:hover {
+  background-color: var(--cp-item-hover-bg);
+}
+
+/* Focused text color (default: unchanged). The title inherits it. */
+.pa-command-palette__item--active .pa-command-palette__item-title {
   color: var(--cp-item-active-color);
 }
 
@@ -237,6 +249,14 @@
 @media (hover: none) {
   .cp-star {
     opacity: 0.5;
+  }
+}
+
+/* Narrow (desktop) windows: cap the list by the viewport. Declared here, after the base
+   max-height, so it wins (same specificity, later in the layer). */
+@media (max-width: 768px) {
+  .pa-command-palette__results {
+    max-height: 60vh;
   }
 }
 

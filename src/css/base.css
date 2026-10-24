@@ -25,20 +25,63 @@
 
 /* The masked-icon primitive: a glyph painted in currentColor through a CSS mask.
    Each glyph is a --cp-icon-* variable (variables.css), so any of them can be
-   replaced with a url(...). */
+   replaced with a url(...). A name with no glyph renders nothing (an empty mask),
+   never a solid square. */
 .pa-icon {
   display: inline-block;
   inline-size: var(--cp-icon-size, 1em);
   block-size: var(--cp-icon-size, 1em);
   flex-shrink: 0;
   background-color: currentColor;
-  -webkit-mask: var(--_cp-icon-src, none) no-repeat center / contain;
-          mask: var(--_cp-icon-src, none) no-repeat center / contain;
+  -webkit-mask: var(--_cp-icon-src, linear-gradient(transparent, transparent)) no-repeat center / contain;
+          mask: var(--_cp-icon-src, linear-gradient(transparent, transparent)) no-repeat center / contain;
 }
 
-.pa-icon--x {
+/* ✕ — the fullscreen close button (and the `x` / `close` icon names). */
+.pa-icon--x,
+.pa-icon--close {
   --_cp-icon-src: var(--cp-icon-close);
 }
+
+/* ✕ on a command token — take it out of the input. */
+.pa-icon--remove {
+  --_cp-icon-src: var(--cp-icon-remove);
+}
+
+.pa-icon--check {
+  --_cp-icon-src: var(--cp-icon-check);
+}
+
+/* Item icons given by NAME (`icon: 'search'`) draw the shared --base-icon-* glyph of
+   that name; set --cp-icon-<name> to override one. Names outside the contract render
+   nothing — pass an inline <svg> or an emoji for those (an icon font's classes can't
+   reach inside the shadow root). */
+.pa-icon--chevron { --_cp-icon-src: var(--cp-icon-chevron, var(--base-icon-chevron)); }
+.pa-icon--caret-down { --_cp-icon-src: var(--cp-icon-caret-down, var(--base-icon-caret-down)); }
+.pa-icon--caret-up { --_cp-icon-src: var(--cp-icon-caret-up, var(--base-icon-caret-up)); }
+.pa-icon--expand { --_cp-icon-src: var(--cp-icon-expand, var(--base-icon-expand)); }
+.pa-icon--collapse { --_cp-icon-src: var(--cp-icon-collapse, var(--base-icon-collapse)); }
+.pa-icon--add { --_cp-icon-src: var(--cp-icon-add, var(--base-icon-add)); }
+.pa-icon--edit { --_cp-icon-src: var(--cp-icon-edit, var(--base-icon-edit)); }
+.pa-icon--delete { --_cp-icon-src: var(--cp-icon-delete, var(--base-icon-delete)); }
+.pa-icon--search { --_cp-icon-src: var(--cp-icon-search, var(--base-icon-search)); }
+.pa-icon--filter { --_cp-icon-src: var(--cp-icon-filter, var(--base-icon-filter)); }
+.pa-icon--refresh { --_cp-icon-src: var(--cp-icon-refresh, var(--base-icon-refresh)); }
+.pa-icon--indeterminate { --_cp-icon-src: var(--cp-icon-indeterminate, var(--base-icon-indeterminate)); }
+.pa-icon--copy { --_cp-icon-src: var(--cp-icon-copy, var(--base-icon-copy)); }
+.pa-icon--ellipsis { --_cp-icon-src: var(--cp-icon-ellipsis, var(--base-icon-ellipsis)); }
+.pa-icon--save { --_cp-icon-src: var(--cp-icon-save, var(--base-icon-save)); }
+.pa-icon--settings { --_cp-icon-src: var(--cp-icon-settings, var(--base-icon-settings)); }
+.pa-icon--bell { --_cp-icon-src: var(--cp-icon-bell, var(--base-icon-bell)); }
+.pa-icon--user { --_cp-icon-src: var(--cp-icon-user, var(--base-icon-user)); }
+.pa-icon--download { --_cp-icon-src: var(--cp-icon-download, var(--base-icon-download)); }
+.pa-icon--link { --_cp-icon-src: var(--cp-icon-link, var(--base-icon-link)); }
+.pa-icon--external-link { --_cp-icon-src: var(--cp-icon-external-link, var(--base-icon-external-link)); }
+.pa-icon--info { --_cp-icon-src: var(--cp-icon-info, var(--base-icon-info)); }
+.pa-icon--success { --_cp-icon-src: var(--cp-icon-success, var(--base-icon-success)); }
+.pa-icon--warning { --_cp-icon-src: var(--cp-icon-warning, var(--base-icon-warning)); }
+.pa-icon--danger { --_cp-icon-src: var(--cp-icon-danger, var(--base-icon-danger)); }
+.pa-icon--clear { --_cp-icon-src: var(--cp-icon-clear, var(--base-icon-clear)); }
 
 .cp-icon--check {
   --_cp-icon-src: var(--cp-icon-check);
