@@ -2,12 +2,12 @@
  * Builds and patches the palette DOM inside the shadow root. Markup and classes
  * match pure-admin-core's canonical `snippets/command-palette.html`.
  *
- * The results list is rebuilt only when the machine replaces its items
+ * The results list is rebuilt only when the engine replaces its items
  * (`listVersion` changed); moving the active row just toggles a class and scrolls
  * it into view, so keyboard navigation is pure DOM work.
  */
 import { escapeHtml, renderIcon } from './icons';
-import type { HomeSection, PaletteMachine, TokenView, UsageView, ViewItem } from './palette';
+import type { HomeSection, PaletteEngine, TokenView, UsageView, ViewItem } from './palette';
 import { DEFAULT_PALETTE_KEYS, type PaletteKeys } from './keyboard';
 import type { Labels } from './types';
 
@@ -104,7 +104,7 @@ const isMac = (): boolean => typeof navigator !== 'undefined' && /Mac|iPhone|iPa
 export const chordKeycap = (letter: string): string =>
   !letter ? '' : isMac() ? `⌘${letter.toUpperCase()}` : `Ctrl ${letter.toUpperCase()}`;
 
-/** What the markup helpers need besides the machine. */
+/** What the markup helpers need besides the engine. */
 export interface RenderContext {
   labels: Labels;
   keys: PaletteKeys;
@@ -128,8 +128,11 @@ function itemHtml(item: ViewItem, index: number, active: boolean, needle: string
     ? `<span class="pa-badge${item.badgeVariant ? ` pa-badge--${escapeHtml(item.badgeVariant)}` : ''}"><bdi>${escapeHtml(item.badge)}</bdi></span>`
     : '';
   return (
-    `<div class="pa-command-palette__item${active ? ' pa-command-palette__item--active' : ''}${item.isDefault ? ' cp-item--default' : ''}"` +
-    ` id="${itemId(index)}" data-index="${index}" role="option" aria-selected="${active}">` +
+    `<div class="pa-command-palette__item${active ? ' pa-command-palette__item--active' : ''}${item.isDefault ? ' cp-item--default' : ''}` +
+    `${item.isDisabled ? ' cp__item--disabled' : ''}${item.isDanger ? ' cp__item--danger' : ''}` +
+    `${item.cssClass ? ` ${escapeHtml(item.cssClass)}` : ''}"` +
+    ` id="${itemId(index)}" data-index="${index}" role="option" aria-selected="${active}"` +
+    `${item.isDisabled ? ' aria-disabled="true"' : ''}${item.tooltip ? ` title="${escapeHtml(item.tooltip)}"` : ''}>` +
     (icon ? `<div class="pa-command-palette__item-icon" aria-hidden="true">${icon}</div>` : '') +
     `<div class="pa-command-palette__item-content">` +
     `<div class="pa-command-palette__item-title"><bdi>${highlight(item.title ?? '', needle)}</bdi></div>` +
@@ -163,7 +166,7 @@ function moreHtml(view: UsageView, hidden: number, heading: string, ctx: RenderC
   );
 }
 
-function homeHtml(m: PaletteMachine, ctx: RenderContext): string {
+function homeHtml(m: PaletteEngine, ctx: RenderContext): string {
   const { labels } = ctx;
   const headings: Record<HomeSection, string> = {
     favorites: labels.favorites,
@@ -182,8 +185,8 @@ function homeHtml(m: PaletteMachine, ctx: RenderContext): string {
   return `<div class="pa-command-palette__home">${(['favorites', 'recent', 'commands', 'contexts'] as const).map(section).join('')}</div>`;
 }
 
-/** Search rows, with a heading section per run of `group` (the machine clusters them). */
-function rowsHtml(m: PaletteMachine, ctx: RenderContext): string {
+/** Search rows, with a heading section per run of `group` (the engine clusters them). */
+function rowsHtml(m: PaletteEngine, ctx: RenderContext): string {
   let out = '';
   let group: string | undefined;
   let rows = '';
@@ -222,7 +225,7 @@ function tokensHtml(tokens: TokenView[] | null, labels: Labels): string {
     .join('');
 }
 
-function footerHtml(m: PaletteMachine, ctx: RenderContext): string {
+function footerHtml(m: PaletteEngine, ctx: RenderContext): string {
   const { labels } = ctx;
   const hint = (key: string, text: string): string =>
     `<div class="pa-command-palette__hint"><span class="pa-command-palette__key">${escapeHtml(key)}</span><span>${escapeHtml(text)}</span></div>`;
@@ -246,12 +249,12 @@ function footerHtml(m: PaletteMachine, ctx: RenderContext): string {
 /**
  * The default confirmation sentence. A wizard reads as what the user built —
  * `/go Orders`, `/deploy to Staging branch main` — with the answers emphasised;
- * an instant command shows its name.
+ * an instant command shows its text.
  */
-export function confirmationBodyHtml(o: { shortcut?: string; name: string; parts: TokenView[] }): string {
-  if (!o.parts.length) return `<strong class="cp-confirm__answer">${escapeHtml(o.name)}</strong>`;
+export function confirmationBodyHtml(o: { trigger?: string; text: string; parts: TokenView[] }): string {
+  if (!o.parts.length) return `<strong class="cp-confirm__answer">${escapeHtml(o.text)}</strong>`;
   return [
-    o.shortcut ? `<span class="cp-confirm__command">${escapeHtml(o.shortcut)}</span>` : '',
+    o.trigger ? `<span class="cp-confirm__command">${escapeHtml(o.trigger)}</span>` : '',
     ...o.parts.map((t) =>
       t.type === 'selection'
         ? `<strong class="cp-confirm__answer">${escapeHtml(t.label)}</strong>`
@@ -296,7 +299,7 @@ export class Renderer {
     this.#tokens = '';
   }
 
-  render(m: PaletteMachine, labels: Labels): void {
+  render(m: PaletteEngine, labels: Labels): void {
     const s = this.#shell;
 
     // ── input row ──
@@ -343,7 +346,7 @@ export class Renderer {
     }
   }
 
-  #resultsHtml(m: PaletteMachine, ctx: RenderContext): string {
+  #resultsHtml(m: PaletteEngine, ctx: RenderContext): string {
     const { labels } = ctx;
     if (m.mode === 'idle') return homeHtml(m, ctx);
     if (m.items.length) {

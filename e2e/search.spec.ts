@@ -24,9 +24,9 @@ test('context search: entered from the home screen too, then searches non-empty 
   await page.keyboard.type('ipad');
   await expect(p.titles.first()).toHaveText('products ipad 0');
   await expect(p.titles.first().locator('mark')).toHaveText('ipad');
-  expect((await calls(page)).search).toEqual([{ scope: { contextId: 'products' }, query: 'ipad' }]);
+  expect((await calls(page)).search).toEqual([{ scope: { contextId: 'products' }, term: 'ipad' }]);
   await page.keyboard.press('Enter');
-  const sel = (await events(page)).find((e) => e.name === 'cp-select');
+  const sel = (await events(page)).find((e) => e.name === 'select');
   expect(sel?.detail).toMatchObject({ item: { id: 'products-0' }, scope: { contextId: 'products' } });
   await expect(p.root).not.toHaveClass(/--active/);
 });
@@ -48,10 +48,10 @@ test('global search: local matches first, then provider hits (debounced, one cal
   await open(page);
   await page.keyboard.type('deploy');
   await expect(p.titles).toHaveText(['Deploy to Environment', 'Global deploy 0', 'Global deploy 1', 'Global deploy 2']);
-  expect((await calls(page)).search).toEqual([{ scope: 'global', query: 'deploy' }]);
+  expect((await calls(page)).search).toEqual([{ scope: 'global', term: 'deploy' }]);
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
-  const sel = (await events(page)).find((e) => e.name === 'cp-select');
+  const sel = (await events(page)).find((e) => e.name === 'select');
   expect(sel?.detail).toMatchObject({ item: { id: 'Global-0' }, scope: 'global' });
 });
 

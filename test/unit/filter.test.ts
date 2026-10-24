@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { filterOptions, findByShortcut, globalMatches, matchesAny } from '../../src/filter';
+import { filterOptions, findByTrigger, globalMatches, matchesAny } from '../../src/filter';
 import { findSequenceCommand } from '../../src/keyboard';
 import { highlight } from '../../src/render';
 import { renderIcon } from '../../src/icons';
@@ -12,11 +12,11 @@ describe('filter', () => {
     expect(matchesAny(['anything'], '  ')).toBe(true);
   });
 
-  it('filterOptions searches label, primitive value and description', () => {
-    const opts = [{ label: 'A', value: 'alpha' }, { label: 'B', description: 'beta thing' }, { label: 'C', value: { x: 1 } }];
-    expect(filterOptions(opts, 'alp').map((o) => o.label)).toEqual(['A']);
-    expect(filterOptions(opts, 'beta').map((o) => o.label)).toEqual(['B']);
-    expect(filterOptions(opts, 'object').map((o) => o.label)).toEqual([]);
+  it('filterOptions searches text, primitive value and description', () => {
+    const opts = [{ text: 'A', value: 'alpha' }, { text: 'B', description: 'beta thing' }, { text: 'C', value: { x: 1 } }];
+    expect(filterOptions(opts, 'alp').map((o) => o.text)).toEqual(['A']);
+    expect(filterOptions(opts, 'beta').map((o) => o.text)).toEqual(['B']);
+    expect(filterOptions(opts, 'object').map((o) => o.text)).toEqual([]);
   });
 
   it('globalMatches ignores descriptions and empty queries', () => {
@@ -25,16 +25,16 @@ describe('filter', () => {
     expect(globalMatches(CONTEXTS, ':u').map((c) => c.id)).toEqual(['users']);
   });
 
-  it('findByShortcut matches shortcut or alias exactly, case-insensitively', () => {
-    expect(findByShortcut(COMMANDS, '/D')?.id).toBe('deploy');
-    expect(findByShortcut(COMMANDS, '/dep')).toBeUndefined();
+  it('findByTrigger matches the trigger or an alias exactly, case-insensitively', () => {
+    expect(findByTrigger(COMMANDS, '/D')?.id).toBe('deploy');
+    expect(findByTrigger(COMMANDS, '/dep')).toBeUndefined();
   });
 });
 
 describe('keyboard helpers', () => {
   it('resolves "g <letter>" sequences only (never chords)', () => {
     expect(findSequenceCommand(COMMANDS, 'd')?.id).toBe('deploy');
-    expect(findSequenceCommand([{ id: 'k', shortcut: '/k', name: 'K', hotkey: 'Ctrl+K' }], 'k')).toBeUndefined();
+    expect(findSequenceCommand([{ id: 'k', trigger: '/k', text: 'K', shortcut: 'Ctrl+K' }], 'k')).toBeUndefined();
   });
 });
 

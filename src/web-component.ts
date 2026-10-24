@@ -1,9 +1,10 @@
 /**
  * `<web-command-palette>` — the custom element. Kept thin on purpose
  * (IMPLEMENTATION_PLAN §4): it declares the public inputs/events, owns the shadow
- * root + CSS, wires DOM/keyboard to the framework-free machine (`palette.ts`) and
+ * root + CSS, wires DOM/keyboard to the framework-free engine (`palette.ts`) and
  * paints its state (`render.ts`). Hosts talk to it only through properties,
- * events and async callbacks.
+ * events (`open`, `close`, `select`, `action`, `ready` + their `on*` twins),
+ * callbacks and `el.controller`.
  *
  * Mount ONCE per page — the first connected instance owns the global Ctrl/⌘+K
  * listener and the `g <letter>` sequences.
@@ -11,12 +12,14 @@
 import {
   BlissElement,
   adoptStyles,
+  createPresentationContext,
   getEnvironment,
   lockBodyScroll,
   observeKeyboardInset,
   registerOverlay,
   dismissAllOverlays,
   resolvePresentation,
+  runBeforeCallbackEager,
   toBool,
   toEnum,
   toFunction,
@@ -24,28 +27,37 @@ import {
   toObjectArray,
   toText,
   toValue,
+  type BeforeCallbackResult,
   type EnvironmentSnapshot,
   type InputDef,
   type MobilePresentation,
   type OverlayHandle,
 } from '@keenmate/web-components-core';
-import { PaletteMachine, type Effect, type MachineHost } from './palette';
+import { runAction } from '@keenmate/web-components-core/actions';
+import { PaletteEngine, type Effect, type EffectOutcome, type PaletteEngineHost, type TokenView } from './palette';
 import { Renderer, chordKeycap, confirmationBodyHtml, createShell, fillConfirmation, type Shell } from './render';
 import { GlobalKeys, handleInputKeydown, sequenceLetter, type PaletteKeys } from './keyboard';
 import { UsageStore, localStoragePersistence, type UsagePersistence } from './usage';
 import {
   DEFAULT_LABELS,
+  type ActionEventDetail,
+  type BeforeActionCallback,
+  type BeforeSelectCallback,
   type Command,
-  type CommandEventDetail,
-  type CompleteEventDetail,
+  type CommandPaletteController,
+  type ConfirmationContext,
   type Context,
   type Display,
   type Labels,
   type LoadUsageCallback,
-  type SaveUsageCallback,
-  type ConfirmationContext,
+  type PaletteContext,
+  type PaletteEventDetail,
   type RenderConfirmationCallback,
+  type Result,
+  type SaveUsageCallback,
+  type Scope,
   type SearchCallback,
+  type Selection,
   type SelectEventDetail,
   type StepOptionsCallback,
 } from './types';
@@ -59,23 +71,27 @@ const isPlainObject = (v: unknown): v is Record<string, string> => typeof v === 
 const INPUTS: readonly InputDef[] = [
   // ── Data (property-only) ─────────────────────────────────────────────────
   { configKey: 'commands', converter: toObjectArray(), on: 'update', type: 'Command[]',
-    description: 'Commands, listed on the home screen and under `/`. `{ id, shortcut, name, aliases?, hotkey?, description?, icon?, steps? }`. A command without `steps` is instant and fires `cp-command`; one with steps runs a wizard and fires `cp-complete`.' },
+    description: 'Commands, listed on the home screen and under `/` — core action items: `{ id, trigger, text, aliases?, shortcut?, description?, icon?, steps?, tooltip?, cssClass?, isVisible?, isDisabled?, isDanger?, get*Callback(ctx)?, onClick(detail)? }`. Running one fires the `action` event (`id` = the command id) — immediately without `steps`, after the last answer with them.' },
   { configKey: 'contexts', converter: toObjectArray(), on: 'update', type: 'Context[]',
-    description: 'Search contexts, listed on the home screen and under `:`. `{ id, shortcut, name, aliases?, description?, icon? }`. Entering one locks the input to `"<shortcut> "` and searches via `searchCallback({ contextId }, query)`.' },
+    description: 'Search contexts, listed on the home screen and under `:`. `{ id, trigger, text, aliases?, description?, icon?, searchCallback? }`. Entering one locks the input to `"<trigger> "` and searches via `searchCallback({ scope: { contextId }, term, signal })`.' },
   { configKey: 'labels', converter: toValue({ validate: isPlainObject }), on: 'update', type: 'Partial<Labels>',
     description: 'UI strings (i18n). Partial — unset keys fall back to English. `{name}` / `{page}` / `{total}` / `{count}` placeholders are interpolated.' },
 
   // ── Callbacks (property-only, read live on every call) ───────────────────
-  { configKey: 'searchCallback', converter: toFunction(), on: 'none', type: '(scope: Scope, query: string, signal: AbortSignal) => Result[] | Promise<Result[]>',
-    description: "Context + global search. `scope` is `'global'` or `{ contextId }`. Called only for NON-EMPTY queries, debounced; a superseded call's `signal` is aborted and its late result ignored." },
-  { configKey: 'stepOptionsCallback', converter: toFunction(), on: 'none', type: '(ctx: StepOptionsContext, signal: AbortSignal) => Option[] | Promise<Option[]>',
-    description: 'Options for a command step; `ctx = { commandId, stepId, query, selections }`. A static step is fetched ONCE on entry (query `""`) and filtered client-side; a `search: true` step is called per debounced keystroke. A step with its own `load` uses that instead.' },
-  { configKey: 'loadUsageCallback', converter: toFunction(), on: 'update', type: '() => UsageEntry[] | Promise<UsageEntry[]>',
+  { configKey: 'searchCallback', converter: toFunction(), on: 'none', type: '(ctx: SearchContext) => Result[] | Promise<Result[]>',
+    description: "Context + global search. `ctx = { scope, term, signal }` + `controller` / `element`; `scope` is `'global'` or `{ contextId }`. Called only for NON-EMPTY terms, debounced; a superseded call's `signal` is aborted and its late result ignored. A context's own `searchCallback` wins for that context." },
+  { configKey: 'getStepOptionsCallback', converter: toFunction(), on: 'none', type: '(ctx: StepOptionsContext) => Option[] | Promise<Option[]>',
+    description: 'Options for a command step; `ctx = { commandId, stepId, term, selections, signal }` + `controller` / `element`. A static step is fetched ONCE on entry (term `""`) and filtered client-side; an `isLiveSearch: true` step is called per debounced keystroke. A step with its own `getOptionsCallback` uses that instead.' },
+  { configKey: 'beforeActionCallback', converter: toFunction(), on: 'none', type: '(detail: ActionEventDetail) => unknown',
+    description: 'Runs before a command fires `action`, with the same detail. Return `false` (async OK) to cancel: no `onClick`, no event, nothing recorded; a wizard steps back to its last answer and the palette stays open.' },
+  { configKey: 'beforeSelectCallback', converter: toFunction(), on: 'none', type: '(ctx: SelectEventDetail) => unknown',
+    description: 'Runs before a search result fires `select` (`ctx = { item, scope }`). Return `false` (async OK) to cancel: no event, nothing recorded, the palette stays open. Other return values continue.' },
+  { configKey: 'loadUsageCallback', converter: toFunction(), on: 'update', type: '(ctx: PaletteContext) => UsageEntry[] | Promise<UsageEntry[]>',
     description: 'Load favorites/recents from the host (e.g. per user, from the server) instead of `localStorage`. Called on connect and when this or `usage-key` changes.' },
   { configKey: 'renderConfirmationCallback', converter: toFunction(), on: 'none', type: '(ctx: ConfirmationContext) => string | HTMLElement | null | false',
-    description: 'Render the text of the one-line confirmation shown after a command ran (the ✓, "Done" and countdown stay). `ctx = { type, commandId?, commandName?, selections?, sentence, item?, scope?, duration }`. Return markup / an element to replace the default, `null` for the default, or `false` to skip it this time. Search-result selections (`type: "select"`) get no confirmation unless this returns content.' },
-  { configKey: 'saveUsageCallback', converter: toFunction(), on: 'none', type: '(entry: UsageEntry) => void | Promise<void>',
-    description: 'Upsert one favorite/recent entry (by `entry.key`) — called on every use and every star toggle when `loadUsageCallback` is set.' },
+    description: 'Render the text of the one-line confirmation shown after a command ran (the ✓, "Done" and countdown stay). `ctx = { type, commandId?, commandText?, selections?, sentence, item?, scope?, duration }` + `controller` / `element`; `type` is `action` or `select`. Return markup / an element to replace the default, `null` for the default, or `false` to skip it this time. Search-result selections (`type: "select"`) get no confirmation unless this returns content.' },
+  { configKey: 'saveUsageCallback', converter: toFunction(), on: 'none', type: '(ctx: { entry: UsageEntry }) => void | Promise<void>',
+    description: 'Upsert one favorite/recent entry (`ctx.entry`, by `entry.key`) — called on every use and every star toggle when `loadUsageCallback` is set.' },
 
   // ── Attributes ───────────────────────────────────────────────────────────
   { configKey: 'display', attribute: 'display', converter: toEnum(['inline', 'tokens'] as const, { default: 'inline' }), shouldReflect: true, on: 'update',
@@ -87,9 +103,9 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'openKey', attribute: 'open-key', converter: toText({ default: 'k', isEmptyAllowed: true }), on: 'none',
     description: "Key that toggles the palette together with Ctrl/⌘. Default `k`. Set `''` to disable the global hotkey." },
   { configKey: 'searchDebounce', attribute: 'search-debounce', converter: toInt({ min: 0, default: 150 }), on: 'none',
-    description: 'Debounce (ms) before a provider call in global search, context search and `search: true` steps. Static lists never call a provider.' },
+    description: 'Debounce (ms) before a provider call in global search, context search and `isLiveSearch` steps. Static lists never call a provider.' },
   { configKey: 'isConfirmationShown', attribute: 'confirmation', converter: toBool('default-true'), on: 'none',
-    description: 'After a wizard completes or an instant command runs, collapse the dialog to one line for `confirmation-duration` ms showing what ran (✓ `/deploy to Staging branch main` · Done) instead of vanishing. The effect event still fires immediately; `cp-close` follows when it goes. Any key or click dismisses it. `confirmation="false"` turns it off.' },
+    description: 'After a command ran, collapse the dialog to one line for `confirmation-duration` ms showing what ran (✓ `/deploy to Staging branch main` · Done) instead of vanishing. The `action` event fires first; `close` follows when it goes. Any key or click dismisses it. `confirmation="false"` turns it off.' },
   { configKey: 'confirmationDuration', attribute: 'confirmation-duration', converter: toInt({ min: 0, default: 1500 }), on: 'none',
     description: 'How long the confirmation stays (ms). Default 1500; `0` turns it off.' },
   { configKey: 'usageStorage', attribute: 'usage-storage', converter: toEnum(['local', 'none'] as const, { default: 'local' }), shouldReflect: true, on: 'update',
@@ -107,7 +123,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'recentKey', attribute: 'recent-key', converter: toText({ default: 'r', isEmptyAllowed: true }), on: 'update',
     description: "Ctrl/⌘ + this key shows all recently used items while the palette is open. Default `r`; `''` disables." },
   { configKey: 'favoritesHotkey', attribute: 'favorites-hotkey', converter: toText({ default: 'g f', isEmptyAllowed: true }), on: 'none',
-    description: "`g <letter>` sequence that opens the palette on the favorites list from anywhere (while closed, not typing). Default `g f`; `''` disables. A command with the same `hotkey` wins." },
+    description: "`g <letter>` sequence that opens the palette on the favorites list from anywhere (while closed, not typing). Default `g f`; `''` disables. A command with the same `shortcut` wins." },
   { configKey: 'recentHotkey', attribute: 'recent-hotkey', converter: toText({ isNullable: true }), on: 'none',
     description: '`g <letter>` sequence that opens the palette on the recent list. Off by default (e.g. `g h`).' },
   { configKey: 'mobilePresentation', attribute: 'mobile-presentation', converter: toEnum(['auto', 'floating', 'fullscreen'] as const, { default: 'auto' }), shouldReflect: true, on: 'update',
@@ -115,34 +131,51 @@ const INPUTS: readonly InputDef[] = [
 
   // ── Reserved bridge hooks (wired by @keenmate/keen-web-commandpalette) ─────
   { configKey: 'searchEvent', attribute: 'data-search-event', converter: toText({ isNullable: true }), on: 'none',
-    description: 'Reserved for the Phoenix LiveView bridge: the LiveView event that answers `searchCallback` via `{:reply, %{results: …}}`. Read by the bridge hook, not by this element.' },
+    description: 'Reserved for the Phoenix LiveView bridge: the LiveView event that answers `searchCallback` via `{:reply, %{results: …}}` (pushed with the ctx data `{ scope, term }`). Read by the bridge hook, not by this element.' },
   { configKey: 'stepOptionsEvent', attribute: 'data-step-options-event', converter: toText({ isNullable: true }), on: 'none',
-    description: 'Reserved for the Phoenix LiveView bridge: the LiveView event that answers `stepOptionsCallback`. Read by the bridge hook, not by this element.' },
+    description: 'Reserved for the Phoenix LiveView bridge: the LiveView event that answers `getStepOptionsCallback` (pushed with the ctx data `{ commandId, stepId, term, selections }`). Read by the bridge hook, not by this element.' },
 ];
 
 type CommandPaletteEvents = {
-  'cp-open': Record<string, never>;
-  'cp-close': Record<string, never>;
-  'cp-select': SelectEventDetail;
-  'cp-complete': CompleteEventDetail;
-  'cp-command': CommandEventDetail;
-  'cp-ready': Record<string, never>;
+  open: PaletteEventDetail;
+  close: PaletteEventDetail;
+  select: SelectEventDetail;
+  action: ActionEventDetail;
+  ready: PaletteEventDetail;
 };
 
+// Every detail carries `controller` / `element` (non-enumerable) and the
+// presentation flags; the camelCase `on<Name>` twin is called with the same
+// detail before the DOM event (bubbles, not composed).
 const EVENTS = [
-  { name: 'cp-open', description: 'The palette opened.' },
-  { name: 'cp-close', description: 'The palette closed (also after a selection/completion).' },
-  { name: 'cp-select', description: "A search result was chosen. `detail = { item, scope }` (`scope` is `'global'` or `{ contextId }`). Perform the effect (navigate…); the palette closes itself." },
-  { name: 'cp-complete', description: 'A multi-step command finished. `detail = { commandId, selections }` — each selection `{ stepId, label, value, optionId?, isFreeText }`. The palette closes itself.' },
-  { name: 'cp-command', description: 'An instant command (no `steps`) was chosen. `detail = { commandId }`. The palette closes itself.' },
-  { name: 'cp-ready', description: 'The element connected and rendered for the first time.' },
+  { name: 'open', description: 'The palette opened. Twin: `onOpen(detail)`.' },
+  { name: 'close', description: 'The palette closed (also after a command ran / a result was chosen). Twin: `onClose(detail)`.' },
+  { name: 'select', description: "A search result was chosen. `detail = { item, scope }` (`scope` is `'global'` or `{ contextId }`). Perform the effect (navigate…); the palette closes itself. Veto with `beforeSelectCallback`. Twin: `onSelect(detail)`." },
+  { name: 'action', description: "A command ran — immediately (no `steps`) or after the wizard's last answer. `detail = { action: 'custom', id, item, source: 'palette', selections, sourceEvent, triggerElement, dataset }` — `id` is the command id, `item` the command, each selection `{ stepId, label, value, optionId?, isFreeText }`. The command's `onClick(detail)` runs first; veto with `beforeActionCallback`. The palette closes itself. Twin: `onAction(detail)`." },
+  { name: 'ready', description: 'The element connected and rendered for the first time. Twin: `onReady(detail)`.' },
 ] as const;
+
+/** The public facade's methods — each delegates to the element method of the same name. */
+const CONTROLLER_METHODS = [
+  'open', 'close', 'toggle', 'reset', 'openWith', 'openFavorites', 'openRecent', 'setCommands', 'setContexts',
+] as const satisfies readonly (keyof CommandPaletteController)[];
+
+/** What the one-line confirmation needs, captured when the effect fired. */
+type Done =
+  | { type: 'action'; command: Command; selections: Selection[]; sentence: string; parts: TokenView[] }
+  | { type: 'select'; item: Result; scope: Scope };
+
+/** The event (and row) behind an engine call, for the `action` detail. */
+interface Trigger {
+  event?: Event;
+  element?: HTMLElement;
+}
 
 /** The element that owns the document-level keys (one palette per page). */
 let keyOwner: CommandPaletteElement | null = null;
 const connected = new Set<CommandPaletteElement>();
 
-export class CommandPaletteElement extends BlissElement<CommandPaletteEvents> {
+export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, CommandPaletteController> {
   protected static override inputs = INPUTS;
   protected static override events = EVENTS;
 
@@ -151,7 +184,9 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents> {
   declare contexts: Context[];
   declare labels: Partial<Labels> | undefined;
   declare searchCallback: SearchCallback | null;
-  declare stepOptionsCallback: StepOptionsCallback | null;
+  declare getStepOptionsCallback: StepOptionsCallback | null;
+  declare beforeActionCallback: BeforeActionCallback | null;
+  declare beforeSelectCallback: BeforeSelectCallback | null;
   declare loadUsageCallback: LoadUsageCallback | null;
   declare saveUsageCallback: SaveUsageCallback | null;
   declare usageStorage: 'local' | 'none';
@@ -172,17 +207,17 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents> {
   declare openKey: string;
   declare searchDebounce: number;
   declare mobilePresentation: MobilePresentation;
-  declare onCpOpen: ((e: CustomEvent<Record<string, never>>) => void) | null;
-  declare onCpClose: ((e: CustomEvent<Record<string, never>>) => void) | null;
-  declare onCpSelect: ((e: CustomEvent<SelectEventDetail>) => void) | null;
-  declare onCpComplete: ((e: CustomEvent<CompleteEventDetail>) => void) | null;
-  declare onCpCommand: ((e: CustomEvent<CommandEventDetail>) => void) | null;
-  declare onCpReady: ((e: CustomEvent<Record<string, never>>) => void) | null;
+  // camelCase twins — called with the event DETAIL, before the DOM event.
+  declare onOpen: ((detail: PaletteEventDetail) => void) | null;
+  declare onClose: ((detail: PaletteEventDetail) => void) | null;
+  declare onSelect: ((detail: SelectEventDetail) => void) | null;
+  declare onAction: ((detail: ActionEventDetail) => void) | null;
+  declare onReady: ((detail: PaletteEventDetail) => void) | null;
 
   #shadow: ShadowRoot;
   #shell: Shell;
   #renderer: Renderer;
-  #machine: PaletteMachine;
+  #engine: PaletteEngine;
   #globalKeys: GlobalKeys;
   #usage: UsageStore | null = null;
   #isOpen = false;
@@ -195,6 +230,8 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents> {
   #returnFocus: HTMLElement | null = null;
   /** Set while the one-line confirmation is showing. */
   #confirmTimer: ReturnType<typeof setTimeout> | null = null;
+  /** The event / row behind the engine call in progress (for the `action` detail). */
+  #trigger: Trigger | null = null;
 
   constructor() {
     super();
@@ -203,15 +240,16 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents> {
     this.#shell = createShell();
     this.#shadow.appendChild(this.#shell.root);
     this.#renderer = new Renderer(this.#shell);
-    this.#machine = new PaletteMachine(this.#machineHost());
+    this.#engine = new PaletteEngine(this.#engineHost());
     this.#globalKeys = new GlobalKeys({
       isOpen: () => this.#isOpen,
       toggle: () => this.toggle(),
       openKey: () => this.config.openKey as string ?? 'k',
-      commands: () => this.#commands(),
-      runCommand: (command) => {
+      // Hidden / disabled commands don't claim their `g <letter>` sequence.
+      commands: () => this.#commands().filter((c) => this.#engine.isCommandEnabled(c)),
+      runCommand: (command, e) => {
         this.open();
-        this.#machine.enterCommand(command);
+        this.#withTrigger({ event: e }, () => this.#engine.enterCommand(command));
       },
       sequences: () => this.#sequences(),
     });
@@ -238,18 +276,19 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents> {
     return { favorite: key('favoriteKey', 'd'), favorites: key('favoritesKey', 'f'), recent: key('recentKey', 'r') };
   }
 
-  // ── machine wiring ────────────────────────────────────────────────────────
+  // ── engine wiring ─────────────────────────────────────────────────────────
 
   #commands(): readonly Command[] {
     return (this.config.commands as Command[] | undefined) ?? [];
   }
 
-  #machineHost(): MachineHost {
+  #engineHost(): PaletteEngineHost {
     return {
       commands: () => this.#commands(),
       contexts: () => (this.config.contexts as Context[] | undefined) ?? [],
       searchCallback: () => (this.config.searchCallback as SearchCallback | null) ?? null,
-      stepOptionsCallback: () => (this.config.stepOptionsCallback as StepOptionsCallback | null) ?? null,
+      getStepOptionsCallback: () => (this.config.getStepOptionsCallback as StepOptionsCallback | null) ?? null,
+      context: (fields) => this.withContext(fields),
       display: () => (this.config.display as Display) ?? 'inline',
       pageSize: () => (this.config.pageSize as number) ?? 8,
       debounceMs: () => (this.config.searchDebounce as number) ?? 150,
@@ -264,57 +303,126 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents> {
     };
   }
 
-  #onEffect(effect: Effect): void {
-    // FUTURE: make cp-select/cp-complete/cp-command cancelable (preventDefault() →
-    // keep the palette open) or add a reply-directive channel (toast/keep-open).
-    // v1 policy: the host performs the effect, the component closes itself.
+  /** `withContext` typed for the palette: `controller` / `element` + the presentation flags. */
+  #ctx<T extends object>(fields: T): T & PaletteContext {
+    return this.withContext(fields) as unknown as T & PaletteContext;
+  }
+
+  /** Run an engine call with the event / row that caused it on record (for the `action` detail). */
+  #withTrigger(trigger: Trigger, fn: () => void): void {
+    const previous = this.#trigger;
+    this.#trigger = trigger;
+    try {
+      fn();
+    } finally {
+      this.#trigger = previous;
+    }
+  }
+
+  /**
+   * A terminal outcome from the engine. `select` and `action` go through their
+   * before-hook; the answer (`false` = vetoed) goes back to the engine, which
+   * records usage or restores its state. The palette closes (or shows the
+   * confirmation) only when the effect went ahead.
+   */
+  #onEffect(effect: Effect): EffectOutcome {
     switch (effect.type) {
       case 'select':
-        this.log.INTERACTION.debug('select', effect.item);
-        this.emit('cp-select', { item: effect.item, scope: effect.scope });
-        break;
-      case 'complete':
-        this.log.INTERACTION.debug('complete', effect.commandId, effect.selections);
-        this.emit('cp-complete', { commandId: effect.commandId, selections: effect.selections });
-        break;
-      case 'command':
-        this.log.INTERACTION.debug('command', effect.commandId);
-        this.emit('cp-command', { commandId: effect.commandId });
-        break;
+        return this.#select(effect.item, effect.scope);
+      case 'action':
+        return this.#runCommand(effect.command, effect.selections);
       case 'close':
-        break;
+        this.close();
+        return;
     }
-    // The effect already fired; the confirmation only delays the close.
-    if (!this.#showConfirmation(effect)) this.close();
+  }
+
+  /** A search result: `beforeSelectCallback` → `select` → close. Sync hooks keep the flow synchronous. */
+  #select(item: Result, scope: Scope): boolean | Promise<boolean> {
+    const detail: SelectEventDetail = this.#ctx({ item, scope });
+    const proceed = (gate: BeforeCallbackResult): boolean => {
+      if (gate.isCancelled) {
+        this.log.INTERACTION.debug('select vetoed', item);
+        return false;
+      }
+      this.log.INTERACTION.debug('select', item);
+      this.emit('select', detail);
+      this.#afterEffect({ type: 'select', item, scope });
+      return true;
+    };
+    const gate = runBeforeCallbackEager(this.config.beforeSelectCallback as BeforeSelectCallback | null, detail, 'beforeSelectCallback');
+    return gate instanceof Promise ? gate.then(proceed) : proceed(gate);
+  }
+
+  /** A command ran: core `runAction` — `beforeActionCallback` → `onClick` → `action` → close. */
+  #runCommand(command: Command, selections: Selection[]): Promise<boolean> {
+    const trigger = this.#trigger;
+    const e = this.#engine;
+    const isCurrent = e.command === command;
+    const done: Done = {
+      type: 'action',
+      command,
+      selections,
+      sentence: isCurrent ? e.sentence : command.trigger,
+      parts: isCurrent ? e.answerParts : [],
+    };
+    const detail = this.#ctx({
+      action: 'custom' as const,
+      id: command.id,
+      item: command,
+      source: 'palette',
+      selections,
+      sourceEvent: trigger?.event,
+      triggerElement: trigger?.element,
+      dataset: {},
+    }) as ActionEventDetail;
+    return runAction({
+      detail,
+      beforeActionCallback: this.config.beforeActionCallback as BeforeActionCallback | null,
+      emitAction: (d) => {
+        this.log.INTERACTION.debug('action', d.id, d.selections);
+        this.emit('action', d as ActionEventDetail);
+      },
+    }).then((ran) => {
+      if (ran) this.#afterEffect(done);
+      else this.log.INTERACTION.debug('action vetoed', command.id);
+      return ran;
+    });
+  }
+
+  /** The effect went ahead: show the confirmation, else close. */
+  #afterEffect(done: Done): void {
+    if (!this.#isOpen) return;
+    if (!this.#showConfirmation(done)) this.close();
   }
 
   #render(): void {
-    if (this.#isOpen && !this.#confirmTimer) this.#renderer.render(this.#machine, this.#labels);
+    if (this.#isOpen && !this.#confirmTimer) this.#renderer.render(this.#engine, this.#labels);
   }
 
   /**
    * Collapse to the one-line confirmation and close after `confirmation-duration`.
-   * Returns false when there's nothing to confirm (off, `0` ms, a plain close, a search
-   * result without custom content, or the callback said `false`).
+   * Returns false when there's nothing to confirm (off, `0` ms, a search result
+   * without custom content, or the callback said `false`).
    */
-  #showConfirmation(effect: Effect): boolean {
-    if (effect.type === 'close' || this.config.isConfirmationShown === false) return false;
+  #showConfirmation(done: Done): boolean {
+    if (this.config.isConfirmationShown === false) return false;
     const duration = (this.config.confirmationDuration as number | undefined) ?? 1500;
     if (duration <= 0) return false;
 
-    const m = this.#machine;
-    const command = effect.type === 'select' ? null : this.#commands().find((c) => c.id === effect.commandId) ?? m.command;
-    const ctx: ConfirmationContext =
-      effect.type === 'select'
-        ? { type: 'select', sentence: effect.item.title, item: effect.item, scope: effect.scope, duration }
+    const command = done.type === 'action' ? done.command : null;
+    const ctx: ConfirmationContext = this.#ctx(
+      done.type === 'select'
+        ? { type: 'select' as const, sentence: done.item.title, item: done.item, scope: done.scope, duration }
         : {
-            type: effect.type,
-            commandId: effect.commandId,
-            commandName: command?.name,
-            selections: effect.type === 'complete' ? effect.selections : [],
-            sentence: m.command?.id === effect.commandId ? m.sentence : command?.shortcut ?? effect.commandId,
+            type: 'action' as const,
+            commandId: done.command.id,
+            commandText: done.command.text,
+            selections: done.selections,
+            sentence: done.sentence,
             duration,
-          };
+          },
+    );
 
     let custom: ReturnType<RenderConfirmationCallback> = null;
     const cb = this.config.renderConfirmationCallback as RenderConfirmationCallback | null;
@@ -326,7 +434,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents> {
       }
     }
     if (custom === false) return false;
-    if (custom == null && effect.type === 'select') return false;
+    if (custom == null && done.type === 'select') return false;
 
     // The dialog collapses to this one line (CSS hides the search row, results and
     // footer under `.cp-confirming`); the line takes focus so any key dismisses it.
@@ -336,9 +444,9 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents> {
     else if (typeof custom === 'string') body.innerHTML = custom;
     else {
       body.innerHTML = confirmationBodyHtml({
-        shortcut: command?.shortcut,
-        name: command?.name ?? ctx.sentence,
-        parts: effect.type === 'complete' ? m.answerParts : [],
+        trigger: command?.trigger,
+        text: command?.text ?? ctx.sentence,
+        parts: done.type === 'action' ? done.parts : [],
       });
     }
     // Shrink from the dialog's current height to the confirmation's (min-height)
@@ -376,33 +484,42 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents> {
   #applyUsage(): void {
     if (this.config.usageStorage === 'none') {
       this.#usage = null;
-      this.#machine.usageChanged();
+      this.#engine.usageChanged();
       return;
     }
     const load = this.config.loadUsageCallback as LoadUsageCallback | null;
     const persistence: UsagePersistence = load
       ? {
-          load: () => load(),
+          load: () => load(this.#ctx({})),
           // Read live, so a callback assigned later is still used.
-          save: (entry) => (this.config.saveUsageCallback as SaveUsageCallback | null)?.(entry),
+          save: (entry) => (this.config.saveUsageCallback as SaveUsageCallback | null)?.(this.#ctx({ entry })),
         }
       : localStoragePersistence((this.config.usageKey as string) || 'web-commandpalette:usage');
-    this.#usage = new UsageStore(persistence, () => this.#machine.usageChanged(), (err) => this.log.DATA.error('usage storage failed', err));
+    this.#usage = new UsageStore(persistence, () => this.#engine.usageChanged(), (err) => this.log.DATA.error('usage storage failed', err));
     this.#usage.load();
   }
 
   // ── DOM wiring ────────────────────────────────────────────────────────────
+
+  /** The row element of the engine's active row, if rendered. */
+  #activeRow(): HTMLElement | undefined {
+    const index = this.#engine.activeIndex;
+    if (index < 0) return undefined;
+    return (this.#shell.results.querySelector(`[data-index="${index}"]`) as HTMLElement | null) ?? undefined;
+  }
 
   #wireDom(): void {
     const { input, results, tokens, backdrop, closeButton, container } = this.#shell;
 
     input.addEventListener('input', (e) => {
       if ((e as InputEvent).isComposing) return;
-      this.#machine.setInput(input.value);
+      this.#engine.setInput(input.value);
     });
-    input.addEventListener('compositionend', () => this.#machine.setInput(input.value));
+    input.addEventListener('compositionend', () => this.#engine.setInput(input.value));
     input.addEventListener('keydown', (e) => {
-      if (handleInputKeydown(e, this.#machine, input, this.#keys(), this.isRtl)) this.log.INTERACTION.trace('key', e.key);
+      this.#withTrigger({ event: e, element: this.#activeRow() }, () => {
+        if (handleInputKeydown(e, this.#engine, input, this.#keys(), this.isRtl)) this.log.INTERACTION.trace('key', e.key);
+      });
     });
 
     // Keep focus in the input while clicking rows/tokens.
@@ -414,22 +531,22 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents> {
       const star = (e.target as Element).closest?.('[data-star]') as HTMLElement | null;
       if (star) {
         e.stopPropagation();
-        this.#machine.toggleFavorite(Number(star.dataset.star));
+        this.#engine.toggleFavorite(Number(star.dataset.star));
         return;
       }
       const more = (e.target as Element).closest?.('[data-view]') as HTMLElement | null;
       if (more) {
-        this.#machine.showUsage(more.dataset.view === 'recent' ? 'recent' : 'favorites');
+        this.#engine.showUsage(more.dataset.view === 'recent' ? 'recent' : 'favorites');
         return;
       }
       const row = (e.target as Element).closest?.('[data-index]') as HTMLElement | null;
-      if (row) this.#machine.select(Number(row.dataset.index));
+      if (row) this.#withTrigger({ event: e, element: row }, () => this.#engine.select(Number(row.dataset.index)));
     });
     tokens.addEventListener('click', (e) => {
       const btn = (e.target as Element).closest?.('[data-token]') as HTMLElement | null;
       if (!btn) return;
       e.stopPropagation();
-      this.#machine.removeToken(Number(btn.dataset.token));
+      this.#engine.removeToken(Number(btn.dataset.token));
       input.focus();
     });
     backdrop.addEventListener('click', () => this.close());
@@ -466,14 +583,14 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents> {
     this.#applySize();
     this.#applyUsage();
     this.#renderer.keys = this.#keys();
-    this.#machine.refresh();
+    this.#engine.refresh();
     this.#renderer.invalidate();
     this.#render();
     if (!this.#isReady && this.isConnected) {
       this.#isReady = true;
       // Deferred a microtask: upgrade happens while the defining module is still
       // evaluating, so a listener added right after `import` would otherwise miss it.
-      queueMicrotask(() => this.emit('cp-ready', {}));
+      queueMicrotask(() => this.emit('ready'));
     }
   }
 
@@ -484,11 +601,11 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents> {
     }
     if ('size' in partial) this.#applySize();
     if ('mobilePresentation' in partial) this.#applyPresentation(getEnvironment());
-    if ('commands' in partial || 'contexts' in partial) this.#machine.refresh();
-    if ('display' in partial) this.#machine.displayChanged();
-    if ('pageSize' in partial) this.#machine.refresh();
+    if ('commands' in partial || 'contexts' in partial) this.#engine.refresh();
+    if ('display' in partial) this.#engine.displayChanged();
+    if ('pageSize' in partial) this.#engine.refresh();
     if ('usageStorage' in partial || 'usageKey' in partial || 'loadUsageCallback' in partial) this.#applyUsage();
-    else if ('recentLimit' in partial || 'favoritesLimit' in partial) this.#machine.refresh();
+    else if ('recentLimit' in partial || 'favoritesLimit' in partial) this.#engine.refresh();
     if ('favoriteKey' in partial || 'favoritesKey' in partial || 'recentKey' in partial) {
       this.#renderer.keys = this.#keys();
       this.#renderer.invalidate();
@@ -528,6 +645,28 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents> {
     this.#applyPresentation(env);
   }
 
+  /** The public facade (`el.controller`): the imperative methods below, never the engine. */
+  protected override createController(): CommandPaletteController {
+    const el = this;
+    const controller = {
+      get isOpen(): boolean {
+        return el.isOpen;
+      },
+    } as CommandPaletteController;
+    for (const name of CONTROLLER_METHODS) {
+      Object.defineProperty(controller, name, {
+        value: (...args: unknown[]) => (el[name] as (...a: unknown[]) => void)(...args),
+        enumerable: true,
+      });
+    }
+    return controller;
+  }
+
+  /** Presentation flags on every event detail and callback ctx (the palette is a popup). */
+  protected override eventContext(): object | undefined {
+    return createPresentationContext(this.#isFullscreen ? 'fullscreen' : 'floating');
+  }
+
   #applyLabels(): void {
     const custom = this.config.labels as Partial<Labels> | undefined;
     this.#labels = { ...DEFAULT_LABELS, ...(custom ?? {}) };
@@ -562,7 +701,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents> {
     }
   }
 
-  // ── public API ────────────────────────────────────────────────────────────
+  // ── public API (also on `el.controller`) ──────────────────────────────────
 
   /** Whether the palette is open. (Also reflected as the `open` attribute.) */
   get isOpen(): boolean {
@@ -580,7 +719,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents> {
     this.#overlay?.activate();
     this.#isOpen = true;
     this.#returnFocus = deepActiveElement();
-    this.#machine.reset();
+    this.#engine.reset();
     this.#shell.root.classList.add('pa-command-palette--active');
     this.toggleAttribute('open', true);
     this.#releaseScroll = lockBodyScroll();
@@ -589,7 +728,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents> {
     this.#render();
     this.#shell.input.focus();
     this.log.UI.debug('open');
-    this.emit('cp-open', {});
+    this.emit('open');
   }
 
   /** Close and reset. No-op when already closed. */
@@ -597,8 +736,8 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents> {
     if (!this.#isOpen) return;
     this.#endConfirmation();
     this.#isOpen = false;
-    this.#machine.dispose();
-    this.#machine.reset();
+    this.#engine.dispose();
+    this.#engine.reset();
     this.#shell.root.classList.remove('pa-command-palette--active');
     this.toggleAttribute('open', false);
     this.#overlay?.deactivate();
@@ -612,9 +751,10 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents> {
     this.#shell.input.blur();
     if (back?.isConnected && typeof back.focus === 'function') back.focus();
     this.log.UI.debug('close');
-    this.emit('cp-close', {});
+    this.emit('close');
   }
 
+  /** Open when closed, close when open. */
   toggle(): void {
     // During a confirmation the user is moving on: Ctrl/⌘+K opens a fresh palette.
     if (this.#isOpen && !this.#confirmTimer) this.close();
@@ -624,13 +764,13 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents> {
   /** Back to the home screen (stays open). */
   reset(): void {
     this.flush();
-    this.#machine.reset();
+    this.#engine.reset();
   }
 
   /** Open pre-filled with `query` (e.g. `'/deploy'`, `':products laptop'`), run through the normal input pipeline. */
   openWith(query: string): void {
     this.open();
-    this.#machine.setInput(query ?? '');
+    this.#engine.setInput(query ?? '');
   }
 
   /** Same as assigning `commands` (imperative hook for server-driven hosts). */
@@ -641,13 +781,13 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents> {
   /** Open on the full favorites list (what `g f` does). No-op list when favorites are off. */
   openFavorites(): void {
     this.open();
-    if (this.#machine.usageView !== 'favorites') this.#machine.showUsage('favorites');
+    if (this.#engine.usageView !== 'favorites') this.#engine.showUsage('favorites');
   }
 
   /** Open on the full recently-used list. */
   openRecent(): void {
     this.open();
-    if (this.#machine.usageView !== 'recent') this.#machine.showUsage('recent');
+    if (this.#engine.usageView !== 'recent') this.#engine.showUsage('recent');
   }
 
   /** Same as assigning `contexts`. */

@@ -7,10 +7,12 @@
  * Behavioural sources of truth: pure-admin `command-palette.js` (routing, wizard,
  * keyboard) and keen `live.ex` (step-back, pagination, global prepend).
  */
-import { filterCommands, filterContexts, filterOptions, findByShortcut, globalMatches, matchesAny } from './filter';
+import { resolveActionItem, type ResolvedActionItem } from '@keenmate/web-components-core/actions';
+import { filterCommands, filterContexts, filterOptions, findByTrigger, globalMatches, matchesAny } from './filter';
 import { cloneResult, cloneSelections, usageKey, type UsageStore, type UsageTarget } from './usage';
 import type {
   Command,
+  CommandContext,
   Context,
   Display,
   Labels,
@@ -19,21 +21,30 @@ import type {
   Result,
   Scope,
   SearchCallback,
+  SearchContext,
   Selection,
   Step,
+  StepContext,
   StepOptionsCallback,
+  StepOptionsContext,
   UsageEntry,
 } from './types';
 
 /** PgUp/PgDn jump (matches all three legacy implementations). */
 export const PAGE_STEP = 8;
 
-/** What the machine needs from its host (the element). Read live on every use. */
-export interface MachineHost {
+/** What the engine needs from its host (the element). Read live on every use. */
+export interface PaletteEngineHost {
   commands(): readonly Command[];
   contexts(): readonly Context[];
   searchCallback(): SearchCallback | null;
-  stepOptionsCallback(): StepOptionsCallback | null;
+  getStepOptionsCallback(): StepOptionsCallback | null;
+  /**
+   * Attach the component context (`controller`, `element`, presentation) to a
+   * callback ctx, in place. The element supplies it; a standalone host may omit
+   * it (callbacks then get the plain fields).
+   */
+  context?<T extends object>(fields: T): T;
   display(): Display;
   pageSize(): number;
   debounceMs(): number;
@@ -48,17 +59,25 @@ export interface MachineHost {
   starKey?(): string;
   /** State changed — re-render. */
   changed(): void;
-  /** A terminal outcome. The host performs it (dispatch + close). */
-  effect(effect: Effect): void;
+  /**
+   * A terminal outcome. The host performs it (before-hook, event, close) and
+   * answers whether it went ahead: `false` (or a Promise of it) = vetoed — the
+   * engine records nothing and, for a finished wizard, steps back to the last
+   * answer so the user can change it; anything else = done (usage is recorded).
+   */
+  effect(effect: Effect): EffectOutcome;
   /** Provider failures (rejected promise / throw). */
   error?(message: string, err: unknown): void;
 }
 
 export type Effect =
   | { type: 'select'; item: Result; scope: Scope }
-  | { type: 'complete'; commandId: string; selections: Selection[] }
-  | { type: 'command'; commandId: string }
+  /** A command ran: immediately (no steps) or after the wizard's last answer. */
+  | { type: 'action'; command: Command; selections: Selection[] }
   | { type: 'close' };
+
+/** The host's answer to {@link PaletteEngineHost.effect}: `false` = vetoed. */
+export type EffectOutcome = boolean | void | PromiseLike<boolean | void>;
 
 export type ItemKind = 'command' | 'context' | 'option' | 'result' | 'usage';
 
@@ -91,6 +110,14 @@ export interface ViewItem {
   isDefault?: boolean;
   /** The remembered answer itself, when its option isn't in the current list. */
   selection?: Selection;
+  /** A command row that can't run (`isDisabled` / `getIsDisabledCallback`). */
+  isDisabled?: boolean;
+  /** A destructive command (`isDanger`). */
+  isDanger?: boolean;
+  /** Extra row classes (`cssClass` / `getClassCallback`). */
+  cssClass?: string;
+  /** Row tooltip (`tooltip` / `getTooltipCallback`). */
+  tooltip?: string;
   ref: Command | Context | Option | Result | UsageEntry;
 }
 
@@ -108,37 +135,47 @@ const fill = (template: string, values: Record<string, string | number>): string
 /** Split a hotkey into keycaps: `"g d"` → `[g, d]`, `"Ctrl+K"` → `[Ctrl, K]`. */
 export const hotkeyKeys = (hotkey: string): string[] => hotkey.split(/[+\s]+/).filter(Boolean);
 
-function commandItem(c: Command, section?: 'commands'): ViewItem {
+/** The resolved action-item fields a command row shows. */
+function commandState(r: ResolvedActionItem): Pick<ViewItem, 'title' | 'icon' | 'tooltip' | 'cssClass' | 'isDisabled' | 'isDanger'> {
+  const out: Pick<ViewItem, 'title' | 'icon' | 'tooltip' | 'cssClass' | 'isDisabled' | 'isDanger'> = { title: r.text, icon: r.icon };
+  if (r.tooltip) out.tooltip = r.tooltip;
+  if (r.cssClass) out.cssClass = r.cssClass;
+  if (r.isDisabled) out.isDisabled = true;
+  if (r.isDanger) out.isDanger = true;
+  return out;
+}
+
+function commandItem(c: Command, r: ResolvedActionItem, section?: 'commands'): ViewItem {
   return {
     kind: 'command',
-    title: c.name,
+    ...commandState(r),
     meta: c.description,
-    icon: c.icon,
-    keys: section && c.hotkey ? hotkeyKeys(c.hotkey) : [c.shortcut],
+    keys: section && c.shortcut ? hotkeyKeys(c.shortcut) : [c.trigger],
     section,
-    key: usageKey({ kind: 'command', label: c.name, commandId: c.id }),
+    key: usageKey({ kind: 'command', label: c.text, commandId: c.id }),
     ref: c,
   };
 }
 
 function contextItem(c: Context, section?: 'contexts'): ViewItem {
   return {
-    kind: 'context', title: c.name, meta: c.description, icon: c.icon, keys: [c.shortcut], section,
-    key: usageKey({ kind: 'context', label: c.name, contextId: c.id }),
+    kind: 'context', title: c.text, meta: c.description, icon: c.icon, keys: [c.trigger], section,
+    key: usageKey({ kind: 'context', label: c.text, contextId: c.id }),
     ref: c,
   };
 }
 
-/** A command/context surfaced in global search: shortcut as a badge (keen/core parity). */
-function globalEntryItem(kind: 'command' | 'context', e: Command | Context): ViewItem {
+/** A command/context surfaced in global search: trigger as a badge (keen/core parity). */
+function globalEntryItem(kind: 'command' | 'context', e: Command | Context, r?: ResolvedActionItem): ViewItem {
   const key = kind === 'command'
-    ? usageKey({ kind, label: e.name, commandId: e.id })
-    : usageKey({ kind, label: e.name, contextId: e.id });
-  return { kind, title: e.name, meta: e.description, icon: e.icon, badge: e.shortcut, key, ref: e };
+    ? usageKey({ kind, label: e.text, commandId: e.id })
+    : usageKey({ kind, label: e.text, contextId: e.id });
+  const base: ViewItem = { kind, title: e.text, meta: e.description, icon: e.icon, badge: e.trigger, key, ref: e };
+  return r ? { ...base, ...commandState(r) } : base;
 }
 
 function optionItem(o: Option): ViewItem {
-  return { kind: 'option', title: o.label, meta: o.description, icon: o.icon, ref: o };
+  return { kind: 'option', title: o.text, meta: o.description, icon: o.icon, ref: o };
 }
 
 function resultItem(r: Result, scope: Scope): ViewItem {
@@ -171,13 +208,23 @@ function clusterByGroup(items: ViewItem[]): ViewItem[] {
 }
 
 const matchesSelection = (o: Option, sel: Selection): boolean =>
-  sel.optionId != null ? o.id === sel.optionId : o.label === sel.label;
+  sel.optionId != null ? o.id === sel.optionId : o.text === sel.label;
+
+/** Attach an `AbortSignal` non-enumerable, so the ctx stays plain JSON for a LiveView bridge. */
+function withSignal<T extends object>(fields: T, signal: AbortSignal): T & { readonly signal: AbortSignal } {
+  return Object.defineProperty(fields, 'signal', { value: signal, enumerable: false, configurable: true }) as T & { readonly signal: AbortSignal };
+}
 
 const isThenable = <T>(v: unknown): v is PromiseLike<T> =>
   !!v && (typeof v === 'object' || typeof v === 'function') && typeof (v as PromiseLike<T>).then === 'function';
 
-export class PaletteMachine {
-  #host: MachineHost;
+/**
+ * The palette ENGINE — the DOM-free state machine behind `<web-command-palette>`.
+ * Exported for standalone use (drive it from your own UI / tests); the element
+ * never exposes it — consumers use `el.controller`.
+ */
+export class PaletteEngine {
+  #host: PaletteEngineHost;
 
   // ── public, read-only view state ──────────────────────────────────────────
   mode: Mode = 'idle';
@@ -222,9 +269,37 @@ export class PaletteMachine {
   #timer: ReturnType<typeof setTimeout> | null = null;
   #request: AbortController | null = null;
 
-  constructor(host: MachineHost) {
+  constructor(host: PaletteEngineHost) {
     this.#host = host;
     this.#home();
+  }
+
+  // ── host helpers ──────────────────────────────────────────────────────────
+
+  /** A callback ctx with the component context attached (when the host supplies it). */
+  #ctx<T extends object>(fields: T): T {
+    return this.#host.context ? this.#host.context(fields) : fields;
+  }
+
+  /** Resolve a command's action-item fields (`get*Callback` wins) against the render-time ctx. */
+  #resolve(c: Command): ResolvedActionItem {
+    return resolveActionItem(c, this.#ctx<CommandContext>({ selections: [] } as unknown as CommandContext));
+  }
+
+  /** The commands to offer: the host's list minus hidden ones (`isVisible` / `getIsVisibleCallback`). */
+  #commands(): Command[] {
+    return this.#host.commands().filter((c) => this.#resolve(c).isVisible);
+  }
+
+  /** Command rows (resolved) for a list of commands. */
+  #commandItems(list: readonly Command[], section?: 'commands'): ViewItem[] {
+    return list.map((c) => commandItem(c, this.#resolve(c), section));
+  }
+
+  /** Whether `command` may run right now (visible and not disabled). */
+  isCommandEnabled(command: Command): boolean {
+    const r = this.#resolve(command);
+    return r.isVisible && !r.isDisabled;
   }
 
   // ── derived view ──────────────────────────────────────────────────────────
@@ -268,8 +343,8 @@ export class PaletteMachine {
     switch (this.mode) {
       case 'command-list': return labels.commands;
       case 'context-list': return labels.searchContexts;
-      case 'command-step': return this.command?.name ?? null;
-      case 'context-search': return this.context ? fill(labels.searchingIn, { name: this.context.name }) : null;
+      case 'command-step': return this.command ? this.#resolve(this.command).text : null;
+      case 'context-search': return this.context ? fill(labels.searchingIn, { name: this.context.text }) : null;
       case 'favorites-list': return labels.favorites;
       case 'recent-list': return labels.recent;
       default: return null;
@@ -286,7 +361,7 @@ export class PaletteMachine {
   /** Tokens-display fragments, or null when the tokens row is not in use. */
   get tokens(): TokenView[] | null {
     if (this.mode !== 'command-step' || this.#host.display() !== 'tokens' || !this.command) return null;
-    const out: TokenView[] = [{ type: 'command', label: this.command.shortcut }];
+    const out: TokenView[] = [{ type: 'command', label: this.command.trigger }];
     this.selections.forEach((sel, index) => {
       const prompt = this.#stepById(sel.stepId)?.prompt?.trim();
       if (prompt) out.push({ type: 'prompt', label: prompt });
@@ -389,7 +464,7 @@ export class PaletteMachine {
       return;
     }
     if (this.mode === 'context-search' && this.context) {
-      const prefix = this.context.shortcut + ' ';
+      const prefix = this.context.trigger + ' ';
       if (!value.startsWith(prefix)) return this.#leave(value);
       this.#onContextQuery(value.slice(prefix.length));
       return;
@@ -456,7 +531,7 @@ export class PaletteMachine {
     this.#setItems([
       ...(store ? capped('favorites', this.#host.favoritesLimit?.() ?? 3) : []),
       ...(store ? capped('recent', this.#host.recentLimit?.() ?? 3) : []),
-      ...this.#host.commands().map((c) => star(commandItem(c, 'commands'))),
+      ...this.#commandItems(this.#commands(), 'commands').map(star),
       ...this.#host.contexts().map((c) => star(contextItem(c, 'contexts'))),
     ]);
   }
@@ -475,16 +550,18 @@ export class PaletteMachine {
     const meta = (text: string | undefined): string | undefined => (compact ? undefined : text);
     switch (e.kind) {
       case 'command': {
-        const c = this.#host.commands().find((x) => x.id === e.commandId);
-        return c ? { ...base, title: c.name, meta: meta(c.description), icon: c.icon, keys: [c.shortcut] } : null;
+        const c = this.#commands().find((x) => x.id === e.commandId);
+        return c ? { ...base, ...commandState(this.#resolve(c)), meta: meta(c.description), keys: [c.trigger] } : null;
       }
       case 'run': {
-        const c = this.#host.commands().find((x) => x.id === e.commandId);
-        return c ? { ...base, title: e.label, meta: meta(c.name), icon: c.icon } : null;
+        const c = this.#commands().find((x) => x.id === e.commandId);
+        if (!c) return null;
+        const r = this.#resolve(c);
+        return { ...base, ...commandState(r), title: e.label, meta: meta(r.text) };
       }
       case 'context': {
         const c = this.#host.contexts().find((x) => x.id === e.contextId);
-        return c ? { ...base, title: c.name, meta: meta(c.description), icon: c.icon, keys: [c.shortcut] } : null;
+        return c ? { ...base, title: c.text, meta: meta(c.description), icon: c.icon, keys: [c.trigger] } : null;
       }
       case 'result':
         return e.item ? { ...base, title: e.item.title, meta: meta(e.item.subtitle), icon: e.item.icon } : null;
@@ -543,8 +620,8 @@ export class PaletteMachine {
   #targetOf(item: ViewItem): UsageTarget | null {
     switch (item.kind) {
       case 'usage': return item.ref as UsageEntry;
-      case 'command': { const c = item.ref as Command; return { kind: 'command', label: c.name, commandId: c.id }; }
-      case 'context': { const c = item.ref as Context; return { kind: 'context', label: c.name, contextId: c.id }; }
+      case 'command': { const c = item.ref as Command; return { kind: 'command', label: c.text, commandId: c.id }; }
+      case 'context': { const c = item.ref as Context; return { kind: 'context', label: c.text, contextId: c.id }; }
       case 'result': {
         const r = item.ref as Result;
         return { kind: 'result', label: r.title, item: cloneResult(r), scope: item.scope ?? 'global' };
@@ -562,15 +639,16 @@ export class PaletteMachine {
   #onCommandInput(v: string): void {
     const space = v.indexOf(' ');
     if (space >= 0) {
-      const exact = findByShortcut(this.#host.commands(), v.slice(0, space));
-      if (exact) return this.#enterCommand(exact, v.slice(space + 1).trimStart());
+      const exact = findByTrigger(this.#commands(), v.slice(0, space));
+      // A disabled command falls through to the filtered list.
+      if (exact && (this.#enterCommand(exact, v.slice(space + 1).trimStart()) || this.command === exact)) return;
     }
     const needle = v.slice(1).trim();
     this.mode = 'command-list';
     this.highlight = needle;
     this.isLoading = false;
     this.emptyText = this.#host.labels().emptyText;
-    this.#setItems(this.#starred(filterCommands(this.#host.commands(), needle).map((c) => commandItem(c))));
+    this.#setItems(this.#starred(this.#commandItems(filterCommands(this.#commands(), needle))));
   }
 
   /** Mark starrable rows with their current star state (only when favorites are on). */
@@ -590,27 +668,67 @@ export class PaletteMachine {
     this.#changed();
   }
 
-  #enterCommand(command: Command, initialQuery: string, replay?: Selection[]): void {
+  /** Returns true when the command ran (a terminal effect fired). A disabled / hidden command does nothing. */
+  #enterCommand(command: Command, initialQuery: string, replay?: Selection[]): boolean {
+    if (!this.isCommandEnabled(command)) return false;
+    if (!command.steps?.length) {
+      // Instant: nothing changes until the host accepts (a veto leaves the palette as it was).
+      return this.#finish(
+        { type: 'action', command, selections: [] },
+        { kind: 'command', label: command.text, commandId: command.id },
+      );
+    }
     this.#cancel();
     this.context = null;
     this.#clearWizard();
     this.command = command;
-    this.#plan = [...(command.steps ?? [])];
+    this.#plan = [...command.steps];
     this.#replay = replay?.length ? cloneSelections(replay) : null;
-    if (!command.steps?.length) {
-      this.#record({ kind: 'command', label: command.name, commandId: command.id });
-      this.#host.effect({ type: 'command', commandId: command.id });
-      return;
-    }
     const first = this.#nextShownStep(-1);
     if (first < 0) {
-      // Every step is hidden by shouldShow — nothing to ask.
-      this.#host.effect({ type: 'complete', commandId: command.id, selections: [] });
-      return;
+      // Every step is hidden by getIsVisibleCallback — nothing to ask.
+      return this.#finish({ type: 'action', command, selections: [] }, null, () => {
+        if (this.command === command && this.mode !== 'command-step') this.#clearWizard();
+      });
     }
     this.mode = 'command-step';
     this.stepIndex = first;
     this.#enterStep(initialQuery);
+    return false;
+  }
+
+  /**
+   * Report a terminal effect to the host. Records `target` once the host accepts
+   * it; runs `onVeto` when it vetoes (`false`, now or later). Returns true — the
+   * flow is over either way (a veto has already restored the state).
+   */
+  #finish(effect: Effect, target: UsageTarget | null, onVeto?: () => void): boolean {
+    const accept = (): void => {
+      if (target) this.#record(target);
+    };
+    const veto = (): void => {
+      onVeto?.();
+      this.#changed();
+    };
+    let out: EffectOutcome;
+    try {
+      out = this.#host.effect(effect);
+    } catch (err) {
+      this.#host.error?.('effect failed', err);
+      veto();
+      return true;
+    }
+    if (out === false) veto();
+    else if (isThenable<boolean | void>(out)) {
+      out.then(
+        (ok) => (ok === false ? veto() : accept()),
+        (err) => {
+          this.#host.error?.('effect failed', err);
+          veto();
+        },
+      );
+    } else accept();
+    return true;
   }
 
   #stepById(id: string): Step | undefined {
@@ -629,12 +747,20 @@ export class PaletteMachine {
     this.#plan = plan;
   }
 
-  /** Index of the next step after `from` whose `shouldShow` passes, or -1. */
+  /** Index of the next step after `from` whose `getIsVisibleCallback` passes, or -1. */
   #nextShownStep(from: number): number {
     const steps = this.#plan;
     for (let i = from + 1; i < steps.length; i++) {
       const s = steps[i];
-      if (!s.shouldShow || s.shouldShow(this.selections)) return i;
+      if (typeof s.getIsVisibleCallback !== 'function') return i;
+      const ctx = this.#ctx({ commandId: this.command?.id ?? '', stepId: s.id, selections: cloneSelections(this.selections) }) as StepContext;
+      let isVisible = true;
+      try {
+        isVisible = s.getIsVisibleCallback(ctx) !== false;
+      } catch (err) {
+        this.#host.error?.('getIsVisibleCallback failed', err);
+      }
+      if (isVisible) return i;
     }
     return -1;
   }
@@ -647,7 +773,7 @@ export class PaletteMachine {
 
   /** `"/assign iPad Air to John"` — the command and its answers so far. */
   #sentence(): string {
-    let text = this.command?.shortcut ?? '';
+    let text = this.command?.trigger ?? '';
     for (const sel of this.selections) text += (this.#stepById(sel.stepId)?.prompt ?? ' ') + sel.label;
     return text;
   }
@@ -677,7 +803,7 @@ export class PaletteMachine {
       const rest = options.filter((_, i) => i !== at);
       return [{ ...optionItem(options[at]), isDefault: true, badge }, ...rest.map(optionItem)];
     }
-    const synthetic: Option = { label: def.label, value: def.value };
+    const synthetic: Option = { text: def.label, value: def.value };
     if (def.optionId != null) synthetic.id = def.optionId;
     return [{ ...optionItem(synthetic), isDefault: true, badge, selection: def }, ...options.map(optionItem)];
   }
@@ -691,7 +817,7 @@ export class PaletteMachine {
     this.emptyText = null;
     this.#setItems(this.#stepItems([]));
     const step = this.step!;
-    if (step.search) {
+    if (step.isLiveSearch) {
       this.#fetchStepOptions(query, true);
     } else if (step.options) {
       this.#stepOptions = step.options;
@@ -705,7 +831,7 @@ export class PaletteMachine {
   #onStepQuery(query: string): void {
     this.#stepQuery = query;
     this.highlight = query.trim();
-    if (this.step?.search) {
+    if (this.step?.isLiveSearch) {
       this.#cancel();
       this.isLoading = true;
       this.#changed();
@@ -729,7 +855,7 @@ export class PaletteMachine {
   /** `isLive`: the result IS the list (search step); else it's the full set to filter. */
   #fetchStepOptions(query: string, isLive: boolean): void {
     const step = this.step!;
-    const cb = step.load ?? this.#host.stepOptionsCallback();
+    const cb = step.getOptionsCallback ?? this.#host.getStepOptionsCallback();
     const command = this.command!;
     if (!cb) {
       this.#stepOptions = [];
@@ -737,7 +863,8 @@ export class PaletteMachine {
       return;
     }
     this.#run(
-      (signal) => cb({ commandId: command.id, stepId: step.id, query, selections: cloneSelections(this.selections) }, signal),
+      (signal) =>
+        cb(this.#ctx(withSignal({ commandId: command.id, stepId: step.id, term: query, selections: cloneSelections(this.selections) }, signal)) as StepOptionsContext),
       (options) => {
         const list = (options ?? []) as Option[];
         if (isLive) {
@@ -762,9 +889,19 @@ export class PaletteMachine {
       this.#cancel();
       const command = this.command!;
       const selections = cloneSelections(this.selections);
-      this.#record({ kind: 'run', label: this.#sentence(), commandId: command.id, selections });
-      this.#host.effect({ type: 'complete', commandId: command.id, selections: cloneSelections(selections) });
-      return true;
+      const count = selections.length;
+      return this.#finish(
+        { type: 'action', command, selections: cloneSelections(selections) },
+        { kind: 'run', label: this.#sentence(), commandId: command.id, selections },
+        // Vetoed: step back to the last answer so the user can change it.
+        () => {
+          if (this.command !== command || this.mode !== 'command-step' || this.selections.length !== count) return;
+          const last = this.selections[count - 1];
+          this.#truncate(count - 1);
+          this.stepIndex = this.#plan.findIndex((s) => s.id === last.stepId);
+          this.#enterStep('');
+        },
+      );
     }
     this.stepIndex = next;
     this.#enterStep('');
@@ -819,7 +956,7 @@ export class PaletteMachine {
   #onContextInput(v: string): void {
     const space = v.indexOf(' ');
     if (space >= 0) {
-      const exact = findByShortcut(this.#host.contexts(), v.slice(0, space));
+      const exact = findByTrigger(this.#host.contexts(), v.slice(0, space));
       if (exact) return this.#enterContext(exact, v.slice(space + 1).trimStart());
     }
     const needle = v.slice(1).trim();
@@ -841,11 +978,11 @@ export class PaletteMachine {
     this.#clearWizard();
     this.mode = 'context-search';
     this.context = context;
-    const prefix = context.shortcut + ' ';
+    const prefix = context.trigger + ' ';
     this.input = prefix + query;
     this.lockedLength = prefix.length;
     this.#onContextQuery(query, true);
-    this.#record({ kind: 'context', label: context.name, contextId: context.id });
+    this.#record({ kind: 'context', label: context.text, contextId: context.id });
   }
 
   #onContextQuery(query: string, isEntry = false): void {
@@ -856,7 +993,7 @@ export class PaletteMachine {
       // The rule that started this project: an empty context query NEVER hits the
       // provider — prompt instead of dumping "top N" results.
       this.isLoading = false;
-      this.emptyText = fill(this.#host.labels().typeToSearch, { name: this.context!.name });
+      this.emptyText = fill(this.#host.labels().typeToSearch, { name: this.context!.text });
       this.#setResults([]);
       if (!isEntry) this.#changed();
       return;
@@ -872,7 +1009,7 @@ export class PaletteMachine {
     // Matching commands/contexts are known locally — show them with zero latency,
     // then append the provider's hits. Works with no searchCallback at all.
     const local = this.#starred([
-      ...globalMatches(this.#host.commands(), q).map((c) => globalEntryItem('command', c)),
+      ...globalMatches(this.#commands(), q).map((c) => globalEntryItem('command', c, this.#resolve(c))),
       ...globalMatches(this.#host.contexts(), q).map((c) => globalEntryItem('context', c)),
     ]);
     if (!this.#host.searchCallback()) {
@@ -888,12 +1025,10 @@ export class PaletteMachine {
 
   /** The provider for `scope`: the context's own `search`, else `searchCallback`. */
   #searchFor(scope: Scope): ((signal: AbortSignal) => unknown) | null {
-    if (scope !== 'global') {
-      const own = this.#host.contexts().find((c) => c.id === scope.contextId)?.search;
-      if (own) return (signal) => own(this.#searchQuery, signal);
-    }
-    const cb = this.#host.searchCallback();
-    return cb ? (signal) => cb(scope, this.#searchQuery, signal) : null;
+    const own = scope !== 'global' ? this.#host.contexts().find((c) => c.id === scope.contextId)?.searchCallback : undefined;
+    const cb = own ?? this.#host.searchCallback();
+    if (!cb) return null;
+    return (signal) => cb(this.#ctx(withSignal({ scope, term: this.#searchQuery }, signal)) as SearchContext);
   }
 
   #searchQuery = '';
@@ -1056,22 +1191,21 @@ export class PaletteMachine {
     if (!item) {
       const step = this.step;
       const text = this.#stepQuery.trim();
-      if (this.mode === 'command-step' && step?.freeText && text) {
+      if (this.mode === 'command-step' && step?.isFreeTextAllowed && text) {
         return this.#choose({ stepId: step.id, label: text, value: text, isFreeText: true });
       }
       return false;
     }
     switch (item.kind) {
       case 'command':
-        this.#enterCommand(item.ref as Command, '');
-        return !(item.ref as Command).steps?.length;
+        return this.#enterCommand(item.ref as Command, '');
       case 'context':
         this.#enterContext(item.ref as Context, '');
         return false;
       case 'option': {
         if (item.selection) return this.#choose({ ...item.selection });
         const o = item.ref as Option;
-        const sel: Selection = { stepId: this.step!.id, label: o.label, value: o.value ?? o.label, isFreeText: false };
+        const sel: Selection = { stepId: this.step!.id, label: o.text, value: o.value ?? o.text, isFreeText: false };
         if (o.id != null) sel.optionId = o.id;
         return this.#choose(sel, o.steps);
       }
@@ -1079,9 +1213,7 @@ export class PaletteMachine {
         const r = item.ref as Result;
         const scope: Scope = item.scope ?? (this.mode === 'context-search' && this.context ? { contextId: this.context.id } : 'global');
         this.#cancel();
-        this.#record({ kind: 'result', label: r.title, item: cloneResult(r), scope });
-        this.#host.effect({ type: 'select', item: r, scope });
-        return true;
+        return this.#finish({ type: 'select', item: r, scope }, { kind: 'result', label: r.title, item: cloneResult(r), scope });
       }
       case 'usage':
         return this.#selectUsage(item.ref as UsageEntry);
@@ -1092,10 +1224,9 @@ export class PaletteMachine {
     switch (e.kind) {
       case 'command':
       case 'run': {
-        const c = this.#host.commands().find((x) => x.id === e.commandId);
+        const c = this.#commands().find((x) => x.id === e.commandId);
         if (!c) return false;
-        this.#enterCommand(c, '', e.kind === 'run' ? e.selections : undefined);
-        return !c.steps?.length;
+        return this.#enterCommand(c, '', e.kind === 'run' ? e.selections : undefined);
       }
       case 'context': {
         const c = this.#host.contexts().find((x) => x.id === e.contextId);
@@ -1106,9 +1237,7 @@ export class PaletteMachine {
         if (!e.item) return false;
         const scope = e.scope ?? 'global';
         this.#cancel();
-        this.#record({ kind: 'result', label: e.item.title, item: e.item, scope });
-        this.#host.effect({ type: 'select', item: cloneResult(e.item), scope });
-        return true;
+        return this.#finish({ type: 'select', item: cloneResult(e.item), scope }, { kind: 'result', label: e.item.title, item: e.item, scope });
       }
     }
     return false;

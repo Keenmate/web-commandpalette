@@ -27,7 +27,12 @@
     {
       "name": "base-danger-color",
       "required": false,
-      "usage": "danger badge background"
+      "usage": "danger badge background; title of an isDanger command row"
+    },
+    {
+      "name": "base-disabled-opacity",
+      "required": false,
+      "usage": "Opacity of a disabled command row"
     },
     {
       "name": "base-duration-fast",
@@ -790,6 +795,14 @@
     {
       "name": "cp-item-active-outline",
       "usage": "Active row outline (--base-focused-outline), drawn inset"
+    },
+    {
+      "name": "cp-item-danger-color",
+      "usage": "Title color of a destructive (isDanger) command row (--base-danger-color)"
+    },
+    {
+      "name": "cp-item-disabled-opacity",
+      "usage": "Opacity of a disabled command row (--base-disabled-opacity)"
     },
     {
       "name": "cp-item-hover-bg",

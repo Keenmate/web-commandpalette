@@ -5,6 +5,99 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+Proposed target: **2.0.0-rc01** (package.json unchanged until decided) — a major: the event,
+callback and item API below is breaking, so `^1.x` consumers must not auto-pull it.
+
+### Changed — BREAKING (interaction model, web-components-core rc15)
+
+Events, callbacks and commands follow the shared KeenMate interaction model
+(web-components-core `/actions`, SPEC §12.5 / §12.12). No aliases — rename on upgrade.
+
+**Every callback takes ONE `ctx` argument.** Every ctx and every event detail carries
+`controller` (the public `CommandPaletteController`, also `el.controller`) and `element` (the
+host) — both non-enumerable, like a provider ctx's `signal`, so `JSON.stringify` / a LiveView
+`pushEvent` see only the data — plus the presentation flags (`presentation`, `isFullscreen`,
+`isModal`; the palette is a popup).
+
+**Events** — no `cp-` prefix; bubbling, **not composed** (was `composed: true`); declared in the
+`static events` table; the camelCase `on*` twin is called with the event **detail** (it used to
+be a listener receiving the `CustomEvent`), then the DOM event fires with the same object.
+
+| Old | New |
+|---|---|
+| `cp-open` / `onCpOpen(e)` | `open` / `onOpen(detail)` |
+| `cp-close` / `onCpClose(e)` | `close` / `onClose(detail)` |
+| `cp-select` / `onCpSelect(e)` — `{ item, scope }` | `select` / `onSelect(detail)` — `{ item, scope }` (search results only) |
+| `cp-command` / `onCpCommand(e)` — `{ commandId }` (instant command) | `action` / `onAction(detail)` — `{ action: 'custom', id, item, source: 'palette', selections: [], sourceEvent, triggerElement, dataset }` |
+| `cp-complete` / `onCpComplete(e)` — `{ commandId, selections }` (wizard done) | the same `action` event, fired after the last answer, with `selections` |
+| `cp-ready` / `onCpReady(e)` | `ready` / `onReady(detail)` |
+| `e.detail.commandId` | `e.detail.id` (and `e.detail.item` = the command) |
+
+**Commands are core action items** (`Command extends ActionItem<CommandContext>`). Running one —
+Enter / click on a command without `steps`, the last wizard answer, or its `g <letter>` hotkey —
+goes through core `runAction`: `beforeActionCallback(detail)` → the command's `onClick(detail)` →
+`onAction` → the `action` event. The palette has no built-in actions: `action` is always
+`'custom'`, `id` identifies the command. The event is dispatched a microtask later than
+`cp-command` / `cp-complete` were (the before-hook may be async).
+
+| Old | New |
+|---|---|
+| `Command.shortcut` (`'/go'`, the slash token) | `Command.trigger` |
+| `Command.name` | `Command.text` |
+| `Command.hotkey` (`'g d'` / `'Ctrl+K'`) | `Command.shortcut` (the key chord, as on every core `ActionItem`) |
+| `Command.description` | unchanged — it's the row's second line (searched by the `/` filter), not a tooltip |
+| — | `Command.tooltip` / `getTooltipCallback`, `cssClass` / `getClassCallback`, `isVisible` / `getIsVisibleCallback` (hidden everywhere: lists, global search, recents, its hotkey), `isDisabled` / `getIsDisabledCallback` (greyed, `aria-disabled`, doesn't run), `isDanger` (danger title color), `getTextCallback`, `getIconCallback`, `onClick(detail)`. Render-time callbacks get `{ selections: [] }` + the context |
+| `Context.shortcut` (`':products'`) / `Context.name` | `Context.trigger` / `Context.text` |
+| `Context.search(query, signal)` | `Context.searchCallback({ scope, term, signal })` |
+| `Option.label` | `Option.text` |
+| `Step.freeText` / `Step.search` (booleans) | `Step.isFreeTextAllowed` / `Step.isLiveSearch` |
+| `Step.shouldShow(selections)` | `Step.getIsVisibleCallback({ commandId, stepId, selections })` |
+| `Step.load(ctx, signal)` | `Step.getOptionsCallback({ commandId, stepId, term, selections, signal })` |
+| `Result.title` / `subtitle`, `Selection.label`, `UsageEntry.label` | unchanged — data records persisted verbatim in recents (renaming would blank stored favorites) |
+
+**Callbacks**
+
+| Old | New |
+|---|---|
+| `searchCallback(scope, query, signal)` | `searchCallback({ scope, term, signal })` |
+| `stepOptionsCallback({ commandId, stepId, query, selections }, signal)` | `getStepOptionsCallback({ commandId, stepId, term, selections, signal })` |
+| `loadUsageCallback()` | `loadUsageCallback(ctx)` |
+| `saveUsageCallback(entry)` | `saveUsageCallback({ entry })` |
+| `renderConfirmationCallback({ type: 'complete' \| 'command' \| 'select', commandName, … })` | `renderConfirmationCallback({ type: 'action' \| 'select', commandText, … })` + the context |
+| — | `beforeActionCallback(detail)` → `false` cancels a command run (async OK): no `onClick`, no event, nothing recorded; a wizard steps back to its last answer, the palette stays open |
+| — | `beforeSelectCallback({ item, scope })` → `false` cancels a result selection (async OK; a sync hook keeps the flow synchronous); the palette stays open |
+
+**Controller / engine**
+
+| Old | New |
+|---|---|
+| element methods only | `el.controller` (`CommandPaletteController`): `isOpen`, `open`, `close`, `toggle`, `reset`, `openWith`, `openFavorites`, `openRecent`, `setCommands`, `setContexts` (the element methods stay) |
+| `PaletteMachine` / `MachineHost` (exported) | `PaletteEngine` / `PaletteEngineHost` (exported for standalone use; the element never exposes it). The host gains an optional `context(fields)`; `effect()` may answer `false` / a Promise to veto. `Effect` `{ type: 'command' \| 'complete', commandId }` → `{ type: 'action', command, selections }` |
+| `findByShortcut` (internal) | `findByTrigger` |
+| types `CompleteEventDetail`, `CommandEventDetail` | `ActionEventDetail`; new `PaletteContext`, `CommandContext`, `StepContext`, `SearchContext`, `PaletteEventDetail`, `BeforeActionCallback`, `BeforeSelectCallback`, `CommandPaletteController` |
+
+**LiveView bridge (`@keenmate/keen-web-commandpalette`)** — `data-search-event` /
+`data-step-options-event` keep their mechanism (their values are the LiveView event names the
+bridge pushes to; nothing is emitted under them). The bridge must listen to `select` / `action`
+instead of `cp-select` / `cp-complete` / `cp-command`, install `searchCallback({ scope, term,
+signal })` / `getStepOptionsCallback(ctx)` (push `term`, not `query`), and send commands /
+contexts / options with the new field names.
+
+### Added
+
+- New CSS knobs `--cp-item-disabled-opacity` (`--base-disabled-opacity`) and
+  `--cp-item-danger-color` (`--base-danger-color`); row classes `cp__item--disabled` /
+  `cp__item--danger`.
+- `e2e/interaction-model.spec.ts` + `test/interaction-model.html`; unit `test/unit/interaction.test.ts`.
+
+### Fixed
+
+- Example pages: the size radios set `size = null` for the default, which the converter rejects
+  (a console warning on every load of the playground / theming pages) — they remove the
+  attribute instead.
+
 ## [1.0.0-rc02] - 2026-10-19
 
 ### Changed

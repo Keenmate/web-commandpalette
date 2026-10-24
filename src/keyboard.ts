@@ -11,7 +11,7 @@
  *    back-or-close, Backspace at the locked prefix steps back, Ctrl/⌘+D star the
  *    active row. Navigation never awaits a provider.
  */
-import type { PaletteMachine } from './palette';
+import type { PaletteEngine } from './palette';
 import type { Command } from './types';
 
 export const SEQUENCE_LEADER = 'g';
@@ -23,10 +23,10 @@ export function sequenceLetter(hotkey: string | null | undefined): string | null
   return parts.length === 2 && parts[0] === SEQUENCE_LEADER && parts[1].length === 1 ? parts[1] : null;
 }
 
-/** The command whose `hotkey` is the sequence `g <letter>`. Chords (`Ctrl+K`) never match. */
+/** The command whose `shortcut` is the sequence `g <letter>`. Chords (`Ctrl+K`) never match. */
 export function findSequenceCommand(commands: readonly Command[], letter: string): Command | undefined {
   const key = letter.toLowerCase();
-  return commands.find((c) => sequenceLetter(c.hotkey) === key);
+  return commands.find((c) => sequenceLetter(c.shortcut) === key);
 }
 
 /** Is the (shadow-piercing) event origin a text-entry field? */
@@ -42,7 +42,8 @@ export interface GlobalKeysHost {
   toggle(): void;
   openKey(): string;
   commands(): readonly Command[];
-  runCommand(command: Command): void;
+  /** Run a command bound to a `g <letter>` sequence; `e` is the keydown. */
+  runCommand(command: Command, e: KeyboardEvent): void;
   /** Built-in sequences (e.g. `g f` → favorites): letter → action. Commands win on a clash. */
   sequences?(): ReadonlyMap<string, () => void>;
 }
@@ -95,7 +96,7 @@ export class GlobalKeys {
     const command = findSequenceCommand(this.#host.commands(), e.key);
     if (command) {
       e.preventDefault();
-      this.#host.runCommand(command);
+      this.#host.runCommand(command, e);
       return;
     }
     const builtin = this.#host.sequences?.().get(e.key.toLowerCase());
@@ -106,7 +107,7 @@ export class GlobalKeys {
   }
 
   #hasSequences(): boolean {
-    return !!this.#host.sequences?.().size || this.#host.commands().some((c) => sequenceLetter(c.hotkey) !== null);
+    return !!this.#host.sequences?.().size || this.#host.commands().some((c) => sequenceLetter(c.shortcut) !== null);
   }
 
   #disarm(): void {
@@ -131,7 +132,7 @@ export const DEFAULT_PALETTE_KEYS: PaletteKeys = { favorite: 'd', favorites: 'f'
 /** Keydown inside the palette input. Returns true when handled. */
 export function handleInputKeydown(
   e: KeyboardEvent,
-  m: PaletteMachine,
+  m: PaletteEngine,
   input: HTMLInputElement,
   keys: PaletteKeys = DEFAULT_PALETTE_KEYS,
   /** Right-to-left: ←/→ paging swaps so "previous" is the arrow toward the inline start. */

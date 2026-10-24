@@ -26,45 +26,46 @@
     const palette = document.getElementById('palette');
     window.calls = { search: [], stepOptions: [] };
     window.events = [];
-    for (const name of ['cp-open', 'cp-close', 'cp-select', 'cp-complete', 'cp-command', 'cp-ready']) {
-      palette.addEventListener(name, (e) => window.events.push({ name, detail: e.detail }));
+    // The detail as plain JSON (controller / element are non-enumerable; sourceEvent / triggerElement serialize to stubs).
+    for (const name of ['open', 'close', 'select', 'action', 'ready']) {
+      palette.addEventListener(name, (e) => window.events.push({ name, detail: JSON.parse(JSON.stringify(e.detail)) }));
     }
     document.getElementById('opener').addEventListener('click', () => palette.open());
 
     palette.commands = [
       {
-        id: 'deploy', shortcut: '/deploy', aliases: ['/d'], hotkey: 'g d', name: 'Deploy to Environment', description: 'Deploy a branch',
+        id: 'deploy', trigger: '/deploy', aliases: ['/d'], shortcut: 'g d', text: 'Deploy to Environment', description: 'Deploy a branch',
         steps: [
           { id: 'env', prompt: ' to ', options: [
-            { id: 'prod', label: 'Production', value: 'production' },
-            { id: 'staging', label: 'Staging', value: 'staging' },
+            { id: 'prod', text: 'Production', value: 'production' },
+            { id: 'staging', text: 'Staging', value: 'staging' },
           ] },
-          { id: 'branch', prompt: ' branch ', search: true },
-          { id: 'note', prompt: ' note ', freeText: true },
+          { id: 'branch', prompt: ' branch ', isLiveSearch: true },
+          { id: 'note', prompt: ' note ', isFreeTextAllowed: true },
         ],
       },
-      { id: 'go', shortcut: '/go', hotkey: 'g g', name: 'Go to Page', description: 'Navigate to a page',
-        steps: [{ id: 'page', options: [{ label: 'Home', value: '/' }, { label: 'Users', value: '/users' }] }] },
-      { id: 'reload', shortcut: '/reload', hotkey: 'g r', name: 'Reload Data', description: 'Instant' },
+      { id: 'go', trigger: '/go', shortcut: 'g g', text: 'Go to Page', description: 'Navigate to a page',
+        steps: [{ id: 'page', options: [{ text: 'Home', value: '/' }, { text: 'Users', value: '/users' }] }] },
+      { id: 'reload', trigger: '/reload', shortcut: 'g r', text: 'Reload Data', description: 'Instant' },
     ];
     palette.contexts = [
-      { id: 'products', shortcut: ':products', aliases: [':p'], name: 'Products', description: 'Search products' },
-      { id: 'users', shortcut: ':users', aliases: [':u'], name: 'Users', description: 'Search users' },
+      { id: 'products', trigger: ':products', aliases: [':p'], text: 'Products', description: 'Search products' },
+      { id: 'users', trigger: ':users', aliases: [':u'], text: 'Users', description: 'Search users' },
     ];
 
     if (!params.has('nosearch')) {
-      palette.searchCallback = (scope, query) => {
-        window.calls.search.push({ scope, query });
-        const count = query === 'many' ? 20 : 3;
+      palette.searchCallback = ({ scope, term }) => {
+        window.calls.search.push({ scope, term });
+        const count = term === 'many' ? 20 : 3;
         const name = scope === 'global' ? 'Global' : scope.contextId;
         return new Promise((resolve) => setTimeout(() => resolve(
-          Array.from({ length: count }, (_, i) => ({ id: `${name}-${i}`, title: `${name} ${query} ${i}`, subtitle: `hit ${i}`, badge: 'Hit', badgeVariant: 'info' }))
+          Array.from({ length: count }, (_, i) => ({ id: `${name}-${i}`, title: `${name} ${term} ${i}`, subtitle: `hit ${i}`, badge: 'Hit', badgeVariant: 'info' }))
         ), 20));
       };
     }
-    palette.stepOptionsCallback = ({ commandId, stepId, query, selections }) => {
-      window.calls.stepOptions.push({ commandId, stepId, query, selections });
-      if (stepId === 'branch') return [`main`, `feature/${query || 'x'}`].map((b) => ({ id: b, label: b, value: b }));
+    palette.getStepOptionsCallback = ({ commandId, stepId, term, selections }) => {
+      window.calls.stepOptions.push({ commandId, stepId, term, selections });
+      if (stepId === 'branch') return [`main`, `feature/${term || 'x'}`].map((b) => ({ id: b, text: b, value: b }));
       return [];
     };
     window.ready = true;

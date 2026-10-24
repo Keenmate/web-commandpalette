@@ -24,8 +24,8 @@ test('a completed run shows under Recent (persisted) and Enter, Enter replays it
   await expect(p.titles.first()).toHaveText('Users');
   await expect(p.footer).toContainText('Run');
   await page.keyboard.press('Enter'); // run it
-  const done = (await events(page)).filter((e) => e.name === 'cp-complete');
-  expect(done.at(-1)?.detail).toMatchObject({ commandId: 'go', selections: [{ stepId: 'page', label: 'Users' }] });
+  const done = (await events(page)).filter((e) => e.name === 'action');
+  expect(done.at(-1)?.detail).toMatchObject({ id: 'go', selections: [{ stepId: 'page', label: 'Users' }] });
 });
 
 test('Ctrl+D and the star button toggle favorites', async ({ page }) => {

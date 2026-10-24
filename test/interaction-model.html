@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>e2e fixture — interaction model</title>
+</head>
+<body>
+  <web-command-palette id="palette" confirmation="false"></web-command-palette>
+
+  <script type="module">
+    import '../src/index.ts';
+
+    const palette = document.getElementById('palette');
+    window.__log = [];
+    window.__details = [];
+    window.__ctx = {};
+    // `veto`: which before-hook says no ('', 'action', 'action-async', 'select').
+    window.veto = '';
+
+    const describeCtx = (ctx) => ({
+      json: JSON.parse(JSON.stringify(ctx)),
+      hasController: !!ctx.controller && typeof ctx.controller.open === 'function',
+      elementIsHost: ctx.element === palette,
+      controllerIsElements: ctx.controller === palette.controller,
+      keys: Object.keys(ctx),
+    });
+
+    // DOM events + their camelCase twins (the twin runs first, with the same detail).
+    for (const name of ['open', 'close', 'select', 'action', 'ready']) {
+      palette.addEventListener(name, (e) => {
+        window.__log.push(`event:${name}`);
+        window.__details.push({ name, sameAsTwin: window.__lastTwin === e.detail, composed: e.composed, bubbles: e.bubbles, ...describeCtx(e.detail) });
+      });
+    }
+    const twin = (name) => (detail) => {
+      window.__lastTwin = detail;
+      window.__log.push(`on:${name}`);
+    };
+    palette.onOpen = twin('open');
+    palette.onClose = twin('close');
+    palette.onSelect = twin('select');
+    palette.onAction = twin('action');
+    palette.onReady = twin('ready');
+
+    palette.beforeActionCallback = (detail) => {
+      window.__log.push(`before:${detail.id}`);
+      window.__ctx.before = describeCtx(detail);
+      if (window.veto === 'action') return false;
+      if (window.veto === 'action-async') return new Promise((r) => setTimeout(() => r(false), 30));
+    };
+    palette.beforeSelectCallback = (ctx) => {
+      window.__log.push(`before-select:${ctx.item.id}`);
+      if (window.veto === 'select') return false;
+    };
+
+    palette.commands = [
+      {
+        id: 'reload', trigger: '/reload', text: 'Reload', shortcut: 'g r',
+        onClick: (detail) => window.__log.push(`onClick:${detail.id}:${detail.source}`),
+      },
+      {
+        id: 'assign', trigger: '/assign', text: 'Assign',
+        steps: [
+          { id: 'user', options: [{ id: 'john', text: 'John' }, { id: 'jane', text: 'Jane' }] },
+          { id: 'role', prompt: ' as ' },
+        ],
+      },
+      { id: 'locked', trigger: '/locked', text: 'Locked', getIsDisabledCallback: (ctx) => (window.__ctx.disabled = describeCtx(ctx), true) },
+      { id: 'hidden', trigger: '/hidden', text: 'Hidden', isVisible: false },
+      { id: 'wipe', trigger: '/wipe', text: 'Wipe', isDanger: true, tooltip: 'Deletes everything', cssClass: 'my-wipe' },
+    ];
+    palette.contexts = [{ id: 'people', trigger: ':people', text: 'People' }];
+    palette.getStepOptionsCallback = (ctx) => {
+      window.__ctx.stepOptions = { ...describeCtx(ctx), hasSignal: ctx.signal instanceof AbortSignal };
+      return [{ text: 'admin' }, { text: 'viewer' }];
+    };
+    palette.searchCallback = (ctx) => {
+      window.__ctx.search = { ...describeCtx(ctx), hasSignal: ctx.signal instanceof AbortSignal };
+      return [{ id: 'p1', title: `Person ${ctx.term}` }];
+    };
+    palette.renderConfirmationCallback = (ctx) => {
+      window.__ctx.confirmation = describeCtx(ctx);
+      return null;
+    };
+    window.ready = true;
+  </script>
+</body>
+</html>

@@ -3,7 +3,7 @@ import { events, load, open, palette } from './fixtures';
 
 test.beforeEach(async ({ page }) => load(page));
 
-test('Ctrl+K toggles the palette, focuses the input, fires cp-open/cp-close', async ({ page }) => {
+test('Ctrl+K toggles the palette, focuses the input, fires open/close', async ({ page }) => {
   const p = palette(page);
   await expect(p.root).not.toHaveClass(/--active/);
   await open(page);
@@ -13,7 +13,7 @@ test('Ctrl+K toggles the palette, focuses the input, fires cp-open/cp-close', as
   await expect(p.root).not.toHaveClass(/--active/);
   await expect(p.host).not.toHaveAttribute('open');
   const names = (await events(page)).map((e) => e.name);
-  expect(names).toEqual(['cp-ready', 'cp-open', 'cp-close']);
+  expect(names).toEqual(['ready', 'open', 'close']);
 });
 
 test('home screen lists commands and contexts with keycaps', async ({ page }) => {
@@ -61,14 +61,14 @@ test('"g d" opens straight into the command; inert while typing in a field', asy
   await expect(p.context).toHaveText('Deploy to Environment');
 });
 
-test('an instant command fires cp-command and closes', async ({ page }) => {
+test('an instant command fires action and closes', async ({ page }) => {
   const p = palette(page);
   await open(page);
   await p.input.fill('/reload');
   await page.keyboard.press('Enter');
   await expect(p.root).not.toHaveClass(/--active/);
-  const ev = (await events(page)).find((e) => e.name === 'cp-command');
-  expect(ev?.detail).toEqual({ commandId: 'reload' });
+  const ev = (await events(page)).find((e) => e.name === 'action');
+  expect(ev?.detail).toMatchObject({ action: 'custom', id: 'reload', source: 'palette', selections: [], item: { id: 'reload', trigger: '/reload' } });
 });
 
 test('clicking a row selects it and keeps focus in the input', async ({ page }) => {
@@ -78,8 +78,9 @@ test('clicking a row selects it and keeps focus in the input', async ({ page }) 
   await expect(p.input).toHaveValue('/go ');
   await expect(p.input).toBeFocused();
   await p.items.filter({ hasText: 'Users' }).click();
-  const ev = (await events(page)).find((e) => e.name === 'cp-complete');
-  expect(ev?.detail).toEqual({ commandId: 'go', selections: [{ stepId: 'page', label: 'Users', value: '/users', isFreeText: false }] });
+  await expect.poll(async () => (await events(page)).some((e) => e.name === 'action')).toBe(true);
+  const ev = (await events(page)).find((e) => e.name === 'action');
+  expect(ev?.detail).toMatchObject({ action: 'custom', id: 'go', source: 'palette', selections: [{ stepId: 'page', label: 'Users', value: '/users', isFreeText: false }] });
 });
 
 test('openWith() runs the query through the input pipeline', async ({ page }) => {

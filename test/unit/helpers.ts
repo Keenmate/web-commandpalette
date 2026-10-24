@@ -1,37 +1,42 @@
 import { vi } from 'vitest';
-import { PaletteMachine, type Effect, type MachineHost } from '../../src/palette';
+import { PaletteEngine, type Effect, type PaletteEngineHost } from '../../src/palette';
 import { UsageStore } from '../../src/usage';
-import { DEFAULT_LABELS, type Command, type Context, type Display, type SearchCallback, type StepOptionsCallback, type UsageEntry } from '../../src/types';
+import { DEFAULT_LABELS, type Command, type Context, type Display, type SearchCallback, type Selection, type StepOptionsCallback, type UsageEntry } from '../../src/types';
+
+/** An effect as the tests compare it: `action` reduced to the command id + selections. */
+export type TestEffect =
+  | Exclude<Effect, { type: 'action' }>
+  | { type: 'action'; commandId: string; selections: Selection[] };
 
 export const COMMANDS: Command[] = [
   {
-    id: 'go', shortcut: '/go', aliases: ['/g'], hotkey: 'g g', name: 'Go to Page', description: 'Navigate to a page', icon: '🧭',
-    steps: [{ id: 'page', placeholder: 'Type a page…', freeText: true, options: [
-      { id: 'home', label: 'Home', value: '/' },
-      { id: 'users', label: 'Users', value: '/users' },
-      { id: 'reports', label: 'Reports', value: '/reports' },
+    id: 'go', trigger: '/go', aliases: ['/g'], shortcut: 'g g', text: 'Go to Page', description: 'Navigate to a page', icon: '🧭',
+    steps: [{ id: 'page', placeholder: 'Type a page…', isFreeTextAllowed: true, options: [
+      { id: 'home', text: 'Home', value: '/' },
+      { id: 'users', text: 'Users', value: '/users' },
+      { id: 'reports', text: 'Reports', value: '/reports' },
     ] }],
   },
   {
-    id: 'deploy', shortcut: '/deploy', aliases: ['/d'], hotkey: 'g d', name: 'Deploy to Environment', description: 'Deploy a branch',
+    id: 'deploy', trigger: '/deploy', aliases: ['/d'], shortcut: 'g d', text: 'Deploy to Environment', description: 'Deploy a branch',
     steps: [
       { id: 'env', prompt: ' to ' },
-      { id: 'branch', prompt: ' branch ', freeText: true, search: true },
+      { id: 'branch', prompt: ' branch ', isFreeTextAllowed: true, isLiveSearch: true },
     ],
   },
-  { id: 'signout', shortcut: '/signout', name: 'Sign out', description: 'End the session' },
+  { id: 'signout', trigger: '/signout', text: 'Sign out', description: 'End the session' },
 ];
 
 export const CONTEXTS: Context[] = [
-  { id: 'products', shortcut: ':products', aliases: [':p'], name: 'Products', description: 'Search products' },
-  { id: 'users', shortcut: ':users', aliases: [':u'], name: 'Users', description: 'Search users' },
+  { id: 'products', trigger: ':products', aliases: [':p'], text: 'Products', description: 'Search products' },
+  { id: 'users', trigger: ':users', aliases: [':u'], text: 'Users', description: 'Search users' },
 ];
 
 export interface Harness {
-  m: PaletteMachine;
-  effects: Effect[];
+  m: PaletteEngine;
+  effects: TestEffect[];
   changed: ReturnType<typeof vi.fn>;
-  host: MachineHost & { state: HostState };
+  host: PaletteEngineHost & { state: HostState };
   /** The in-memory favorites/recents store (when `usage: true`). */
   store: UsageStore | null;
   /** What the store last persisted. */
@@ -52,7 +57,7 @@ interface HostState {
 }
 
 export function harness(over: Partial<HostState> = {}): Harness {
-  const effects: Effect[] = [];
+  const effects: TestEffect[] = [];
   const changed = vi.fn();
   const state: HostState = {
     commands: COMMANDS,
@@ -67,7 +72,7 @@ export function harness(over: Partial<HostState> = {}): Harness {
     ...over,
   };
   const saved: UsageEntry[] = [];
-  let m: PaletteMachine | null = null;
+  let m: PaletteEngine | null = null;
   const store = state.usage
     ? new UsageStore({ load: () => [], save: (entry) => { saved.push(entry); } }, () => m?.usageChanged())
     : null;
@@ -76,7 +81,7 @@ export function harness(over: Partial<HostState> = {}): Harness {
     commands: () => state.commands,
     contexts: () => state.contexts,
     searchCallback: () => state.search,
-    stepOptionsCallback: () => state.stepOptions,
+    getStepOptionsCallback: () => state.stepOptions,
     display: () => state.display,
     pageSize: () => state.pageSize,
     debounceMs: () => state.debounce,
@@ -84,13 +89,15 @@ export function harness(over: Partial<HostState> = {}): Harness {
     usage: () => store,
     recentLimit: () => state.recentLimit,
     changed: () => changed(),
-    effect: (e: Effect) => effects.push(e),
+    effect: (e: Effect) => {
+      effects.push(e.type === 'action' ? { type: 'action', commandId: e.command.id, selections: e.selections } : e);
+    },
   };
-  m = new PaletteMachine(host);
+  m = new PaletteEngine(host);
   return { m, effects, changed, host, store, saved };
 }
 
 /** Flush pending promise callbacks. */
 export const tick = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
 
-export const titles = (m: PaletteMachine): string[] => m.items.map((i) => i.title);
+export const titles = (m: PaletteEngine): string[] => m.items.map((i) => i.title);

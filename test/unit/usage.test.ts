@@ -8,41 +8,42 @@ afterEach(() => vi.useRealTimers());
 
 const sections = (m: ReturnType<typeof harness>['m']): string[] => [...new Set(m.items.map((i) => i.section ?? ''))];
 
-describe('per-step load / per-context search', () => {
-  it('a step with `load` uses it instead of stepOptionsCallback', () => {
-    const load = vi.fn(() => [{ label: 'Alice' }, { label: 'Bob' }]);
+describe('per-step getOptionsCallback / per-context searchCallback', () => {
+  it('a step with `getOptionsCallback` uses it instead of getStepOptionsCallback', () => {
+    const load = vi.fn(() => [{ text: 'Alice' }, { text: 'Bob' }]);
     const stepOptions = vi.fn(() => []);
-    const cmd: Command = { id: 'x', shortcut: '/x', name: 'X', steps: [{ id: 'user', load }] };
+    const cmd: Command = { id: 'x', trigger: '/x', text: 'X', steps: [{ id: 'user', getOptionsCallback: load }] };
     const { m } = harness({ commands: [cmd], stepOptions });
     m.setInput('/x ');
     expect(titles(m)).toEqual(['Alice', 'Bob']);
-    expect(load).toHaveBeenCalledWith({ commandId: 'x', stepId: 'user', query: '', selections: [] }, expect.any(AbortSignal));
+    expect(load).toHaveBeenCalledWith({ commandId: 'x', stepId: 'user', term: '', selections: [] });
+    expect((load.mock.calls[0] as unknown[])[0]).toHaveProperty('signal', expect.any(AbortSignal));
     expect(stepOptions).not.toHaveBeenCalled();
   });
 
-  it('a shared picker is reused across commands; steps without `load` fall back to the callback', () => {
-    const pickUser = { search: true, load: vi.fn(({ query }: { query: string }) => [{ label: `user ${query}` }]) };
-    const stepOptions = vi.fn(() => [{ label: 'write' }]);
-    const cmd: Command = { id: 'perm', shortcut: '/perm', name: 'Perm', steps: [{ id: 'perm' }, { id: 'user', prompt: ' to ', ...pickUser }] };
+  it('a shared picker is reused across commands; steps without `getOptionsCallback` fall back to the callback', () => {
+    const pickUser = { isLiveSearch: true, getOptionsCallback: vi.fn(({ term }: { term: string }) => [{ text: `user ${term}` }]) };
+    const stepOptions = vi.fn(() => [{ text: 'write' }]);
+    const cmd: Command = { id: 'perm', trigger: '/perm', text: 'Perm', steps: [{ id: 'perm' }, { id: 'user', prompt: ' to ', ...pickUser }] };
     const { m } = harness({ commands: [cmd], stepOptions });
     m.setInput('/perm ');
     expect(stepOptions).toHaveBeenCalledTimes(1);
     m.select(); // write
-    expect(pickUser.load).toHaveBeenCalledTimes(1);
+    expect(pickUser.getOptionsCallback).toHaveBeenCalledTimes(1);
     expect(titles(m)).toEqual(['user ']);
   });
 
-  it('a context with `search` uses it instead of searchCallback (still: no call on an empty query)', async () => {
-    const own = vi.fn((q: string) => [{ id: 't1', title: `ticket ${q}` }]);
+  it('a context with `searchCallback` uses it instead of the element searchCallback (still: no call on an empty query)', async () => {
+    const own = vi.fn(({ term }: { term: string }) => [{ id: 't1', title: `ticket ${term}` }]);
     const search = vi.fn(() => []);
-    const ctx: Context = { id: 'tickets', shortcut: ':tickets', name: 'Tickets', search: own };
+    const ctx: Context = { id: 'tickets', trigger: ':tickets', text: 'Tickets', searchCallback: own };
     const { m } = harness({ contexts: [ctx], search });
     m.setInput(':tickets ');
     await vi.advanceTimersByTimeAsync(500);
     expect(own).not.toHaveBeenCalled();
     m.setInput(':tickets 42');
     await vi.advanceTimersByTimeAsync(150);
-    expect(own).toHaveBeenCalledWith('42', expect.any(AbortSignal));
+    expect(own).toHaveBeenCalledWith({ scope: { contextId: 'tickets' }, term: '42' });
     expect(search).not.toHaveBeenCalled();
     expect(titles(m)).toEqual(['ticket 42']);
   });
@@ -208,10 +209,10 @@ describe('compact home + full lists (Ctrl/⌘+F / R)', () => {
 
 describe('replaying a run (Tab steps, Enter finishes)', () => {
   const PERM: Command = {
-    id: 'perm', shortcut: '/perm', name: 'Add permission',
+    id: 'perm', trigger: '/perm', text: 'Add permission',
     steps: [
-      { id: 'perm', options: [{ id: 'read', label: 'read' }, { id: 'write', label: 'write' }] },
-      { id: 'user', prompt: ' to ', options: [{ id: 'peter', label: 'Peter' }, { id: 'jane', label: 'Jane' }] },
+      { id: 'perm', options: [{ id: 'read', text: 'read' }, { id: 'write', text: 'write' }] },
+      { id: 'user', prompt: ' to ', options: [{ id: 'peter', text: 'Peter' }, { id: 'jane', text: 'Jane' }] },
     ],
   };
 
@@ -242,7 +243,7 @@ describe('replaying a run (Tab steps, Enter finishes)', () => {
     m.select(m.items.findIndex((i) => i.section === 'recent'));
     m.commit();
     expect(effects).toEqual([{
-      type: 'complete', commandId: 'perm', selections: [
+      type: 'action', commandId: 'perm', selections: [
         { stepId: 'perm', label: 'write', value: 'write', optionId: 'write', isFreeText: false },
         { stepId: 'user', label: 'Peter', value: 'Peter', optionId: 'peter', isFreeText: false },
       ],
@@ -258,7 +259,7 @@ describe('replaying a run (Tab steps, Enter finishes)', () => {
     m.setInput('/perm write to ja');
     expect(titles(m)).toEqual(['Jane']);
     m.commit();
-    expect(effects[0]).toMatchObject({ type: 'complete', selections: [{ label: 'write' }, { label: 'Jane' }] });
+    expect(effects[0]).toMatchObject({ type: 'action', selections: [{ label: 'write' }, { label: 'Jane' }] });
   });
 
   it('Enter without a replay just selects (one step)', () => {
@@ -270,7 +271,7 @@ describe('replaying a run (Tab steps, Enter finishes)', () => {
   });
 
   it('a remembered answer not in a search step\'s list is offered as its own row', () => {
-    const live: Command = { id: 'who', shortcut: '/who', name: 'Who', steps: [{ id: 'user', search: true, freeText: true }] };
+    const live: Command = { id: 'who', trigger: '/who', text: 'Who', steps: [{ id: 'user', isLiveSearch: true, isFreeTextAllowed: true }] };
     const { m, effects } = harness({ usage: true, commands: [live], stepOptions: () => [] });
     m.setInput('/who ');
     m.setInput('/who someone');
@@ -280,17 +281,17 @@ describe('replaying a run (Tab steps, Enter finishes)', () => {
     m.select(m.items.findIndex((i) => i.section === 'recent'));
     expect(titles(m)).toEqual(['someone']);
     m.commit();
-    expect(effects[1]).toMatchObject({ type: 'complete', selections: [{ stepId: 'user', label: 'someone', isFreeText: true }] });
+    expect(effects[1]).toMatchObject({ type: 'action', selections: [{ stepId: 'user', label: 'someone', isFreeText: true }] });
   });
 
   it('replays through a branch (inline options)', () => {
     const ASSIGN: Command = {
-      id: 'assign-admin', shortcut: '/assign-admin', name: 'Assign admin',
+      id: 'assign-admin', trigger: '/assign-admin', text: 'Assign admin',
       steps: [
-        { id: 'user', options: [{ id: 'john', label: 'John' }] },
+        { id: 'user', options: [{ id: 'john', text: 'John' }] },
         { id: 'target', prompt: ' to ', options: [
-          { id: 'group', label: 'group', steps: [{ id: 'group', options: [{ label: 'Finance' }] }] },
-          { id: 'site', label: 'site', steps: [{ id: 'site', options: [{ label: 'Intranet' }] }] },
+          { id: 'group', text: 'group', steps: [{ id: 'group', options: [{ text: 'Finance' }] }] },
+          { id: 'site', text: 'site', steps: [{ id: 'site', options: [{ text: 'Intranet' }] }] },
         ] },
       ],
     };
@@ -303,19 +304,19 @@ describe('replaying a run (Tab steps, Enter finishes)', () => {
     m.reset();
     m.select(m.items.findIndex((i) => i.section === 'recent'));
     m.commit();
-    expect(effects[1]).toMatchObject({ type: 'complete', selections: [{ stepId: 'user' }, { stepId: 'target', label: 'site' }, { stepId: 'site', label: 'Intranet' }] });
+    expect(effects[1]).toMatchObject({ type: 'action', selections: [{ stepId: 'user' }, { stepId: 'target', label: 'site' }, { stepId: 'site', label: 'Intranet' }] });
   });
 
   it('stops at a forking step whose options are still loading; Enter continues once loaded', async () => {
     let resolve!: (v: unknown) => void;
     const cmd: Command = {
-      id: 'f', shortcut: '/f', name: 'F',
+      id: 'f', trigger: '/f', text: 'F',
       steps: [
-        { id: 'a', options: [{ label: 'one' }] },
+        { id: 'a', options: [{ text: 'one' }] },
         { id: 'kind', prompt: ' to ' }, // loaded via callback (async)
       ],
     };
-    const kinds = [{ id: 'g', label: 'group', steps: [{ id: 'group', options: [{ label: 'Finance' }] }] }];
+    const kinds = [{ id: 'g', text: 'group', steps: [{ id: 'group', options: [{ text: 'Finance' }] }] }];
     let isAsync = false;
     const stepOptions = vi.fn(() => (isAsync ? new Promise((r) => { resolve = r; }) : kinds));
     const { m, effects } = harness({ usage: true, commands: [cmd], stepOptions });
@@ -333,7 +334,7 @@ describe('replaying a run (Tab steps, Enter finishes)', () => {
     await vi.advanceTimersByTimeAsync(0);
     expect(titles(m)).toEqual(['group']);
     m.commit();
-    expect(effects[1]).toMatchObject({ type: 'complete', selections: [{ stepId: 'a' }, { stepId: 'kind' }, { stepId: 'group', label: 'Finance' }] });
+    expect(effects[1]).toMatchObject({ type: 'action', selections: [{ stepId: 'a' }, { stepId: 'kind' }, { stepId: 'group', label: 'Finance' }] });
   });
 });
 

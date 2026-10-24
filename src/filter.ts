@@ -15,16 +15,16 @@ export function matchesAny(fields: readonly unknown[], needle: string): boolean 
 }
 
 export function commandFields(c: Command): unknown[] {
-  return [c.name, c.shortcut, ...(c.aliases ?? []), c.description];
+  return [c.text, c.trigger, ...(c.aliases ?? []), c.description];
 }
 
 export function contextFields(c: Context): unknown[] {
-  return [c.name, c.shortcut, ...(c.aliases ?? []), c.description];
+  return [c.text, c.trigger, ...(c.aliases ?? []), c.description];
 }
 
 export function optionFields(o: Option): unknown[] {
   const value = typeof o.value === 'string' || typeof o.value === 'number' ? o.value : null;
-  return [o.label, value, o.description];
+  return [o.text, value, o.description];
 }
 
 export function filterCommands(list: readonly Command[], needle: string): Command[] {
@@ -41,17 +41,17 @@ export function filterOptions(list: readonly Option[], needle: string): Option[]
 
 /**
  * Global-search prepend (mirrors keen's `global_matches`): commands/contexts whose
- * name, shortcut, or an alias contains the query. Description is deliberately NOT
+ * text, trigger, or an alias contains the query. Description is deliberately NOT
  * searched here so a free-text query doesn't drag in loosely related commands.
  */
 export function globalMatches<T extends Command | Context>(list: readonly T[], query: string): T[] {
   const q = norm(query).trim();
   if (!q) return [];
-  return list.filter((e) => [e.name, e.shortcut, ...(e.aliases ?? [])].some((f) => norm(f).includes(q)));
+  return list.filter((e) => [e.text, e.trigger, ...(e.aliases ?? [])].some((f) => norm(f).includes(q)));
 }
 
-/** Exact (case-insensitive) shortcut-or-alias lookup. */
-export function findByShortcut<T extends Command | Context>(list: readonly T[], token: string): T | undefined {
+/** Exact (case-insensitive) trigger-or-alias lookup. */
+export function findByTrigger<T extends Command | Context>(list: readonly T[], token: string): T | undefined {
   const t = token.toLowerCase();
-  return list.find((e) => [e.shortcut, ...(e.aliases ?? [])].some((s) => s.toLowerCase() === t));
+  return list.find((e) => [e.trigger, ...(e.aliases ?? [])].some((s) => s.toLowerCase() === t));
 }

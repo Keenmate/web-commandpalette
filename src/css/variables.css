@@ -129,6 +129,9 @@
   --cp-item-active-color: var(--base-focused-text-color, currentColor);
   --cp-item-active-outline: var(--base-focused-outline, var(--cp-outline-width) solid var(--cp-accent-color));
   --cp-outline-width: var(--base-outline-width, 1px);
+  /* A command with `isDisabled` (greyed, can't run) / `isDanger` (destructive). */
+  --cp-item-disabled-opacity: var(--base-disabled-opacity, 0.4);
+  --cp-item-danger-color: var(--base-danger-color, light-dark(#dc2626, #f87171));
   --cp-item-icon-bg: var(--cp-accent-color-light);
   --cp-item-icon-color: var(--cp-accent-color);
   --cp-highlight-bg: var(--cp-accent-color-light-hover);

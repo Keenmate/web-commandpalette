@@ -104,11 +104,11 @@ describe('command list (/)', () => {
     expect(titles(m)).toEqual(['Reports']);
   });
 
-  it('an instant command fires `command`', () => {
+  it('an instant command fires `action` (no selections)', () => {
     const { m, effects } = harness();
     m.setInput('/signout');
     m.select();
-    expect(effects).toEqual([{ type: 'command', commandId: 'signout' }]);
+    expect(effects).toEqual([{ type: 'action', commandId: 'signout', selections: [] }]);
   });
 });
 
@@ -121,17 +121,17 @@ describe('command steps (wizard)', () => {
     expect(titles(m)).toEqual(['Users']);
     m.select();
     expect(effects).toEqual([
-      { type: 'complete', commandId: 'go', selections: [{ stepId: 'page', label: 'Users', value: '/users', optionId: 'users', isFreeText: false }] },
+      { type: 'action', commandId: 'go', selections: [{ stepId: 'page', label: 'Users', value: '/users', optionId: 'users', isFreeText: false }] },
     ]);
   });
 
   it('static step via stepOptionsCallback: fetched ONCE (empty query), filtered client-side', () => {
-    const envs: Option[] = [{ label: 'Production', value: 'prod' }, { label: 'Staging', value: 'stage' }];
+    const envs: Option[] = [{ text: 'Production', value: 'prod' }, { text: 'Staging', value: 'stage' }];
     const stepOptions = vi.fn(() => envs);
     const { m } = harness({ stepOptions });
     m.setInput('/deploy ');
     expect(stepOptions).toHaveBeenCalledTimes(1);
-    expect(stepOptions.mock.calls[0][0]).toEqual({ commandId: 'deploy', stepId: 'env', query: '', selections: [] });
+    expect(stepOptions.mock.calls[0][0]).toEqual({ commandId: 'deploy', stepId: 'env', term: '', selections: [] });
     expect(m.input).toBe('/deploy to ');
     m.setInput('/deploy to sta');
     m.setInput('/deploy to stag');
@@ -139,9 +139,9 @@ describe('command steps (wizard)', () => {
     expect(stepOptions).toHaveBeenCalledTimes(1);
   });
 
-  it('search:true step calls the provider per debounced keystroke, with prior selections', async () => {
-    const stepOptions = vi.fn((ctx: { stepId: string; query: string }) =>
-      ctx.stepId === 'env' ? [{ label: 'Production', value: 'prod' }] : [{ label: `feat/${ctx.query}`, value: ctx.query }]);
+  it('isLiveSearch step calls the provider per debounced keystroke, with prior selections', async () => {
+    const stepOptions = vi.fn((ctx: { stepId: string; term: string }) =>
+      ctx.stepId === 'env' ? [{ text: 'Production', value: 'prod' }] : [{ text: `feat/${ctx.term}`, value: ctx.term }]);
     const { m } = harness({ stepOptions });
     m.setInput('/deploy ');
     m.select(); // Production
@@ -152,41 +152,41 @@ describe('command steps (wizard)', () => {
     expect(stepOptions).toHaveBeenCalledTimes(2); // debounced
     await vi.advanceTimersByTimeAsync(150);
     expect(stepOptions).toHaveBeenCalledTimes(3);
-    const ctx = stepOptions.mock.calls[2][0] as unknown as { query: string; selections: unknown[] };
-    expect(ctx.query).toBe('ab');
+    const ctx = stepOptions.mock.calls[2][0] as unknown as { term: string; selections: unknown[] };
+    expect(ctx.term).toBe('ab');
     expect(ctx.selections).toEqual([{ stepId: 'env', label: 'Production', value: 'prod', isFreeText: false }]);
     expect(titles(m)).toEqual(['feat/ab']);
   });
 
-  it('freeText: Enter with no match submits the typed text', () => {
+  it('isFreeTextAllowed: Enter with no match submits the typed text', () => {
     const { m, effects } = harness();
     m.setInput('/go /custom/path');
     expect(m.items).toEqual([]);
     m.select();
     expect(effects[0]).toEqual({
-      type: 'complete', commandId: 'go',
+      type: 'action', commandId: 'go',
       selections: [{ stepId: 'page', label: '/custom/path', value: '/custom/path', isFreeText: true }],
     });
   });
 
-  it('shouldShow skips steps', () => {
+  it('getIsVisibleCallback skips steps', () => {
     const { m, effects } = harness({
       commands: [{
-        id: 'x', shortcut: '/x', name: 'X',
+        id: 'x', trigger: '/x', text: 'X',
         steps: [
-          { id: 'a', options: [{ label: 'skip' }, { label: 'ask' }] },
-          { id: 'b', options: [{ label: 'B1' }], shouldShow: (sel) => sel[0]?.label === 'ask' },
+          { id: 'a', options: [{ text: 'skip' }, { text: 'ask' }] },
+          { id: 'b', options: [{ label: 'B1' }], getIsVisibleCallback: ({ selections }) => selections[0]?.label === 'ask' },
         ],
       }],
     });
     m.setInput('/x ');
     m.select(0); // skip → b hidden → complete
-    expect(effects[0]).toMatchObject({ type: 'complete', commandId: 'x' });
+    expect(effects[0]).toMatchObject({ type: 'action', commandId: 'x' });
     expect((effects[0] as { selections: unknown[] }).selections).toHaveLength(1);
   });
 
   it('back(): previous step, then the command list', () => {
-    const stepOptions = vi.fn(() => [{ label: 'Production', value: 'prod' }]);
+    const stepOptions = vi.fn(() => [{ text: 'Production', value: 'prod' }]);
     const { m } = harness({ stepOptions });
     m.setInput('/deploy ');
     m.select();
@@ -201,7 +201,7 @@ describe('command steps (wizard)', () => {
   });
 
   it('tokens display: input holds only the query; tokens carry the sentence', () => {
-    const { m, host } = harness({ display: 'tokens', stepOptions: () => [{ label: 'Production', value: 'prod' }] });
+    const { m, host } = harness({ display: 'tokens', stepOptions: () => [{ text: 'Production', value: 'prod' }] });
     m.setInput('/deploy ');
     expect(m.input).toBe('');
     expect(m.lockedLength).toBe(0);
@@ -223,14 +223,14 @@ describe('command steps (wizard)', () => {
 
   describe('branching (option.steps)', () => {
     const ASSIGN: Command = {
-      id: 'assign-admin', shortcut: '/assign-admin', name: 'Assign admin',
+      id: 'assign-admin', trigger: '/assign-admin', text: 'Assign admin',
       steps: [
-        { id: 'user', options: [{ id: 'john', label: 'John' }] },
+        { id: 'user', options: [{ id: 'john', text: 'John' }] },
         { id: 'target', prompt: ' to ', options: [
-          { id: 'group', label: 'group', steps: [{ id: 'group', options: [{ label: 'Finance' }] }] },
-          { id: 'site', label: 'site', steps: [{ id: 'site', options: [{ label: 'Intranet' }] }] },
+          { id: 'group', text: 'group', steps: [{ id: 'group', options: [{ text: 'Finance' }] }] },
+          { id: 'site', text: 'site', steps: [{ id: 'site', options: [{ text: 'Intranet' }] }] },
         ] },
-        { id: 'role', prompt: ' as ', options: [{ label: 'owner' }] },
+        { id: 'role', prompt: ' as ', options: [{ text: 'owner' }] },
       ],
     };
 
@@ -247,7 +247,7 @@ describe('command steps (wizard)', () => {
       expect(m.step?.id).toBe('role');
       m.select();
       expect(effects[0]).toEqual({
-        type: 'complete', commandId: 'assign-admin', selections: [
+        type: 'action', commandId: 'assign-admin', selections: [
           { stepId: 'user', label: 'John', value: 'John', optionId: 'john', isFreeText: false },
           { stepId: 'target', label: 'site', value: 'site', optionId: 'site', isFreeText: false },
           { stepId: 'site', label: 'Intranet', value: 'Intranet', isFreeText: false },
@@ -285,8 +285,8 @@ describe('command steps (wizard)', () => {
 
     it('branch steps can come from stepOptionsCallback (plain JSON)', () => {
       const stepOptions = vi.fn((ctx: { stepId: string }) =>
-        ctx.stepId === 'kind' ? [{ label: 'group', steps: [{ id: 'group', search: true }] }] : [{ label: 'Finance' }]);
-      const cmd: Command = { id: 'x', shortcut: '/x', name: 'X', steps: [{ id: 'kind' }] };
+        ctx.stepId === 'kind' ? [{ label: 'group', steps: [{ id: 'group', isLiveSearch: true }] }] : [{ label: 'Finance' }]);
+      const cmd: Command = { id: 'x', trigger: '/x', text: 'X', steps: [{ id: 'kind' }] };
       const { m } = harness({ commands: [cmd], stepOptions });
       m.setInput('/x ');
       m.select(); // group (from the callback)
@@ -331,7 +331,7 @@ describe('context search (:)', () => {
     expect(search).not.toHaveBeenCalled();
   });
 
-  it('non-empty query → debounced searchCallback({contextId}, q)', async () => {
+  it('non-empty query → debounced searchCallback({ scope: { contextId }, term })', async () => {
     const results: Result[] = [{ id: 'p1', title: 'iPad Air', badge: 'New', badgeVariant: 'info' }];
     const search = vi.fn(() => results);
     const { m, effects } = harness({ search });
@@ -339,7 +339,8 @@ describe('context search (:)', () => {
     expect(m.isLoading).toBe(true);
     await vi.advanceTimersByTimeAsync(150);
     expect(search).toHaveBeenCalledTimes(1);
-    expect(search.mock.calls[0].slice(0, 2)).toEqual([{ contextId: 'products' }, 'ipad']);
+    expect(search.mock.calls[0][0]).toEqual({ scope: { contextId: 'products' }, term: 'ipad' });
+    expect((search.mock.calls[0][0] as unknown as { signal: AbortSignal }).signal).toBeInstanceOf(AbortSignal);
     expect(titles(m)).toEqual(['iPad Air']);
     expect(m.items[0].badge).toBe('New');
     m.select();
@@ -373,7 +374,7 @@ describe('global search', () => {
     expect(titles(m)).toEqual(['Go to Page']);
     expect(m.isLoading).toBe(true);
     await vi.advanceTimersByTimeAsync(150);
-    expect(search.mock.calls[0].slice(0, 2)).toEqual(['global', 'go']);
+    expect(search.mock.calls[0][0]).toEqual({ scope: 'global', term: 'go' });
     expect(titles(m)).toEqual(['Go to Page', 'User Goran']);
     expect(m.isLoading).toBe(false);
     m.select(1);
@@ -391,7 +392,7 @@ describe('global search', () => {
   it('a superseded request is aborted and its late result ignored', async () => {
     const resolvers: Array<(r: Result[]) => void> = [];
     const signals: AbortSignal[] = [];
-    const search = vi.fn((_s: unknown, _q: string, signal: AbortSignal) => {
+    const search = vi.fn(({ signal }: { signal: AbortSignal }) => {
       signals.push(signal);
       return new Promise<Result[]>((res) => resolvers.push(res));
     });

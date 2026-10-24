@@ -139,6 +139,17 @@
   background-color: var(--cp-item-hover-bg);
 }
 
+/* A command that can't run: greyed, no pointer. */
+.cp__item--disabled {
+  opacity: var(--cp-item-disabled-opacity);
+  cursor: default;
+}
+
+/* A destructive command: its title in the danger color. */
+.cp__item--danger .pa-command-palette__item-title {
+  color: var(--cp-item-danger-color);
+}
+
 /* Focused text color (default: unchanged). The title inherits it. */
 .pa-command-palette__item--active .pa-command-palette__item-title {
   color: var(--cp-item-active-color);

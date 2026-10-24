@@ -5,7 +5,7 @@ test.beforeEach(async ({ page }) => load(page));
 
 const panel = (page: import('@playwright/test').Page) => palette(page).host.locator('.cp-confirm');
 
-test('a finished wizard shows ✓ Done with the answers; cp-complete fires at once, cp-close after the panel', async ({ page }) => {
+test('a finished wizard shows ✓ Done with the answers; action fires at once, close after the panel', async ({ page }) => {
   const p = palette(page);
   await open(page);
   await page.keyboard.type('/go us');
@@ -20,12 +20,12 @@ test('a finished wizard shows ✓ Done with the answers; cp-complete fires at on
   await expect(p.footer).toBeHidden();
   await expect(panel(page)).toBeFocused();
   let names = (await events(page)).map((e) => e.name);
-  expect(names).toContain('cp-complete');
-  expect(names.filter((n) => n === 'cp-close')).toHaveLength(0);
+  expect(names).toContain('action');
+  expect(names.filter((n) => n === 'close')).toHaveLength(0);
 
   await expect(p.root).not.toHaveClass(/--active/, { timeout: 3000 });
   names = (await events(page)).map((e) => e.name);
-  expect(names.at(-1)).toBe('cp-close');
+  expect(names.at(-1)).toBe('close');
 });
 
 test('any key dismisses it immediately; Ctrl+K during it opens a fresh palette', async ({ page }) => {

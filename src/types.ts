@@ -2,11 +2,16 @@
  * Public data shapes for `<web-command-palette>`.
  *
  * Everything a host hands IN (commands, contexts, options, results) and everything
- * the component hands OUT (callback arguments, event details) is plain JSON — no
- * functions, no class instances — so a LiveView bridge can serialize it verbatim
- * (IMPLEMENTATION_PLAN §7). The one exception is the optional `Step.shouldShow`
- * predicate, which a JS host may use; server-driven hosts simply omit it.
+ * the component hands OUT (callback contexts, event details) is plain JSON data
+ * (IMPLEMENTATION_PLAN §7), so a LiveView bridge can serialize it verbatim. The
+ * component context every ctx / detail carries — `controller` and `element` (and a
+ * search ctx's `signal`) — is attached NON-enumerable: destructuring works,
+ * `JSON.stringify` / `Object.keys` see only the data. Functions on items
+ * (`onClick`, `get*Callback`, `searchCallback`, `getOptionsCallback`) are JS-only
+ * conveniences; server-driven hosts omit them.
  */
+import type { ActionEventDetail as CoreActionEventDetail, ActionItem, ComponentContext } from '@keenmate/web-components-core/actions';
+import type { PresentationContext } from '@keenmate/web-components-core';
 
 /**
  * An item icon. Rendered by shape (see `icons.ts`):
@@ -19,6 +24,115 @@ export type IconInput = string;
 /** Badge colour variants (pure-admin `pa-badge--*`). */
 export type BadgeVariant = 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'secondary';
 
+export type MaybePromise<T> = T | Promise<T>;
+
+// ── controller + component context ──────────────────────────────────────────
+
+/**
+ * The palette's public facade — `el.controller`, and `controller` on every
+ * callback ctx and event detail. The imperative API of the element; the internal
+ * `PaletteEngine` is never exposed.
+ */
+export interface CommandPaletteController {
+  /** Whether the palette is open. */
+  readonly isOpen: boolean;
+  /** Open on the home screen. No-op when already open. */
+  open(): void;
+  /** Close and reset. No-op when already closed. */
+  close(): void;
+  /** Open when closed, close when open. */
+  toggle(): void;
+  /** Back to the home screen (stays open). */
+  reset(): void;
+  /** Open pre-filled with `query` (`'/deploy'`, `':products laptop'`), run through the normal input pipeline. */
+  openWith(query: string): void;
+  /** Open on the full favorites list (what `g f` does). */
+  openFavorites(): void;
+  /** Open on the full recently-used list. */
+  openRecent(): void;
+  /** Same as assigning `commands`. */
+  setCommands(list: Command[]): void;
+  /** Same as assigning `contexts`. */
+  setContexts(list: Context[]): void;
+}
+
+/**
+ * What every callback ctx and event detail carries: `controller` + `element`
+ * (non-enumerable) and the presentation flags (`presentation`, `isFullscreen`,
+ * `isModal`) — the palette is a popup. A standalone `PaletteEngine` without an
+ * element host passes plain objects (no controller / element / presentation).
+ */
+// The element type comes from the tag-name map (declared in index.ts), so this
+// side-layer file doesn't import the element module.
+export type PaletteContext = ComponentContext<CommandPaletteController, HTMLElementTagNameMap['web-command-palette']> & PresentationContext;
+
+// ── commands (action items) ─────────────────────────────────────────────────
+
+/** The surface context of a command: render-time `get*Callback`s and, at activation, the action detail. */
+export interface CommandContext extends PaletteContext {
+  /** The wizard answers. Empty at render time and for a command without steps. */
+  selections: Selection[];
+}
+
+/**
+ * A command, listed on the home screen and under `/`. A command is a core
+ * `ActionItem` (`@keenmate/web-components-core/actions`): activating it — Enter /
+ * click on a command without `steps`, or the last answer of a wizard — runs
+ * `beforeActionCallback` → `onClick` → the `action` event (`source: 'palette'`).
+ * The palette has no built-in actions, so `action` is always `'custom'` and `id`
+ * identifies the command. `isActive` / `getIsActiveCallback` are not supported
+ * (palette rows are not toggles).
+ */
+export interface Command extends Omit<ActionItem<CommandContext, never>, 'id' | 'text' | 'isActive' | 'getIsActiveCallback'> {
+  id: string;
+  /** The slash token that runs it, e.g. `"/go"`. */
+  trigger: string;
+  /** Display text. */
+  text: string;
+  /** More slash tokens that match, e.g. `["/g"]`. */
+  aliases?: string[];
+  /**
+   * Key chord shown on the home-screen row. A `g <letter>` sequence (`"g d"`) also
+   * runs the command from anywhere while the palette is closed; a chord
+   * (`"Ctrl+K"`) is displayed only.
+   */
+  shortcut?: string;
+  /** The row's second line (searched by the `/` filter). */
+  description?: string;
+  icon?: IconInput;
+  /** Absent / empty = the command fires `action` immediately. Otherwise a wizard runs first. */
+  steps?: Step[];
+}
+
+/**
+ * The `action` event detail (also `onAction`, the command's `onClick` and
+ * `beforeActionCallback`): `action: 'custom'`, `id` (the command id), `item` (the
+ * command), `source: 'palette'`, `selections`, `sourceEvent` (the keydown / click
+ * that ran it), `triggerElement` (the activated row, when there was one),
+ * `dataset` (`{}`), plus `controller` / `element` / presentation.
+ */
+export type ActionEventDetail = CoreActionEventDetail<CommandContext, never> & { item: Command };
+
+// ── wizard steps ────────────────────────────────────────────────────────────
+
+/** The ctx of `Step.getIsVisibleCallback`. */
+export interface StepContext extends PaletteContext {
+  commandId: string;
+  stepId: string;
+  /** The answers so far. */
+  selections: Selection[];
+}
+
+/** The ctx of `getStepOptionsCallback` / `Step.getOptionsCallback`. */
+export interface StepOptionsContext extends StepContext {
+  /** The step's typed text (`''` for a static step's one-time fetch). */
+  term: string;
+  /** Aborted when the request is superseded or the palette closes. Non-enumerable. */
+  readonly signal: AbortSignal;
+}
+
+export type StepOptionsCallback = (ctx: StepOptionsContext) => MaybePromise<Option[] | null | undefined>;
+
 /** One step of a multi-step command (a "wizard" prompt). */
 export interface Step {
   id: string;
@@ -27,60 +141,29 @@ export interface Step {
   /** Input placeholder while this step is active. */
   placeholder?: string;
   /** Allow submitting the typed text (Enter) when no option matches. */
-  freeText?: boolean;
+  isFreeTextAllowed?: boolean;
   /**
-   * `true` = LIVE search: `stepOptionsCallback` is called per (debounced) keystroke.
+   * `true` = LIVE search: the options provider is called per (debounced) keystroke.
    * Falsy (default) = STATIC: the full option list is fetched ONCE on step entry
    * (or taken from `options`) and filtered client-side with zero latency.
    */
-  search?: boolean;
+  isLiveSearch?: boolean;
   /** Inline static options — the zero-callback way to define a static step. */
   options?: Option[];
-  /** Skip this step unless the predicate returns true (JS hosts only). */
-  shouldShow?: (selections: Selection[]) => boolean;
+  /** Skip this step unless it returns `true` (JS hosts only). */
+  getIsVisibleCallback?: (ctx: StepContext) => boolean;
   /**
    * This step's own options provider (JS hosts only) — same contract as
-   * `stepOptionsCallback`, which stays the fallback for steps without one. Lets a
+   * `getStepOptionsCallback`, which stays the fallback for steps without one. Lets a
    * picker be defined once and reused: `{ id: 'user', ...pickUser }`.
    */
-  load?: StepOptionsCallback;
-}
-
-/** A command, listed under `/` and on the home screen. */
-export interface Command {
-  id: string;
-  /** e.g. `"/go"`. */
-  shortcut: string;
-  name: string;
-  aliases?: string[];
-  /** Leading-key sequence (`"g g"`) — fires from anywhere while the palette is closed. A chord (`"Ctrl+K"`) is displayed only. */
-  hotkey?: string;
-  description?: string;
-  icon?: IconInput;
-  /** Absent/empty = instant command (fires `cp-command`). */
-  steps?: Step[];
-}
-
-/** A search context, listed under `:` and on the home screen. */
-export interface Context {
-  id: string;
-  /** e.g. `":products"`. */
-  shortcut: string;
-  name: string;
-  aliases?: string[];
-  description?: string;
-  icon?: IconInput;
-  /**
-   * This context's own search (JS hosts only). Called instead of `searchCallback`
-   * for queries inside the context — same rules: non-empty queries, debounced, abortable.
-   */
-  search?: (query: string, signal: AbortSignal) => MaybePromise<Result[] | null | undefined>;
+  getOptionsCallback?: StepOptionsCallback;
 }
 
 /** A command-step option. */
 export interface Option {
   id?: string;
-  label: string;
+  text: string;
   value?: unknown;
   description?: string;
   icon?: IconInput;
@@ -93,7 +176,58 @@ export interface Option {
   steps?: Step[];
 }
 
-/** A search hit (context or global). Extra keys pass through to the `cp-select` handler. */
+/** One recorded wizard answer. Persisted in usage entries, so its fields are stable. */
+export interface Selection {
+  stepId: string;
+  /** The chosen option's `text`, or the typed text. */
+  label: string;
+  /** The option's `value` (falls back to its text), or the typed text for a free-text answer. */
+  value: unknown;
+  /** The chosen option's `id`, when it had one. */
+  optionId?: string;
+  /** True when the answer is typed free text rather than a listed option. */
+  isFreeText: boolean;
+}
+
+// ── search ──────────────────────────────────────────────────────────────────
+
+/** What a search runs against. */
+export type Scope = 'global' | { contextId: string };
+
+/** The ctx of `searchCallback` / `Context.searchCallback`. */
+export interface SearchContext extends PaletteContext {
+  /** `'global'` or `{ contextId }`. */
+  scope: Scope;
+  /** The (non-empty, trimmed) query. */
+  term: string;
+  /** Aborted when the request is superseded or the palette closes. Non-enumerable. */
+  readonly signal: AbortSignal;
+}
+
+export type SearchCallback = (ctx: SearchContext) => MaybePromise<Result[] | null | undefined>;
+
+/** A search context, listed under `:` and on the home screen. */
+export interface Context {
+  id: string;
+  /** The colon token that enters it, e.g. `":products"`. */
+  trigger: string;
+  /** Display text. */
+  text: string;
+  aliases?: string[];
+  description?: string;
+  icon?: IconInput;
+  /**
+   * This context's own search (JS hosts only). Called instead of `searchCallback`
+   * for queries inside the context — same rules: non-empty terms, debounced, abortable.
+   */
+  searchCallback?: SearchCallback;
+}
+
+/**
+ * A search hit (context or global). Extra keys pass through to the `select`
+ * handler. A data record, not an action item — and persisted verbatim in usage
+ * entries — so it keeps its `title` / `subtitle` pair.
+ */
 export interface Result {
   id: string;
   title: string;
@@ -107,30 +241,7 @@ export interface Result {
   [key: string]: unknown;
 }
 
-/** What a search runs against. */
-export type Scope = 'global' | { contextId: string };
-
-/** One recorded wizard answer. */
-export interface Selection {
-  stepId: string;
-  label: string;
-  /** The option's `value` (falls back to its label), or the typed text for a free-text answer. */
-  value: unknown;
-  /** The chosen option's `id`, when it had one. */
-  optionId?: string;
-  /** True when the answer is typed free text rather than a listed option. */
-  isFreeText: boolean;
-}
-
-/** Argument of `stepOptionsCallback`. */
-export interface StepOptionsContext {
-  commandId: string;
-  stepId: string;
-  query: string;
-  selections: Selection[];
-}
-
-export type MaybePromise<T> = T | Promise<T>;
+// ── favorites / recents ─────────────────────────────────────────────────────
 
 /**
  * One remembered thing — a favorite and/or a recently used item. Plain JSON: this
@@ -158,15 +269,22 @@ export interface UsageEntry {
   isFavorite: boolean;
 }
 
-/** What `renderConfirmationCallback` gets — plain JSON, like the effect events. */
-export interface ConfirmationContext {
-  /** Which effect just fired: a finished wizard, an instant command, or a chosen search result. */
-  type: 'complete' | 'command' | 'select';
+export type LoadUsageCallback = (ctx: PaletteContext) => MaybePromise<UsageEntry[] | null | undefined>;
+/** Upsert `ctx.entry` (insert or replace by `key`). */
+export type SaveUsageCallback = (ctx: PaletteContext & { entry: UsageEntry }) => MaybePromise<void>;
+
+// ── confirmation ────────────────────────────────────────────────────────────
+
+/** What `renderConfirmationCallback` gets. */
+export interface ConfirmationContext extends PaletteContext {
+  /** Which effect just fired: a command ran (`action`) or a search result was chosen (`select`). */
+  type: 'action' | 'select';
   commandId?: string;
-  /** The command's display name. */
-  commandName?: string;
+  /** The command's display text. */
+  commandText?: string;
+  /** The wizard answers (`[]` for a command without steps). */
   selections?: Selection[];
-  /** `"/deploy to Staging branch main"`, the command shortcut, or the result title. */
+  /** `"/deploy to Staging branch main"`, the command trigger, or the result title. */
   sentence: string;
   item?: Result;
   scope?: Scope;
@@ -180,12 +298,21 @@ export interface ConfirmationContext {
  */
 export type RenderConfirmationCallback = (ctx: ConfirmationContext) => string | HTMLElement | null | undefined | false;
 
-export type LoadUsageCallback = () => MaybePromise<UsageEntry[] | null | undefined>;
-/** Upsert one entry (insert or replace by `key`). */
-export type SaveUsageCallback = (entry: UsageEntry) => MaybePromise<void>;
+// ── before-hooks ────────────────────────────────────────────────────────────
 
-export type SearchCallback = (scope: Scope, query: string, signal: AbortSignal) => MaybePromise<Result[] | null | undefined>;
-export type StepOptionsCallback = (ctx: StepOptionsContext, signal: AbortSignal) => MaybePromise<Option[] | null | undefined>;
+/**
+ * `beforeSelectCallback(ctx)` — a search result is about to be chosen. Return
+ * `false` (or a Promise of it) to cancel: no `select` event, nothing recorded, the
+ * palette stays open. Any other return continues.
+ */
+export type BeforeSelectCallback = (ctx: SelectEventDetail) => unknown;
+
+/**
+ * `beforeActionCallback(detail)` — a command is about to run (the `action` detail).
+ * Return `false` (or a Promise of it) to cancel: no `onClick`, no `action` event,
+ * nothing recorded; a wizard steps back to its last answer, the palette stays open.
+ */
+export type BeforeActionCallback = (detail: ActionEventDetail) => unknown;
 
 /** Every visible string. `{name}`, `{page}`, `{total}`, `{count}` are placeholders. */
 export interface Labels {
@@ -294,15 +421,14 @@ export type Mode =
 export type Display = 'inline' | 'tokens';
 
 // ── event details ─────────────────────────────────────────────────────────────
+// Every detail carries `controller` / `element` (non-enumerable) and the
+// presentation flags; the `on<Name>` twin receives the same object.
 
-export interface SelectEventDetail {
+/** `open` / `close` / `ready`. */
+export type PaletteEventDetail = PaletteContext;
+
+/** `select` — a search result was chosen. */
+export interface SelectEventDetail extends PaletteContext {
   item: Result;
   scope: Scope;
-}
-export interface CompleteEventDetail {
-  commandId: string;
-  selections: Selection[];
-}
-export interface CommandEventDetail {
-  commandId: string;
 }

@@ -4,9 +4,10 @@ import { logging } from './logger';
 
 export { CommandPaletteElement };
 
-// The DOM-free machine + helpers, for hosts that want to drive or test the logic directly.
-export { PaletteMachine, PAGE_STEP } from './palette';
-export type { MachineHost, Effect, ViewItem, TokenView, NavDirection, HomeSection } from './palette';
+// The DOM-free engine + helpers, for hosts that want to drive or test the logic directly
+// (the element never exposes it — use `el.controller`).
+export { PaletteEngine, PAGE_STEP } from './palette';
+export type { PaletteEngineHost, Effect, EffectOutcome, ViewItem, TokenView, NavDirection, HomeSection } from './palette';
 export { UsageStore, usageKey, frecency, localStoragePersistence, MAX_RECENT_ENTRIES } from './usage';
 export type { UsagePersistence, UsageTarget } from './usage';
 export { renderIcon } from './icons';
@@ -15,14 +16,19 @@ export { DEFAULT_LABELS } from './types';
 export type {
   IconInput,
   BadgeVariant,
+  CommandPaletteController,
+  PaletteContext,
+  CommandContext,
   Command,
   Step,
+  StepContext,
   Context,
   Option,
   Result,
   Scope,
   Selection,
   StepOptionsContext,
+  SearchContext,
   SearchCallback,
   StepOptionsCallback,
   UsageEntry,
@@ -33,9 +39,11 @@ export type {
   Labels,
   Mode,
   Display,
+  PaletteEventDetail,
   SelectEventDetail,
-  CompleteEventDetail,
-  CommandEventDetail,
+  ActionEventDetail,
+  BeforeActionCallback,
+  BeforeSelectCallback,
 } from './types';
 
 export { enableLogging, disableLogging, setLogLevel, setCategoryLevel, LOGGING_CATEGORIES } from './logger';
