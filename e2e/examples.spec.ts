@@ -48,13 +48,13 @@ test('controls persist across a reload', async ({ page }) => {
   await expect(page.locator('web-command-palette')).toHaveAttribute('display', 'tokens');
 });
 
-test('examples-commands-steps: shouldShow skips the range step for Inventory', async ({ page }) => {
+test('examples-commands-steps: getIsVisibleCallback skips the range step for Inventory', async ({ page }) => {
   await page.goto('/examples-commands-steps.html');
   const host = page.locator('web-command-palette');
   await page.waitForFunction(() => !!customElements.get('web-command-palette'));
   await host.evaluate((el) => (el as unknown as { openWith(q: string): void }).openWith('/report inv'));
   await page.keyboard.press('Enter');
-  await expect(page.locator('#cs05-log')).toContainText('"commandId": "report"');
+  await expect(page.locator('#cs05-log')).toContainText('"id": "report"');
   await expect(page.locator('#cs05-log')).toContainText('Inventory Status');
 });
 
@@ -88,7 +88,7 @@ test('examples-favorites: shared live picker, then replay from Recent with Enter
   await page.keyboard.press('Tab'); // write
   await expect(input).toHaveValue('/add-permission write to ');
   await page.keyboard.type('pet');
-  await expect(titles).toHaveText(['Peter Parker']); // pickUser.load (live, debounced)
+  await expect(titles).toHaveText(['Peter Parker']); // pickUser.getOptionsCallback (live, debounced)
   await page.keyboard.press('Enter');
   await expect(page.locator('#fr03-log')).toContainText('"label":"Peter Parker"');
   await expect(page.locator('#fr01-log')).toContainText('pickUser');
@@ -97,8 +97,8 @@ test('examples-favorites: shared live picker, then replay from Recent with Enter
   await expect(host.locator('.pa-command-palette__item--active .pa-command-palette__item-title')).toHaveText('/add-permission write to Peter Parker');
   await page.keyboard.press('Enter');
   await page.keyboard.press('Enter');
-  // The replay completed the same run again: two identical cp-complete lines.
-  await expect(page.locator('#fr03-log')).toHaveText(/cp-complete[\s\S]*Peter Parker[\s\S]*cp-complete[\s\S]*Peter Parker/);
+  // The replay completed the same run again: two identical action lines.
+  await expect(page.locator('#fr03-log')).toHaveText(/action[\s\S]*Peter Parker[\s\S]*action[\s\S]*Peter Parker/);
 });
 
 test('examples-playground: confirmation + favorites switches apply to the palette', async ({ page }) => {

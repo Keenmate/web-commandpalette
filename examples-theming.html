@@ -329,7 +329,7 @@
 <!-- Page wiring -->
 <script type="module">
     import { attachControlsPersistence } from '@keenmate/web-components-devkit/examples';
-    import { commands, contexts, searchCallback, stepOptionsCallback } from './examples-data.js';
+    import { commands, contexts, searchCallback, getStepOptionsCallback } from './examples-data.js';
 
     /** The gallery stylesheet's source rules for `#<id>` (and its ::part()s), as written; inline SVGs shortened. */
     function rulesFor(id) {
@@ -350,26 +350,26 @@
         palette.commands = commands;
         palette.contexts = contexts;
         palette.searchCallback = searchCallback;
-        palette.stepOptionsCallback = stepOptionsCallback;
+        palette.getStepOptionsCallback = getStepOptionsCallback;
 
         // Size & presentation apply to every palette on the page (main + gallery instances).
         const palettes = [...document.querySelectorAll('web-command-palette')];
         const bind = (name, apply) => document.querySelectorAll(`input[name="${name}"]`).forEach((r) =>
             r.addEventListener('change', (e) => { if (e.target.checked) palettes.forEach((el) => apply(el, e.target.value)); }));
         bind('th01-rem', (el, v) => (v ? el.style.setProperty('--base-rem', v) : el.style.removeProperty('--base-rem')));
-        bind('th01-size', (el, v) => { el.size = v || null; });
+        bind('th01-size', (el, v) => (v ? el.setAttribute('size', v) : el.removeAttribute('size')));
         bind('th01-presentation', (el, v) => el.setAttribute('mobile-presentation', v));
 
         document.querySelectorAll('[data-open]').forEach((b) =>
-            b.addEventListener('click', () => palette.openWith(b.dataset.open)));
+            b.addEventListener('click', () => palette.controller.openWith(b.dataset.open)));
 
         // TH01 — each gallery card drives its own themed instance and prints its rules.
         for (const card of document.querySelectorAll('[data-gallery-theme]')) {
             const id = `theme-${card.dataset.galleryTheme}`;
             const themed = document.getElementById(id);
-            Object.assign(themed, { commands, contexts, searchCallback, stepOptionsCallback });
+            Object.assign(themed, { commands, contexts, searchCallback, getStepOptionsCallback });
             card.querySelectorAll('[data-theme-open]').forEach((b) =>
-                b.addEventListener('click', () => themed.openWith(b.dataset.themeOpen)));
+                b.addEventListener('click', () => themed.controller.openWith(b.dataset.themeOpen)));
             card.querySelector('pre').textContent = rulesFor(id);
         }
 

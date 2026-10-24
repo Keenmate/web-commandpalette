@@ -50,52 +50,52 @@ const variants = {
 
 export const commands = [
   {
-    id: 'deploy', shortcut: '/deploy', aliases: ['/d'], hotkey: 'g d', icon: '🚀',
-    name: 'Deploy to Environment', description: 'Deploy a branch to an environment',
+    id: 'deploy', trigger: '/deploy', aliases: ['/d'], shortcut: 'g d', icon: '🚀',
+    text: 'Deploy to Environment', description: 'Deploy a branch to an environment',
     steps: [
       { id: 'environment', prompt: ' to ', placeholder: 'Select environment…', options: [
-        { id: 'prod', label: 'Production', description: 'Live servers', icon: '🔴', value: 'production' },
-        { id: 'staging', label: 'Staging', description: 'Pre-production', icon: '🟡', value: 'staging' },
-        { id: 'dev', label: 'Development', description: 'Dev servers', icon: '🟢', value: 'development' },
+        { id: 'prod', text: 'Production', description: 'Live servers', icon: '🔴', value: 'production' },
+        { id: 'staging', text: 'Staging', description: 'Pre-production', icon: '🟡', value: 'staging' },
+        { id: 'dev', text: 'Development', description: 'Dev servers', icon: '🟢', value: 'development' },
       ] },
-      // Live step: options come from stepOptionsCallback per keystroke.
-      { id: 'branch', prompt: ' branch ', placeholder: 'Select or type branch…', freeText: true, search: true },
+      // Live step: options come from getStepOptionsCallback per keystroke.
+      { id: 'branch', prompt: ' branch ', placeholder: 'Select or type branch…', isFreeTextAllowed: true, isLiveSearch: true },
     ],
   },
   {
-    id: 'assign', shortcut: '/assign', aliases: ['/a'], hotkey: 'g a', icon: '👤',
-    name: 'Assign to User', description: 'Assign an item to a team member',
+    id: 'assign', trigger: '/assign', aliases: ['/a'], shortcut: 'g a', icon: '👤',
+    text: 'Assign to User', description: 'Assign an item to a team member',
     steps: [
-      { id: 'item', placeholder: 'Select item…' },          // static, via stepOptionsCallback (fetched once)
+      { id: 'item', placeholder: 'Select item…' },          // static, via getStepOptionsCallback (fetched once)
       { id: 'user', prompt: ' to ', placeholder: 'Select user…' },
     ],
   },
   {
-    id: 'go', shortcut: '/go', aliases: ['/g', '/nav'], hotkey: 'g g', icon: '🧭',
-    name: 'Go to Page', description: 'Navigate to a page',
-    steps: [{ id: 'page', placeholder: 'Type page name…', freeText: true, options: [
-      { id: 'dashboard', label: 'Dashboard', description: 'Overview', icon: '📊', value: '/' },
-      { id: 'products', label: 'Products', description: 'Catalog', icon: '📦', value: '/products' },
-      { id: 'orders', label: 'Orders', description: 'Sales', icon: '🧾', value: '/orders' },
-      { id: 'users', label: 'Users', description: 'Accounts', icon: '👥', value: '/users' },
-      { id: 'settings', label: 'Settings', description: 'Configuration', icon: '⚙️', value: '/settings' },
+    id: 'go', trigger: '/go', aliases: ['/g', '/nav'], shortcut: 'g g', icon: '🧭',
+    text: 'Go to Page', description: 'Navigate to a page',
+    steps: [{ id: 'page', placeholder: 'Type page name…', isFreeTextAllowed: true, options: [
+      { id: 'dashboard', text: 'Dashboard', description: 'Overview', icon: '📊', value: '/' },
+      { id: 'products', text: 'Products', description: 'Catalog', icon: '📦', value: '/products' },
+      { id: 'orders', text: 'Orders', description: 'Sales', icon: '🧾', value: '/orders' },
+      { id: 'users', text: 'Users', description: 'Accounts', icon: '👥', value: '/users' },
+      { id: 'settings', text: 'Settings', description: 'Configuration', icon: '⚙️', value: '/settings' },
     ] }],
   },
   {
-    id: 'theme', shortcut: '/theme', aliases: ['/t'], hotkey: 'g t', icon: '🎨',
-    name: 'Switch Theme', description: 'Change the visual theme',
+    id: 'theme', trigger: '/theme', aliases: ['/t'], shortcut: 'g t', icon: '🎨',
+    text: 'Switch Theme', description: 'Change the visual theme',
     steps: [{ id: 'theme', placeholder: 'Select theme…', options: [
-      { id: 'light', label: 'Light', icon: '☀️', value: 'light' },
-      { id: 'dark', label: 'Dark', icon: '🌑', value: 'dark' },
+      { id: 'light', text: 'Light', icon: '☀️', value: 'light' },
+      { id: 'dark', text: 'Dark', icon: '🌑', value: 'dark' },
     ] }],
   },
-  { id: 'reload', shortcut: '/reload', hotkey: 'g r', icon: '🔄', name: 'Reload Data', description: 'Instant command (no steps)' },
+  { id: 'reload', trigger: '/reload', shortcut: 'g r', icon: '🔄', text: 'Reload Data', description: 'Instant command (no steps)' },
 ];
 
 export const contexts = [
-  { id: 'products', shortcut: ':products', aliases: [':p', ':prod'], name: 'Products', description: 'Search products by name or SKU', icon: '📦' },
-  { id: 'users', shortcut: ':users', aliases: [':u'], name: 'Users', description: 'Search users by name or email', icon: '👤' },
-  { id: 'orders', shortcut: ':orders', aliases: [':o'], name: 'Orders', description: 'Search orders by number or customer', icon: '🧾' },
+  { id: 'products', trigger: ':products', aliases: [':p', ':prod'], text: 'Products', description: 'Search products by name or SKU', icon: '📦' },
+  { id: 'users', trigger: ':users', aliases: [':u'], text: 'Users', description: 'Search users by name or email', icon: '👤' },
+  { id: 'orders', trigger: ':orders', aliases: [':o'], text: 'Orders', description: 'Search orders by number or customer', icon: '🧾' },
 ];
 
 const has = (text, q) => String(text).toLowerCase().includes(q);
@@ -104,9 +104,9 @@ const productHit = (p) => ({ id: 'product-' + p.id, title: p.name, subtitle: `SK
 const userHit = (u) => ({ id: 'user-' + u.id, title: u.name, subtitle: `${u.email} • ${u.role}`, icon: '👤', badge: u.status, badgeVariant: variants[u.status], href: `/users/${u.id}` });
 const orderHit = (o) => ({ id: 'order-' + o.id, title: `Order #${o.id}`, subtitle: `${o.customer} • ${o.total} • ${o.items} items`, icon: '🧾', badge: o.status, badgeVariant: variants[o.status], href: `/orders/${o.id}` });
 
-/** Simulated server search (latency + AbortSignal). */
-export function searchCallback(scope, query, signal) {
-  const q = query.toLowerCase();
+/** Simulated server search (latency + AbortSignal). One ctx: `{ scope, term, signal }`. */
+export function searchCallback({ scope, term, signal }) {
+  const q = term.toLowerCase();
   const find = {
     products: () => products.filter((p) => has(p.name, q) || has(p.sku, q)).map(productHit),
     users: () => users.filter((u) => has(u.name, q) || has(u.email, q)).map(userHit),
@@ -124,16 +124,16 @@ export function searchCallback(scope, query, signal) {
 const branches = ['main', 'develop', 'feature/new-ui', 'feature/palette', 'fix/login', 'release/2.0'];
 
 /** Step options: static steps get their full list once; the live `branch` step is queried per keystroke. */
-export async function stepOptionsCallback({ commandId, stepId, query }) {
+export async function getStepOptionsCallback({ commandId, stepId, term }) {
   if (commandId === 'assign' && stepId === 'item') {
-    return products.map((p) => ({ id: 'p-' + p.id, label: p.name, description: `SKU: ${p.sku}`, icon: p.icon, value: p.id }));
+    return products.map((p) => ({ id: 'p-' + p.id, text: p.name, description: `SKU: ${p.sku}`, icon: p.icon, value: p.id }));
   }
   if (commandId === 'assign' && stepId === 'user') {
-    return users.map((u) => ({ id: 'u-' + u.id, label: u.name, description: u.email, icon: '👤', value: u.id }));
+    return users.map((u) => ({ id: 'u-' + u.id, text: u.name, description: u.email, icon: '👤', value: u.id }));
   }
   if (commandId === 'deploy' && stepId === 'branch') {
     await new Promise((r) => setTimeout(r, 150));
-    return branches.filter((b) => b.includes(query.toLowerCase())).map((b) => ({ id: b, label: b, icon: '🌿', value: b }));
+    return branches.filter((b) => b.includes(term.toLowerCase())).map((b) => ({ id: b, text: b, icon: '🌿', value: b }));
   }
   return [];
 }

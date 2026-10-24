@@ -1,5 +1,5 @@
 <meta name="kmwc:title" content="Async Search">
-<meta name="kmwc:subtitle" content="<code>searchCallback(scope, query, signal)</code> covers scoped and global search, with debounce, AbortSignal cancellation and client-side pages. Every provider call shows up in the log below.">
+<meta name="kmwc:subtitle" content="<code>searchCallback({ scope, term, signal })</code> covers scoped and global search, with debounce, AbortSignal cancellation and client-side pages. Every provider call shows up in the log below.">
 <meta name="kmwc:body-class" content="dark-output">
 
 <!-- ============================================================= -->
@@ -11,7 +11,7 @@
         Entering a context (<code>:products</code> or its alias <code>:p</code>, from the home screen, or with
         <code>:p laptop</code>) locks the input to <code>":products "</code> and shows “Searching in Products”.
         <b>An empty query never calls the provider</b>: you get “Type to search Products” instead.
-        Typing calls <code>searchCallback({ contextId: 'products' }, query)</code>.
+        Typing calls <code>searchCallback({ scope: { contextId: 'products' }, term, signal })</code>.
     </p>
     <div class="demo-area">
         <button type="button" data-open=":products ">:products (empty → no call)</button>
@@ -26,7 +26,7 @@
     <h2>AS02 · Global Search</h2>
     <p>
         Free text first shows any command or context whose name, shortcut or alias matches, <b>instantly and
-        without calling the provider</b>. It then appends <code>searchCallback('global', query)</code> results.
+        without calling the provider</b>. It then appends <code>searchCallback({ scope: 'global', term, signal })</code> results.
         Try “deploy” (a command, then server hits) or “mac”.
     </p>
     <div class="demo-area">
@@ -114,22 +114,22 @@
         };
 
         // A fake server, shaped like fetch(): it honours the AbortSignal.
-        palette.searchCallback = (scope, query, signal) => new Promise((resolve, reject) => {
+        palette.searchCallback = ({ scope, term, signal }) => new Promise((resolve, reject) => {
             const label = scope === 'global' ? 'global' : scope.contextId;
-            write(`→ ${label} "${query}"`);
-            const q = query.toLowerCase();
+            write(`→ ${label} "${term}"`);
+            const q = term.toLowerCase();
             const pool = scope === 'global' ? [...pools.products, ...pools.users, ...pools.items] : pools[scope.contextId] ?? [];
             const hits = pool.filter((r) => r.title.toLowerCase().includes(q) || (r.subtitle ?? '').toLowerCase().includes(q));
-            const timer = setTimeout(() => { write(`← ${label} "${query}": ${hits.length} hits`); resolve(hits); }, latency);
+            const timer = setTimeout(() => { write(`← ${label} "${term}": ${hits.length} hits`); resolve(hits); }, latency);
             signal.addEventListener('abort', () => {
                 clearTimeout(timer);
-                write(`✕ ${label} "${query}" aborted`);
+                write(`✕ ${label} "${term}" aborted`);
                 reject(new DOMException('aborted', 'AbortError'));
             }, { once: true });
         });
 
         document.querySelectorAll('[data-open]').forEach((b) =>
-            b.addEventListener('click', () => palette.openWith(b.dataset.open)));
+            b.addEventListener('click', () => palette.controller.openWith(b.dataset.open)));
         document.querySelectorAll('input[name="as03-debounce"]').forEach((r) =>
             r.addEventListener('change', (e) => { if (e.target.checked) palette.setAttribute('search-debounce', e.target.value); }));
         document.querySelectorAll('input[name="as03-latency"]').forEach((r) =>

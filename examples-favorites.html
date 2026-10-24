@@ -1,30 +1,30 @@
 <meta name="kmwc:title" content="Favorites, Recents &amp; Pickers">
-<meta name="kmwc:subtitle" content="An admin console: reusable pickers defined once with <code>load</code>, a branching command, favorites and recently used items, replaying a past run with <kbd>Tab</kbd> / <kbd>Enter</kbd>, and grouped search results.">
+<meta name="kmwc:subtitle" content="An admin console: reusable pickers defined once with <code>getOptionsCallback</code>, a branching command, favorites and recently used items, replaying a past run with <kbd>Tab</kbd> / <kbd>Enter</kbd>, and grouped search results.">
 <meta name="kmwc:body-class" content="dark-output">
 
 <!-- ============================================================= -->
 <!-- FR01 · Reusable pickers                                          -->
 <!-- ============================================================= -->
 <div class="card">
-    <h2>FR01 · Reusable Pickers (<code>step.load</code>)</h2>
+    <h2>FR01 · Reusable Pickers (<code>step.getOptionsCallback</code>)</h2>
     <p>
-        Each picker is defined once and spread into any step that needs it. A step's own <code>load</code> wins over
-        <code>stepOptionsCallback</code>, so there's no <code>switch (commandId + stepId)</code>. <code>pickUser</code> is a live
-        (<code>search: true</code>) lookup; <code>pickGroup</code> / <code>pickSite</code> load once and filter in the browser; the
+        Each picker is defined once and spread into any step that needs it. A step's own <code>getOptionsCallback</code> wins over
+        <code>getStepOptionsCallback</code>, so there's no <code>switch (commandId + stepId)</code>. <code>pickUser</code> is a live
+        (<code>isLiveSearch: true</code>) lookup; <code>pickGroup</code> / <code>pickSite</code> load once and filter in the browser; the
         permission list is fixed inline.
     </p>
-<pre>const pickUser  = { search: true, placeholder: 'User…',  load: ({ query }, signal) =&gt; api.users(query, signal) };
-const pickGroup = {               placeholder: 'Group…', load: (_, signal) =&gt; api.groups(signal) };
+<pre>const pickUser  = { isLiveSearch: true, placeholder: 'User…',  getOptionsCallback: ({ term, signal }) =&gt; api.users(term, signal) };
+const pickGroup = {               placeholder: 'Group…', getOptionsCallback: ({ signal }) =&gt; api.groups(signal) };
 
-{ id: 'add-permission', shortcut: '/add-permission', steps: [
-    { id: 'permission', options: [{ label: 'read' }, { label: 'write' }, { label: 'admin' }] },
+{ id: 'add-permission', trigger: '/add-permission', steps: [
+    { id: 'permission', options: [{ text: 'read' }, { text: 'write' }, { text: 'admin' }] },
     { id: 'user', prompt: ' to ', ...pickUser },
 ] }
-{ id: 'assign-admin', shortcut: '/assign-admin', steps: [
+{ id: 'assign-admin', trigger: '/assign-admin', steps: [
     { id: 'user', ...pickUser },
     { id: 'target', prompt: ' to ', options: [
-        { id: 'group', label: 'group', steps: [{ id: 'group', ...pickGroup }] },
-        { id: 'site',  label: 'site',  steps: [{ id: 'site',  ...pickSite }] },
+        { id: 'group', text: 'group', steps: [{ id: 'group', ...pickGroup }] },
+        { id: 'site',  text: 'site',  steps: [{ id: 'site',  ...pickSite }] },
     ] },
 ] }</pre>
     <div class="demo-area">
@@ -97,7 +97,7 @@ const pickGroup = {               placeholder: 'Group…', load: (_, signal) =&g
         list is still loading, <kbd>Enter</kbd> stops there; press it again once the list appears.
     </p>
     <div class="output">
-        <div class="output-label">cp-complete / cp-command / cp-select</div>
+        <div class="output-label">action / select</div>
         <pre id="fr03-log">—</pre>
     </div>
 </div>
@@ -127,11 +127,11 @@ const pickGroup = {               placeholder: 'Group…', load: (_, signal) =&g
 <!-- FR05 · Grouped results                                           -->
 <!-- ============================================================= -->
 <div class="card">
-    <h2>FR05 · Grouped Results &amp; Context <code>search</code></h2>
+    <h2>FR05 · Grouped Results &amp; Context <code>searchCallback</code></h2>
     <p>
         Results with a <code>group</code> appear under headings, grouped in the order each group first appears. Global
-        search for “an” returns users, groups and sites. The <code>:users</code> context brings its own <code>search</code>
-        function, so <code>searchCallback</code> is never asked for it.
+        search for “an” returns users, groups and sites. The <code>:users</code> context brings its own <code>searchCallback</code>,
+        so the element's <code>searchCallback</code> is never asked for it.
     </p>
     <div class="demo-area">
         <button type="button" data-open="an">“an” (grouped)</button>
@@ -146,7 +146,7 @@ const pickGroup = {               placeholder: 'Group…', load: (_, signal) =&g
     <h2>FR06 · Confirmation</h2>
     <p>
         When a command finishes, the dialog briefly collapses to one line showing what ran (✓ <code>/deploy to
-        Staging branch main</code> · Done) instead of vanishing the moment you press <kbd>Enter</kbd>. The effect event still fires
+        Staging branch main</code> · Done) instead of vanishing the moment you press <kbd>Enter</kbd>. The <code>action</code> event still fires
         immediately; only the closing waits. Any key or click dismisses it, and <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>
         goes straight to a fresh palette. <code>renderConfirmationCallback(ctx)</code> can replace the content,
         return <code>false</code> to skip the confirmation, or opt search-result selections in. By default they get none,
@@ -171,7 +171,7 @@ const pickGroup = {               placeholder: 'Group…', load: (_, signal) =&g
 <pre>palette.renderConfirmationCallback = (ctx) =&gt; {
     if (ctx.type === 'select') return `Opening &lt;b&gt;${ctx.sentence}&lt;/b&gt;…`;
     if (ctx.commandId === 'reload') return false;             // no confirmation for this one
-    return `&lt;b&gt;${ctx.commandName}&lt;/b&gt; queued — ${ctx.selections.map((s) =&gt; s.label).join(' → ')}`;
+    return `&lt;b&gt;${ctx.commandText}&lt;/b&gt; queued — ${ctx.selections.map((s) =&gt; s.label).join(' → ')}`;
 };</pre>
     <div class="demo-area">
         <button type="button" data-open="/set-priority ">/set-priority</button>
@@ -189,11 +189,11 @@ const pickGroup = {               placeholder: 'Group…', load: (_, signal) =&g
 
     // ── fake directory ───────────────────────────────────────────────
     const people = ['Peter Parker', 'Jane Foster', 'John Smith', 'Anna Novak', 'Daniel Black', 'Hana Svobodova', 'Ian Grant']
-        .map((name, i) => ({ id: 'u' + i, label: name, description: name.toLowerCase().replace(' ', '.') + '@corp.example', icon: '👤', value: 'u' + i }));
+        .map((name, i) => ({ id: 'u' + i, text: name, description: name.toLowerCase().replace(' ', '.') + '@corp.example', icon: '👤', value: 'u' + i }));
     const groups = ['Finance', 'Engineering', 'Sales', 'Management', 'Support']
-        .map((name) => ({ id: 'g-' + name.toLowerCase(), label: name, icon: '👥', value: name }));
+        .map((name) => ({ id: 'g-' + name.toLowerCase(), text: name, icon: '👥', value: name }));
     const sites = ['Intranet', 'HR Portal', 'Projects', 'Sales Hub', 'Engineering Wiki']
-        .map((name) => ({ id: 's-' + name.toLowerCase().replace(' ', '-'), label: name, icon: '🌐', value: name }));
+        .map((name) => ({ id: 's-' + name.toLowerCase().replace(' ', '-'), text: name, icon: '🌐', value: name }));
 
     const pickerLog = document.getElementById('fr01-log');
     const logPicker = (line) => { pickerLog.textContent = line + '\n' + (pickerLog.textContent === '—' ? '' : pickerLog.textContent); };
@@ -205,57 +205,57 @@ const pickGroup = {               placeholder: 'Group…', load: (_, signal) =&g
 
     // ── pickers: defined once, reused by any step ────────────────────
     const pickUser = {
-        search: true, placeholder: 'Search users…',
-        load: ({ query }, signal) => {
-            logPicker(`pickUser  query=${JSON.stringify(query)}`);
-            return later(people.filter((p) => has(p.label, query)), 200, signal);
+        isLiveSearch: true, placeholder: 'Search users…',
+        getOptionsCallback: ({ term, signal }) => {
+            logPicker(`pickUser  term=${JSON.stringify(term)}`);
+            return later(people.filter((p) => has(p.text, term)), 200, signal);
         },
     };
     const pickGroup = {
         placeholder: 'Select group…',
-        load: (_ctx, signal) => { logPicker('pickGroup (once)'); return later(groups, 300, signal); },
+        getOptionsCallback: ({ signal }) => { logPicker('pickGroup (once)'); return later(groups, 300, signal); },
     };
     const pickSite = {
         placeholder: 'Select site collection…',
-        load: (_ctx, signal) => { logPicker('pickSite  (once)'); return later(sites, 300, signal); },
+        getOptionsCallback: ({ signal }) => { logPicker('pickSite  (once)'); return later(sites, 300, signal); },
     };
 
     const commands = [
-        { id: 'add-permission', shortcut: '/add-permission', aliases: ['/perm'], icon: '🔑', name: 'Add Permission', description: 'Grant a permission to a user',
+        { id: 'add-permission', trigger: '/add-permission', aliases: ['/perm'], icon: '🔑', text: 'Add Permission', description: 'Grant a permission to a user',
           steps: [
             { id: 'permission', placeholder: 'Permission…', options: [
-                { id: 'read', label: 'read', icon: '👁️' }, { id: 'write', label: 'write', icon: '✏️' }, { id: 'admin', label: 'admin', icon: '🛡️' },
+                { id: 'read', text: 'read', icon: '👁️' }, { id: 'write', text: 'write', icon: '✏️' }, { id: 'admin', text: 'admin', icon: '🛡️' },
             ] },
             { id: 'user', prompt: ' to ', ...pickUser },
           ] },
-        { id: 'assign-admin', shortcut: '/assign-admin', aliases: ['/admin'], icon: '🛡️', name: 'Assign Admin', description: 'To a group or a SharePoint site collection',
+        { id: 'assign-admin', trigger: '/assign-admin', aliases: ['/admin'], icon: '🛡️', text: 'Assign Admin', description: 'To a group or a SharePoint site collection',
           steps: [
             { id: 'user', ...pickUser },
             { id: 'target', prompt: ' to ', placeholder: 'group or site…', options: [
-                { id: 'group', label: 'group', icon: '👥', steps: [{ id: 'group', ...pickGroup }] },
-                { id: 'site', label: 'site', icon: '🌐', steps: [{ id: 'site', ...pickSite }] },
+                { id: 'group', text: 'group', icon: '👥', steps: [{ id: 'group', ...pickGroup }] },
+                { id: 'site', text: 'site', icon: '🌐', steps: [{ id: 'site', ...pickSite }] },
             ] },
           ] },
-        { id: 'set-priority', shortcut: '/set-priority', aliases: ['/prio'], icon: '🚩', name: 'Set Priority', description: 'A fixed list',
+        { id: 'set-priority', trigger: '/set-priority', aliases: ['/prio'], icon: '🚩', text: 'Set Priority', description: 'A fixed list',
           steps: [{ id: 'priority', placeholder: 'Priority…', options: [
-            { id: 'high', label: 'High', icon: '🔴' }, { id: 'medium', label: 'Medium', icon: '🟡' }, { id: 'low', label: 'Low', icon: '🟢' },
+            { id: 'high', text: 'High', icon: '🔴' }, { id: 'medium', text: 'Medium', icon: '🟡' }, { id: 'low', text: 'Low', icon: '🟢' },
           ] }] },
-        { id: 'reload', shortcut: '/reload', hotkey: 'g r', icon: '🔄', name: 'Reload Directory', description: 'Instant command' },
+        { id: 'reload', trigger: '/reload', shortcut: 'g r', icon: '🔄', text: 'Reload Directory', description: 'Instant command' },
     ];
 
-    const asResult = (o, group) => ({ id: o.id, title: o.label, subtitle: o.description, icon: o.icon, group });
+    const asResult = (o, group) => ({ id: o.id, title: o.text, subtitle: o.description, icon: o.icon, group });
     const contexts = [
-        { id: 'users', shortcut: ':users', aliases: [':u'], icon: '👤', name: 'Users', description: 'Own search function',
-          search: (query, signal) => later(people.filter((p) => has(p.label, query)).map((p) => asResult(p)), 200, signal) },
-        { id: 'groups', shortcut: ':groups', aliases: [':g'], icon: '👥', name: 'Groups', description: 'Via searchCallback' },
+        { id: 'users', trigger: ':users', aliases: [':u'], icon: '👤', text: 'Users', description: 'Own search function',
+          searchCallback: ({ term, signal }) => later(people.filter((p) => has(p.text, term)).map((p) => asResult(p)), 200, signal) },
+        { id: 'groups', trigger: ':groups', aliases: [':g'], icon: '👥', text: 'Groups', description: 'Via searchCallback' },
     ];
 
     function wire() {
         const palette = document.getElementById('palette');
         palette.commands = commands;
         palette.contexts = contexts;
-        palette.searchCallback = (scope, query, signal) => {
-            const hit = (list, group) => list.filter((o) => has(o.label, query)).map((o) => asResult(o, group));
+        palette.searchCallback = ({ scope, term, signal }) => {
+            const hit = (list, group) => list.filter((o) => has(o.text, term)).map((o) => asResult(o, group));
             const results = scope === 'global'
                 ? [...hit(people, 'Users'), ...hit(groups, 'Groups'), ...hit(sites, 'Sites')]
                 : hit(groups);
@@ -264,12 +264,11 @@ const pickGroup = {               placeholder: 'Group…', load: (_, signal) =&g
 
         const out = document.getElementById('fr03-log');
         const write = (line) => { out.textContent = line + '\n\n' + (out.textContent === '—' ? '' : out.textContent); };
-        palette.addEventListener('cp-complete', (e) => write('cp-complete ' + JSON.stringify(e.detail)));
-        palette.addEventListener('cp-command', (e) => write('cp-command ' + JSON.stringify(e.detail)));
-        palette.addEventListener('cp-select', (e) => write('cp-select ' + JSON.stringify({ title: e.detail.item.title, scope: e.detail.scope })));
+        palette.addEventListener('action', (e) => write('action ' + JSON.stringify({ id: e.detail.id, selections: e.detail.selections })));
+        palette.addEventListener('select', (e) => write('select ' + JSON.stringify({ title: e.detail.item.title, scope: e.detail.scope })));
 
         document.querySelectorAll('[data-open]').forEach((b) =>
-            b.addEventListener('click', () => palette.openWith(b.dataset.open)));
+            b.addEventListener('click', () => palette.controller.openWith(b.dataset.open)));
 
         // FR02 — per-user key, limit, on/off
         const radio = (name, fn) => document.querySelectorAll(`input[name="${name}"]`).forEach((r) =>
@@ -277,7 +276,7 @@ const pickGroup = {               placeholder: 'Group…', load: (_, signal) =&g
         radio('fr02-user', (user) => palette.setAttribute('usage-key', `demo:usage:${user}`));
         radio('fr02-limit', (n) => { palette.setAttribute('favorites-limit', n); palette.setAttribute('recent-limit', n); });
         radio('fr02-storage', (v) => palette.setAttribute('usage-storage', v));
-        document.getElementById('fr02-favorites').addEventListener('click', () => palette.openFavorites());
+        document.getElementById('fr02-favorites').addEventListener('click', () => palette.controller.openFavorites());
         document.getElementById('fr02-clear').addEventListener('click', () => {
             if (palette.loadUsageCallback) {
                 server.clear();
@@ -299,7 +298,7 @@ const pickGroup = {               placeholder: 'Group…', load: (_, signal) =&g
         };
         radio('fr04-mode', (mode) => {
             if (mode === 'server') {
-                palette.saveUsageCallback = (entry) => {
+                palette.saveUsageCallback = ({ entry }) => {
                     logServer(`PUT  /api/me/palette-usage/${encodeURIComponent(entry.key).slice(0, 40)}  count=${entry.count} ★=${entry.isFavorite}`);
                     server.set(entry.key, entry);
                     return later(undefined, 300);
@@ -317,7 +316,7 @@ const pickGroup = {               placeholder: 'Group…', load: (_, signal) =&g
         const customConfirmation = (ctx) => {
             if (ctx.type === 'select') return `Opening <b>${ctx.sentence}</b>…`;
             if (ctx.commandId === 'reload') return false;
-            return `<b>${ctx.commandName}</b> queued — ${ctx.selections.map((s) => s.label).join(' → ') || 'no answers'}`;
+            return `<b>${ctx.commandText}</b> queued — ${ctx.selections.map((s) => s.label).join(' → ') || 'no answers'}`;
         };
         radio('fr06-render', (v) => { palette.renderConfirmationCallback = v === 'custom' ? customConfirmation : null; });
 

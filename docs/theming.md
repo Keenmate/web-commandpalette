@@ -76,6 +76,7 @@ Keycaps use the same font by default; `--cp-key-font-family` changes them.
 | `--cp-backdrop-bg` | Backdrop colour |
 | `--cp-backdrop-filter` | Backdrop filter (`none` to disable the blur) |
 | `--cp-item-hover-bg` / `-item-active-bg` | Row backgrounds |
+| `--cp-item-disabled-opacity` / `-item-danger-color` | A disabled command row (`isDisabled`, default `--base-disabled-opacity`) / a destructive one's title (`isDanger`, default `--base-danger-color`) |
 | `--cp-highlight-bg` / `-highlight-text` | `<mark>` query highlight |
 | `--cp-key-bg` / `-key-text` / `-key-font-size` / `-key-font-weight` | Keycaps |
 | `--cp-scrollbar-thumb-bg` / `-thumb-bg-hover` / `-track-bg` | Results scrollbar colours (default: `--base-border-color` thumb on a transparent track) |

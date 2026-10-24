@@ -42,6 +42,17 @@ top; the CSS is the component's own (plain CSS in the shadow root).
 
 - **RTL, i18n and a phone sheet** — `dir="rtl"` on the element or any ancestor mirrors the layout, which uses logical CSS throughout. It also swaps ←/→ paging and isolates mixed-direction text, so `/deploy …` keeps its order inside Hebrew or Arabic UI. Every visible and announced string comes from the `labels` map. On touch phones, `mobile-presentation="auto"` turns the dialog into a fullscreen sheet that stays above the on-screen keyboard.
 
+> **Breaking change in the next release (2.0) — interaction model.** The `cp-` prefix is gone
+> (`open`, `close`, `select`, `ready`), and `cp-command` / `cp-complete` fold into one `action`
+> event per command run (`detail.id` = the command id, `detail.selections` the wizard answers).
+> `on*` twins receive the event **detail**. Commands are core action items (`name` → `text`,
+> `shortcut` → `trigger`, `hotkey` → `shortcut`, plus `isVisible` / `isDisabled` / `isDanger` /
+> `onClick` / `get*Callback`); options use `text`; every callback takes one `ctx`
+> (`searchCallback({ scope, term, signal })`, `getStepOptionsCallback(ctx)`);
+> `beforeActionCallback` / `beforeSelectCallback` can cancel; `el.controller` is the public facade.
+> The full old → new table is in the [CHANGELOG `[Unreleased]` section](CHANGELOG.md#unreleased);
+> the docs below already describe the new API.
+
 ## Demos & docs
 
 - 🧪 [Live examples](https://examples.web-commandpalette.keenmate.dev) — the hosted example site
@@ -72,13 +83,16 @@ npm install @keenmate/web-commandpalette
 
   const palette = document.querySelector('web-command-palette');
   palette.commands = [
-    { id: 'reload', shortcut: '/reload', name: 'Reload data', hotkey: 'g r' },
-    { id: 'go', shortcut: '/go', name: 'Go to page',
-      steps: [{ id: 'page', options: [{ label: 'Users', value: '/users' }, { label: 'Orders', value: '/orders' }] }] },
+    { id: 'reload', trigger: '/reload', text: 'Reload data', shortcut: 'g r' },
+    { id: 'go', trigger: '/go', text: 'Go to page',
+      steps: [{ id: 'page', options: [{ text: 'Users', value: '/users' }, { text: 'Orders', value: '/orders' }] }] },
   ];
 
-  palette.addEventListener('cp-command', (e) => reload());                                      // instant command
-  palette.addEventListener('cp-complete', (e) => (location.href = e.detail.selections[0].value)); // wizard done
+  // One `action` event per command: at once without steps, after the last answer with them.
+  palette.addEventListener('action', (e) => {
+    if (e.detail.id === 'reload') reload();
+    if (e.detail.id === 'go') location.href = e.detail.selections[0].value;
+  });
 </script>
 ```
 
@@ -87,20 +101,21 @@ npm install @keenmate/web-commandpalette
 **With search — contexts, a server callback and results:**
 
 ```js
-palette.contexts = [{ id: 'products', shortcut: ':products', aliases: [':p'], name: 'Products' }];
+palette.contexts = [{ id: 'products', trigger: ':products', aliases: [':p'], text: 'Products' }];
 
-palette.searchCallback = async (scope, query, signal) => {
-  // scope: 'global' | { contextId: 'products' } — called only for non-empty, debounced queries
+palette.searchCallback = async ({ scope, term, signal }) => {
+  // scope: 'global' | { contextId: 'products' } — called only for non-empty, debounced terms
   const where = scope === 'global' ? 'global' : scope.contextId;
-  const res = await fetch(`/api/search?scope=${where}&q=${encodeURIComponent(query)}`, { signal });
+  const res = await fetch(`/api/search?scope=${where}&q=${encodeURIComponent(term)}`, { signal });
   return res.json(); // [{ id, title, subtitle?, icon?, href?, group? }]
 };
 
-palette.addEventListener('cp-select', (e) => (location.href = e.detail.item.href));
+palette.addEventListener('select', (e) => (location.href = e.detail.item.href));
 ```
 
-The palette closes itself after `cp-select` / `cp-complete` / `cp-command`; the host performs the
-effect. See [docs/usage.md](./docs/usage.md) for the full API and
+The palette closes itself after `select` / `action`; the host performs the effect. Every callback
+takes one `ctx`, and every ctx and event detail carries `controller` (`el.controller`, the public
+facade) and `element`. See [docs/usage.md](./docs/usage.md) for the full API and
 [docs/examples.md](./docs/examples.md) for recipes (step pickers, branching wizards, favorites on
 the server, custom confirmation).
 
@@ -156,7 +171,7 @@ Details — single tests, the CSS pipeline, publishing, the example-site image �
 | Layer | File | Role |
 |-------|------|------|
 | Element | `src/web-component.ts` | `CommandPaletteElement` — the `static inputs` / `static events` tables (IDE metadata is generated from them), overlay, presentation, confirmation |
-| Logic | `src/palette.ts` | `PaletteMachine` — DOM-free modes, wizard, filtering, async search, pagination |
+| Logic | `src/palette.ts` | `PaletteEngine` — DOM-free modes, wizard, filtering, async search, pagination |
 | Logic | `src/usage.ts` | `UsageStore` — favorites + recents, frecency, pluggable persistence |
 | Render | `src/render.ts` | builds the shadow DOM once and patches it |
 | Service | `src/keyboard.ts`, `src/filter.ts`, `src/icons.ts` | global hotkeys + input key map, filtering, icon rendering |

@@ -15,17 +15,17 @@ What the user types decides the mode:
 |---|---|---|
 | *(nothing)* | home: favorites, recent, commands, contexts | in memory |
 | `/dep` | command list | in memory, filtered client-side |
-| `/deploy ` | command wizard | step `options`, its own `load`, or `stepOptionsCallback` (static: once; `search: true`: per keystroke) |
+| `/deploy ` | command wizard | step `options`, its own `getOptionsCallback`, or `getStepOptionsCallback` (static: once; `isLiveSearch: true`: per keystroke) |
 | `:` | context list | in memory, filtered client-side |
-| `:p ` | scoped search, input locked to `":products "` | **nothing until you type** — then the context's `search`, or `searchCallback({ contextId }, q)` |
-| `mac` | global search | matching commands/contexts first (instantly), then `searchCallback('global', q)` |
+| `:p ` | scoped search, input locked to `":products "` | **nothing until you type** — then the context's `searchCallback`, or `searchCallback({ scope: { contextId }, term })` |
+| `mac` | global search | matching commands/contexts first (instantly), then `searchCallback({ scope: 'global', term })` |
 
 ### Keyboard
 
 | Keys | Where | Does |
 |---|---|---|
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd> | anywhere | open / close (`open-key`) |
-| <kbd>g</kbd> then a letter | anywhere, not typing | run the command with that `hotkey`; `g f` opens favorites |
+| <kbd>g</kbd> then a letter | anywhere, not typing | run the command with that `shortcut`; `g f` opens favorites |
 | <kbd>↑</kbd><kbd>↓</kbd> <kbd>PgUp</kbd><kbd>PgDn</kbd> <kbd>Home</kbd><kbd>End</kbd> | list | move — pure client-side, never waits on a provider |
 | <kbd>←</kbd><kbd>→</kbd> | search, caret at the edge | previous / next page (mirrored in RTL) |
 | <kbd>Enter</kbd> | list | select; in a replayed run, also accept the remaining remembered answers |
@@ -33,18 +33,32 @@ What the user types decides the mode:
 | <kbd>Esc</kbd>, <kbd>⌫</kbd> at the locked prefix | wizard, scoped search, full lists | step back; <kbd>Esc</kbd> elsewhere closes |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>D</kbd> / <kbd>F</kbd> / <kbd>R</kbd> | palette open | star the active row / all favorites / all recent |
 
+## Callback contexts
+
+Every callback takes **one** `ctx` object. Every ctx and every event detail also carries:
+
+- `controller` — the public facade (the same object as `el.controller`, see [Controller](#controller)),
+- `element` — the `<web-command-palette>` host,
+- `presentation` (`'floating'` | `'fullscreen'`), `isFullscreen`, `isModal` — how the palette is shown.
+
+`controller` and `element` (and a provider ctx's `signal`) are **non-enumerable**: destructuring
+works (`({ term, signal, controller }) => …`), while `JSON.stringify(ctx)` — and so a LiveView
+`pushEvent(…, ctx)` — sees only the data. Spreading (`{ ...ctx }`) drops them.
+
 ## Properties
 
 Objects and functions are **properties only** — set them from JS (or a framework/LiveView hook).
 
 | Property | Type | Notes |
 |---|---|---|
-| `commands` | `Command[]` | Home screen + `/`. |
+| `commands` | `Command[]` | Home screen + `/`. Core action items — see [Data shapes](#data-shapes). |
 | `contexts` | `Context[]` | Home screen + `:`. |
-| `searchCallback` | `(scope, query, signal) => Result[] \| Promise<Result[]>` | Context + global search. `scope` is `'global'` or `{ contextId }`. Called only for **non-empty** queries, debounced. |
-| `stepOptionsCallback` | `(ctx, signal) => Option[] \| Promise<Option[]>` | `ctx = { commandId, stepId, query, selections }`. Fallback for steps without their own `load`. |
-| `loadUsageCallback` | `() => UsageEntry[] \| Promise<UsageEntry[]>` | Load favorites/recents from the host instead of `localStorage`. |
-| `saveUsageCallback` | `(entry) => void \| Promise<void>` | Upsert one entry (by `entry.key`) on every use / star toggle. |
+| `searchCallback` | `({ scope, term, signal }) => Result[] \| Promise<Result[]>` | Context + global search. `scope` is `'global'` or `{ contextId }`. Called only for **non-empty** terms, debounced. |
+| `getStepOptionsCallback` | `({ commandId, stepId, term, selections, signal }) => Option[] \| Promise<Option[]>` | Fallback for steps without their own `getOptionsCallback`. |
+| `beforeActionCallback` | `(detail) => unknown` | Runs before a command fires `action` (same detail). `false` (async OK) cancels: no `onClick`, no event, nothing recorded; a wizard steps back to its last answer and the palette stays open. |
+| `beforeSelectCallback` | `({ item, scope }) => unknown` | Runs before a search result fires `select`. `false` (async OK) cancels; the palette stays open. Other return values continue. |
+| `loadUsageCallback` | `(ctx) => UsageEntry[] \| Promise<UsageEntry[]>` | Load favorites/recents from the host instead of `localStorage`. |
+| `saveUsageCallback` | `({ entry }) => void \| Promise<void>` | Upsert one entry (by `entry.key`) on every use / star toggle. |
 | `labels` | `Partial<Labels>` | UI strings; unset keys fall back to English. |
 | `display` | `'inline' \| 'tokens'` | Wizard display. Default `inline`. |
 | `size` | `'sm' \| 'lg' \| 'xl' \| null` | Width/height preset. |
@@ -60,6 +74,8 @@ Objects and functions are **properties only** — set them from JS (or a framewo
 | `isConfirmationShown` | `boolean` | Show the confirmation panel after a command ran. Default `true` (attribute `confirmation`). |
 | `confirmationDuration` | `number` | How long it stays (ms). Default `1500`; `0` = off. |
 | `favoritesHotkey` / `recentHotkey` | `string` | `g <letter>` sequence (palette closed) that opens on that list. Defaults `'g f'` / off. |
+| `onOpen` / `onClose` / `onSelect` / `onAction` / `onReady` | `(detail) => void` | Event twins — see [Events](#events). |
+| `controller` *(read-only)* | `CommandPaletteController` | The public facade. |
 | `isOpen` *(read-only)* | `boolean` | |
 
 Callbacks are read **live** on every call, so they can be (re)assigned at any time — e.g. by a
@@ -70,54 +86,84 @@ LiveView bridge after `connectedCallback`.
 `display`, `size`, `page-size`, `open-key`, `search-debounce`, `mobile-presentation`,
 `usage-storage`, `usage-key`, `favorites-limit`, `recent-limit`, `favorite-key`, `favorites-key`,
 `recent-key`, `favorites-hotkey`, `recent-hotkey`, `confirmation`, `confirmation-duration`.
-`open` is **reflected** (present while open) — use the methods to open/close.
+`open` is **reflected** (present while open) — use the controller to open/close.
 
 Reserved for the Phoenix LiveView bridge (`@keenmate/keen-web-commandpalette`):
-`data-search-event`, `data-step-options-event`. The element itself doesn't act on them; the bridge
-hook reads them and installs a `{:reply}`-backed `searchCallback` / `stepOptionsCallback`.
+`data-search-event`, `data-step-options-event`. Their values are the LiveView event names the
+bridge pushes to. The element itself doesn't act on them; the bridge hook reads them and installs
+a `{:reply}`-backed `searchCallback` / `getStepOptionsCallback` (it pushes the ctx data:
+`{ scope, term }` / `{ commandId, stepId, term, selections }`).
 
-## Methods
+## Controller
 
-| Method | |
+`el.controller` (also `controller` on every ctx and detail) is the palette's public facade:
+
+| Member | |
 |---|---|
-| `open()` / `close()` / `toggle()` | Open on the home screen / close and reset. |
+| `isOpen` | Whether the palette is open. |
+| `open()` / `close()` / `toggle()` | Open on the home screen / close and reset / either. |
 | `openWith(query)` | Open pre-filled, e.g. `'/deploy '`, `':products laptop'`, `'mac'`. |
 | `reset()` | Back to the home screen (stays open). |
 | `setCommands(list)` / `setContexts(list)` | Same as assigning the properties. |
 | `openFavorites()` / `openRecent()` | Open on the full favorites / recent list. |
 
+The same methods exist on the element. The DOM-free `PaletteEngine` behind it is exported for
+standalone use only; the element never exposes it.
+
 ## Events
 
-All bubble and are `composed`. Each also has a handler property (`onCpSelect`, …).
+All bubble and are **not** composed. Each has a camelCase twin property (`el.onAction = (detail) => …`)
+that is called with the **same detail object** first, then the DOM event fires. Every detail
+carries `controller` / `element` (non-enumerable) and the presentation flags.
 
-| Event | `detail` | When |
-|---|---|---|
-| `cp-open` / `cp-close` | `{}` | Opened / closed (`cp-close` also follows every selection). |
-| `cp-select` | `{ item, scope }` | A search result was chosen. |
-| `cp-complete` | `{ commandId, selections }` | A multi-step command finished. |
-| `cp-command` | `{ commandId }` | An **instant** command (no `steps`) was chosen. |
-| `cp-ready` | `{}` | First render done (fires a microtask after upgrade). |
+| Event | Twin | `detail` | When |
+|---|---|---|---|
+| `open` / `close` | `onOpen` / `onClose` | context only | Opened / closed (`close` also follows every command and selection). |
+| `select` | `onSelect` | `{ item, scope }` | A search result was chosen. Veto with `beforeSelectCallback`. |
+| `action` | `onAction` | `{ action: 'custom', id, item, source: 'palette', selections, sourceEvent, triggerElement, dataset }` | A command ran — immediately (no `steps`, `selections: []`) or after the wizard's last answer. `id` is the command id, `item` the command. |
+| `ready` | `onReady` | context only | First render done (fires a microtask after upgrade). |
 
-The palette **closes itself** after `cp-select` / `cp-complete` / `cp-command` (after a brief
-[confirmation](#confirmation) for commands); the host performs
-the effect (navigate, toast, …). Instant commands fire only `cp-command`; wizards fire only
-`cp-complete`.
+A command is a core action item (`@keenmate/web-components-core/actions`), so running one follows
+the shared order: `beforeActionCallback(detail)` (`false` cancels) → the command's
+`onClick(detail)` → `onAction` → the `action` event. `sourceEvent` is the keydown / click that ran
+it; `triggerElement` the activated row (absent for a `g <letter>` hotkey). The palette has no
+built-in actions, so `action` is always `'custom'`: switch on `detail.id`.
+
+```js
+palette.addEventListener('action', (e) => {
+  if (e.detail.id === 'deploy') deploy(e.detail.selections);
+});
+palette.beforeActionCallback = async ({ item }) => item.isDanger ? confirm(`Run ${item.text}?`) : undefined;
+```
+
+The palette **closes itself** after `select` / `action` (after a brief
+[confirmation](#confirmation) for commands); the host performs the effect (navigate, toast, …).
 
 ## Data shapes
 
 All plain JSON (so a server can send them verbatim), except the optional JS-only functions
-`Step.shouldShow`, `Step.load` and `Context.search`.
+(`get*Callback`, `onClick`, `Step.getOptionsCallback`, `Context.searchCallback`).
 
 ```ts
+// A command is a core ActionItem<CommandContext> (isActive / getIsActiveCallback aren't used).
 interface Command {
   id: string;
-  shortcut: string;          // "/deploy"
-  name: string;
+  trigger: string;           // "/deploy" — the slash token that runs it
+  text: string;
   aliases?: string[];        // ["/d"]
-  hotkey?: string;           // "g d" (runs from anywhere while closed) — a chord like "Ctrl+K" is display-only
-  description?: string;
+  shortcut?: string;         // "g d" (runs from anywhere while closed) — a chord like "Ctrl+K" is display-only
+  description?: string;      // the row's second line
   icon?: string;             // see Icons
-  steps?: Step[];            // absent/empty → instant command (cp-command)
+  steps?: Step[];            // absent/empty → fires `action` at once
+  tooltip?: string;          // row tooltip
+  cssClass?: string;         // extra row classes
+  isVisible?: boolean;       // false → hidden everywhere (lists, search, recents, its `g` hotkey)
+  isDisabled?: boolean;      // listed greyed out, doesn't run
+  isDanger?: boolean;        // destructive styling
+  getTextCallback?(ctx): string;     getIconCallback?(ctx): string;   getTooltipCallback?(ctx): string;
+  getClassCallback?(ctx): string | string[];
+  getIsVisibleCallback?(ctx): boolean; getIsDisabledCallback?(ctx): boolean;   // ctx = { selections: [] } + context
+  onClick?(detail): void | Promise<void>;                                      // the `action` detail
 }
 
 interface Step {
@@ -125,15 +171,15 @@ interface Step {
   prompt?: string;           // inline connective text, e.g. " to " (default " ")
   placeholder?: string;
   options?: Option[];        // inline static options (no callback needed)
-  search?: boolean;          // true → stepOptionsCallback per debounced keystroke
-  freeText?: boolean;        // Enter with no match submits the typed text
-  shouldShow?: (selections: Selection[]) => boolean;   // JS hosts only
-  load?: (ctx, signal) => Option[] | Promise<Option[]>; // JS hosts only — this step's own provider
+  isLiveSearch?: boolean;    // true → the options provider per debounced keystroke
+  isFreeTextAllowed?: boolean; // Enter with no match submits the typed text
+  getIsVisibleCallback?: (ctx: { commandId, stepId, selections }) => boolean;  // JS hosts only
+  getOptionsCallback?: (ctx: { commandId, stepId, term, selections, signal }) => Option[] | Promise<Option[]>; // JS hosts only
 }
 
-interface Context { id: string; shortcut: string; name: string; aliases?: string[]; description?: string; icon?: string;
-                    search?: (query, signal) => Result[] | Promise<Result[]>; }   // JS hosts only
-interface Option  { id?: string; label: string; value?: unknown; description?: string; icon?: string;
+interface Context { id: string; trigger: string; text: string; aliases?: string[]; description?: string; icon?: string;
+                    searchCallback?: (ctx: { scope, term, signal }) => Result[] | Promise<Result[]>; }   // JS hosts only
+interface Option  { id?: string; text: string; value?: unknown; description?: string; icon?: string;
                     steps?: Step[]; }       // branch: asked right after this option is chosen
 interface Result  { id: string; title: string; subtitle?: string; icon?: string; badge?: string;
                     badgeVariant?: 'primary'|'success'|'warning'|'danger'|'info'|'secondary'; href?: string;
@@ -142,31 +188,35 @@ interface Result  { id: string; title: string; subtitle?: string; icon?: string;
 interface Selection { stepId: string; label: string; value: unknown; optionId?: string; isFreeText: boolean; }
 ```
 
+`Result` keeps `title` / `subtitle` — it's a search record (not an action item) and is stored
+verbatim in recents. `Selection.label` is the chosen option's `text` (or the typed text); it's
+persisted in recents too, so it keeps its name.
+
 ### Step options: static vs live
 
-- **Static** (default): `options` inline, or `stepOptionsCallback` called **once** on step entry
-  with `query: ''`. Typing filters that list in the browser — zero latency, zero round-trips.
-- **Live** (`search: true`): `stepOptionsCallback` per debounced keystroke. Use it only when the
+- **Static** (default): `options` inline, or `getStepOptionsCallback` called **once** on step entry
+  with `term: ''`. Typing filters that list in the browser — zero latency, zero round-trips.
+- **Live** (`isLiveSearch: true`): `getStepOptionsCallback` per debounced keystroke. Use it only when the
   candidates can't be enumerated up front.
 
-### Reusable pickers (`step.load`)
+### Reusable pickers (`step.getOptionsCallback`)
 
-A step may bring its own provider — same contract as `stepOptionsCallback`, which remains the
+A step may bring its own provider — same contract as `getStepOptionsCallback`, which remains the
 fallback for steps without one. Define a picker once and spread it wherever it's needed:
 
 ```js
-const pickUser = { search: true, placeholder: 'User…', load: ({ query }, signal) => api.users(query, signal) };
-const pickServer = { load: (_, signal) => api.servers(signal) };   // static: loaded once, filtered locally
+const pickUser = { isLiveSearch: true, placeholder: 'User…', getOptionsCallback: ({ term, signal }) => api.users(term, signal) };
+const pickServer = { getOptionsCallback: ({ signal }) => api.servers(signal) };   // static: loaded once, filtered locally
 
-{ id: 'assign-admin', shortcut: '/assign-admin', name: 'Assign admin', steps: [
+{ id: 'assign-admin', trigger: '/assign-admin', text: 'Assign admin', steps: [
   { id: 'user', ...pickUser },
   { id: 'server', prompt: ' to ', ...pickServer },
 ] }
 ```
 
-Likewise a context may bring its own `search(query, signal)`; `searchCallback` then isn't asked
-for that context. Server-driven hosts (the LiveView bridge) can't send functions, so they keep
-using the two central callbacks.
+Likewise a context may bring its own `searchCallback(ctx)`; the element's `searchCallback` then
+isn't asked for that context. Server-driven hosts (the LiveView bridge) can't send functions, so
+they keep using the two central callbacks.
 
 ### Branching
 
@@ -174,18 +224,18 @@ An option may carry its own `steps`. Choosing it inserts them right after the cu
 before the remaining siblings, so one command can fork:
 
 ```js
-{ id: 'assign-admin', shortcut: '/assign-admin', name: 'Assign admin', steps: [
-  { id: 'user', placeholder: 'User…', search: true },
+{ id: 'assign-admin', trigger: '/assign-admin', text: 'Assign admin', steps: [
+  { id: 'user', placeholder: 'User…', isLiveSearch: true },
   { id: 'target', prompt: ' to ', options: [
-    { id: 'group', label: 'group', steps: [{ id: 'group', prompt: ' ', search: true }] },
-    { id: 'site',  label: 'site',  steps: [{ id: 'site',  prompt: ' ', search: true }] },
+    { id: 'group', text: 'group', steps: [{ id: 'group', prompt: ' ', isLiveSearch: true }] },
+    { id: 'site',  text: 'site',  steps: [{ id: 'site',  prompt: ' ', isLiveSearch: true }] },
   ] },
 ] }
 ```
 
-The input reads `/assign-admin John to group Finance`; `cp-complete` gets the selections
+The input reads `/assign-admin John to group Finance`; `action` gets the selections
 `user`, `target` (`group`) and `group`. Stepping back past the forking answer drops its branch.
-Branches are plain JSON, so options returned by `stepOptionsCallback` may carry them too. Step ids
+Branches are plain JSON, so options returned by `getStepOptionsCallback` may carry them too. Step ids
 must be unique across the whole command.
 
 ### Async + aborts
@@ -200,9 +250,9 @@ Give results a `group` and they render under section headings, clustered in firs
 order (the commands/contexts that global search prepends stay ungrouped, on top):
 
 ```js
-palette.searchCallback = async (scope, q) => [
-  ...(await users(q)).map((u) => ({ id: u.id, title: u.name, group: 'Users' })),
-  ...(await sites(q)).map((s) => ({ id: s.id, title: s.name, group: 'Sites' })),
+palette.searchCallback = async ({ term }) => [
+  ...(await users(term)).map((u) => ({ id: u.id, title: u.name, group: 'Users' })),
+  ...(await sites(term)).map((s) => ({ id: s.id, title: s.name, group: 'Sites' })),
 ];
 ```
 
@@ -219,7 +269,7 @@ the heading's end.
   tapping the heading control does the same (phones). While the palette is open these chords
   shadow the browser's find / reload.
 - **`g f`** opens the palette straight on favorites from anywhere on the page (`favorites-hotkey`;
-  `recent-hotkey` is off by default). A command whose `hotkey` is the same sequence wins.
+  `recent-hotkey` is off by default). A command whose `shortcut` is the same sequence wins.
 - `openFavorites()` / `openRecent()` do the same from code.
  Remembered: instant commands,
 **completed runs with their answers**, contexts entered and chosen search results. Entries pointing
@@ -237,7 +287,7 @@ config hides them automatically.
 
 ```js
 palette.loadUsageCallback = () => fetch('/api/me/palette-usage').then((r) => r.json());
-palette.saveUsageCallback = (entry) => fetch(`/api/me/palette-usage/${encodeURIComponent(entry.key)}`,
+palette.saveUsageCallback = ({ entry }) => fetch(`/api/me/palette-usage/${encodeURIComponent(entry.key)}`,
   { method: 'PUT', body: JSON.stringify(entry), headers: { 'content-type': 'application/json' } });
 ```
 
@@ -261,18 +311,18 @@ to the server. `usage-storage="none"` turns stars and both sections off.
 After a wizard completes or an instant command runs, the dialog doesn't just vanish: for
 `confirmation-duration` ms (default 1500) it collapses to a single line — ✓, what ran, **Done**
 and a countdown bar — then closes. A wizard reads as the sentence the user built, answers in bold
-(`/deploy to **Staging** branch **main**`); an instant command shows its name.
+(`/deploy to **Staging** branch **main**`); an instant command shows its text.
 
-- The effect event (`cp-complete` / `cp-command`) fires **immediately**; only the close waits.
-  `cp-close` fires when the panel goes.
+- The `action` event fires **immediately**; only the close waits.
+  `close` fires when the panel goes.
 - Any key or click dismisses it; <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd> goes straight to a fresh palette.
 - `confirmation="false"` (or `confirmation-duration="0"`) turns it off.
-- Search-result selections (`cp-select`) get no panel by default — they usually navigate away.
+- Search-result selections (`select`) get no panel by default — they usually navigate away.
 
 ```js
 palette.renderConfirmationCallback = (ctx) => {
-  // ctx = { type: 'complete' | 'command' | 'select', commandId?, commandName?, selections?,
-  //         sentence, item?, scope?, duration }
+  // ctx = { type: 'action' | 'select', commandId?, commandText?, selections?,
+  //         sentence, item?, scope?, duration } + controller / element / presentation
   if (ctx.type === 'select') return `Opening <b>${ctx.sentence}</b>…`;   // opt search results in
   if (ctx.commandId === 'reload') return false;                             // skip for this one
   return null;                                                              // the default panel

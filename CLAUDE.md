@@ -68,12 +68,16 @@ nginx, port 12410; see BUILD.md). Don't run the publish targets unless the user 
 ## Architecture
 
 `<web-command-palette>` is a framework-agnostic web component. It owns the whole command-palette
-state machine and talks to hosts only through properties, events (`cp-*`) and async callbacks
-(`searchCallback`, `stepOptionsCallback`). It replaces three drifting implementations (pure-admin
+state machine and talks to hosts only through properties, events (`open`, `close`, `select`,
+`action`, `ready` + camelCase `on*` twins that receive the detail), single-ctx callbacks
+(`searchCallback`, `getStepOptionsCallback`, `before{Action,Select}Callback`) and `el.controller`
+(the public facade). It follows the KeenMate interaction model (web-components-core `/actions`):
+a command is a core `ActionItem` and running one goes through `runAction`
+(`beforeActionCallback` → `onClick` → `action` event). It replaces three drifting implementations (pure-admin
 vanilla, svelte-pure-admin, keen-pure-admin LiveComponent). **Top design priority: easy to
 configure** — `commands` + `searchCallback` must be a complete setup.
 
-- `src/palette.ts` — `PaletteMachine`, DOM-free. Owns modes (`idle`, `command-list`,
+- `src/palette.ts` — `PaletteEngine`, DOM-free. Owns modes (`idle`, `command-list`,
   `command-step`, `context-list`, `context-search`, `global-search`), input routing, the wizard,
   filtering, debounced/abortable provider calls and client-side pagination. Exposes read-only
   view state (`items`, `activeIndex`, `listVersion`, `input`, `lockedLength`, …) and reports
@@ -84,7 +88,8 @@ configure** — `commands` + `searchCallback` must be a complete setup.
 - `src/keyboard.ts` — the document-level `GlobalKeys` (Ctrl/⌘+K, `g <letter>`) and the input
   keydown map.
 - `src/web-component.ts` — thin `BlissElement` subclass: the `static inputs` / `static events`
-  tables (CEM metadata is generated from them), the `MachineHost` adapter, overlay/scroll-lock,
+  tables (CEM metadata is generated from them), the `PaletteEngineHost` adapter (incl. `context()` = `withContext`, so engine-built ctxs carry
+  `controller` / `element` / presentation), `createController()` (facade from a method list), overlay/scroll-lock,
   presentation (phone fullscreen sheet), focus. Only the first connected instance owns the global keys.
 - `src/usage.ts` — `UsageStore`: favorites + recents (frecency-ranked, pruned to 50 non-favorites),
   persisted via `localStorage` (`usage-key`) or the host's `loadUsageCallback`/`saveUsageCallback`.
@@ -120,7 +125,7 @@ validates the manifest against the built bundle.
 See plan §10. These are the bugs that motivated the project.
 
 - Static vs. dynamic: the `/` and `:` lists and non-`search` steps filter client-side. Only global
-  search, context search and `search: true` steps call providers, debounced (`searchDebounce`).
+  search, context search and `isLiveSearch` steps call providers, debounced (`searchDebounce`).
 - A context search with an empty query must NOT call `searchCallback`; show `labels.typeToSearch`.
   The input keeps a locked `"<shortcut> "` prefix.
 - Global search prepends matching commands/contexts (works with no `searchCallback`), then appends
@@ -128,13 +133,15 @@ See plan §10. These are the bugs that motivated the project.
 - Keyboard navigation never awaits a provider and must not bump `listVersion`.
 - Superseded requests are aborted via `AbortSignal`, and late results are dropped.
 - Callback arguments and event details must stay plain JSON, because the LiveView bridge
-  serializes them. `searchCallback`/`stepOptionsCallback` are read live. `data-search-event` /
+  serializes them. `searchCallback`/`getStepOptionsCallback` are read live; a provider ctx's
+  `signal` (like `controller` / `element`) is attached non-enumerable so `JSON.stringify(ctx)` stays data. `data-search-event` /
   `data-step-options-event` are reserved for the future `../keen-web-commandpalette` bridge.
-- The component closes itself after `cp-select` / `cp-complete` / `cp-command`, and the host
+- The component closes itself after `select` / `action` (unless a before-hook returned `false`), and the host
   performs the effect. Commands first collapse to the one-line confirmation (`#showConfirmation` in the
-  element, `.cp-confirming` hides everything but `.cp-confirm`; the event still fires immediately, `cp-close` follows) — while `#confirmTimer` is set,
-  `#render()` must not repaint over it. Instant commands fire only `cp-command`. A `// FUTURE:` note in
-  `#onEffect` marks where keep-open/directives would go.
+  element, `.cp-confirming` hides everything but `.cp-confirm`; the event still fires immediately, `close` follows) — while `#confirmTimer` is set,
+  `#render()` must not repaint over it. The engine reports terminal effects through `host.effect()`, whose answer (`false` = vetoed, a Promise
+  = later) decides whether usage is recorded or the wizard steps back to its last answer. Keep-open after a
+  successful effect and a reply-directive channel (toast / keep-open) are still future work.
 - RTL comes from inherited `direction`: CSS must stay logical (`inset-inline-*`, `margin-inline-*`,
   `inline-size` — no physical left/right), rendered text runs are wrapped in `<bdi>`, and ←/→
   paging swaps via `this.isRTL` (read per keydown, so runtime `dir` flips need no rebuild).
@@ -142,7 +149,8 @@ See plan §10. These are the bugs that motivated the project.
 - Usage entries must stay plain JSON (they're persisted). A run's branch steps are NOT stored: on
   replay, a forking answer is resolved against the step's current options, and Enter's
   fast-forward stops at a step whose list isn't loaded yet rather than guess the branch.
-- `Step.load`, `Context.search` and `Step.shouldShow` are JS-only conveniences; the central
-  `stepOptionsCallback` / `searchCallback` must keep working for server-driven hosts.
+- `Step.getOptionsCallback`, `Context.searchCallback`, `Step.getIsVisibleCallback` and the command
+  `get*Callback` / `onClick` are JS-only conveniences; the central `getStepOptionsCallback` /
+  `searchCallback` and the `action` event must keep working for server-driven hosts.
 
 Out of scope here: the keen bridge, Svelte/React/Razor wrappers, the directive-return channel, and migrating the existing palettes.

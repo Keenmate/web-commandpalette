@@ -1,5 +1,5 @@
 <meta name="kmwc:title" content="Basic Usage">
-<meta name="kmwc:subtitle" content="The three-line setup, the ways to open the palette, the <code>cp-*</code> effect events, and translating the UI with <code>labels</code>.">
+<meta name="kmwc:subtitle" content="The three-line setup, the ways to open the palette, the effect events (<code>select</code> / <code>action</code>), and translating the UI with <code>labels</code>.">
 <meta name="kmwc:body-class" content="dark-output">
 
 <!-- ============================================================= -->
@@ -13,9 +13,9 @@
         fully working palette. Press <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>, then type
         <code>/</code> for commands, <code>:</code> for contexts, or anything else for global search.
     </p>
-    <div class="code-block"><pre><code>palette.commands = [{ id: 'home', shortcut: '/home', name: 'Go home', hotkey: 'g h' }, …];
-palette.contexts = [{ id: 'people', shortcut: ':people', aliases: [':p'], name: 'People' }];
-palette.searchCallback = async (scope, query, signal) =&gt; fetchResults(scope, query, signal);</code></pre></div>
+    <div class="code-block"><pre><code>palette.commands = [{ id: 'home', trigger: '/home', text: 'Go home', shortcut: 'g h' }, …];
+palette.contexts = [{ id: 'people', trigger: ':people', aliases: [':p'], text: 'People' }];
+palette.searchCallback = async ({ scope, term, signal }) =&gt; fetchResults(scope, term, signal);</code></pre></div>
     <div class="demo-area">
         <button type="button" data-open="">Open (Ctrl/⌘+K)</button>
         <button type="button" class="secondary" data-open="/">/ commands</button>
@@ -31,9 +31,9 @@ palette.searchCallback = async (scope, query, signal) =&gt; fetchResults(scope, 
     <h2>BU02 · Opening the Palette</h2>
     <p>
         <code>open-key</code> sets the key used with Ctrl/⌘ (clear it to disable the global hotkey).
-        A command's <code>hotkey: 'g h'</code> runs it from anywhere while the palette is closed.
+        A command's <code>shortcut: 'g h'</code> runs it from anywhere while the palette is closed.
         These <kbd>g</kbd>-sequences are ignored while you type in a field. Hosts can also call
-        <code>open()</code>, <code>toggle()</code> or <code>openWith(query)</code> to open it already filled in.
+        <code>el.controller.open()</code>, <code>toggle()</code> or <code>openWith(query)</code> to open it already filled in.
     </p>
     <div class="controls">
         <span><code>open-key</code>:</span>
@@ -55,9 +55,11 @@ palette.searchCallback = async (scope, query, signal) =&gt; fetchResults(scope, 
     <h2>BU03 · Effect Events</h2>
     <p>
         The host performs the effect and the palette closes itself:
-        <code>cp-select</code> for a search result, <code>cp-complete</code> when a wizard finishes, and
-        <code>cp-command</code> for an instant command (one with no <code>steps</code>).
-        <code>cp-open</code> and <code>cp-close</code> bracket every session.
+        <code>select</code> for a search result, and <code>action</code> when a command runs (a command is
+        a core action item: <code>detail.id</code> is the command id, <code>detail.selections</code> the wizard's
+        answers, empty for an instant command). <code>open</code> and <code>close</code> bracket every session.
+        Each event has a camelCase twin (<code>el.onAction = (detail) =&gt; …</code>), and
+        <code>beforeActionCallback</code> / <code>beforeSelectCallback</code> can return <code>false</code> to cancel.
     </p>
     <div class="output">
         <div class="output-label">Event log</div>
@@ -105,18 +107,18 @@ palette.searchCallback = async (scope, query, signal) =&gt; fetchResults(scope, 
     function wire() {
         const palette = document.getElementById('palette');
         palette.commands = [
-            { id: 'home', shortcut: '/home', name: 'Go home', description: 'Instant command', hotkey: 'g h', icon: '🏠' },
-            { id: 'theme', shortcut: '/theme', name: 'Switch theme', description: 'One-step wizard', icon: '🎨',
-              steps: [{ id: 'theme', options: [{ label: 'Light', value: 'light', icon: '☀️' }, { label: 'Dark', value: 'dark', icon: '🌑' }] }] },
+            { id: 'home', trigger: '/home', text: 'Go home', description: 'Instant command', shortcut: 'g h', icon: '🏠' },
+            { id: 'theme', trigger: '/theme', text: 'Switch theme', description: 'One-step wizard', icon: '🎨',
+              steps: [{ id: 'theme', options: [{ text: 'Light', value: 'light', icon: '☀️' }, { text: 'Dark', value: 'dark', icon: '🌑' }] }] },
         ];
-        palette.contexts = [{ id: 'people', shortcut: ':people', aliases: [':p'], name: 'People', description: 'Search people', icon: '👥' }];
-        palette.searchCallback = async (scope, query) =>
+        palette.contexts = [{ id: 'people', trigger: ':people', aliases: [':p'], text: 'People', description: 'Search people', icon: '👥' }];
+        palette.searchCallback = async ({ scope, term }) =>
             ['Ada Lovelace', 'Alan Turing', 'Grace Hopper', 'Linus Torvalds', 'Margaret Hamilton']
-                .filter((n) => n.toLowerCase().includes(query.toLowerCase()))
+                .filter((n) => n.toLowerCase().includes(term.toLowerCase()))
                 .map((n) => ({ id: n, title: n, subtitle: scope === 'global' ? 'Person' : 'In People', icon: '👤' }));
 
         document.querySelectorAll('[data-open]').forEach((b) =>
-            b.addEventListener('click', () => palette.openWith(b.dataset.open)));
+            b.addEventListener('click', () => palette.controller.openWith(b.dataset.open)));
 
         document.querySelectorAll('input[name="bu02-key"]').forEach((r) =>
             r.addEventListener('change', (e) => { if (e.target.checked) palette.setAttribute('open-key', e.target.value); }));
@@ -126,9 +128,12 @@ palette.searchCallback = async (scope, query, signal) =&gt; fetchResults(scope, 
 
         const log = document.getElementById('bu03-log');
         let started = false;
-        for (const name of ['cp-open', 'cp-close', 'cp-select', 'cp-complete', 'cp-command']) {
+        // The data of each detail (controller / element are non-enumerable, so JSON skips them).
+        const brief = (name, d) => name === 'action' ? { id: d.id, selections: d.selections }
+            : name === 'select' ? { item: d.item, scope: d.scope } : {};
+        for (const name of ['open', 'close', 'select', 'action']) {
             palette.addEventListener(name, (e) => {
-                const line = `${name} ${JSON.stringify(e.detail)}`;
+                const line = `${name} ${JSON.stringify(brief(name, e.detail))}`;
                 log.textContent = started ? `${line}\n${log.textContent}` : line;
                 started = true;
             });

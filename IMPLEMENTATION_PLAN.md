@@ -152,6 +152,12 @@ unit-testable without the DOM.
 
 ## 5. Element API surface (design for "easy to configure")
 
+> **API names updated (2026-10, interaction model).** The names below follow the KeenMate
+> interaction model (web-components-core `/actions`): events without the `cp-` prefix, one
+> `action` event per command run, single-ctx callbacks, commands as core action items,
+> `el.controller`. `docs/usage.md` is the reference; the CHANGELOG `[Unreleased]` section has the
+> old → new table.
+
 ### Tag
 `<web-command-palette>` — mount **once** per page (it owns the global `Ctrl/⌘+K` listener and
 the `g <letter>` sequences).
@@ -162,8 +168,9 @@ the `g <letter>` sequences).
 |---|---|---|
 | `commands` | `Command[]` | Static list. Shown on the home screen + under `/`. |
 | `contexts` | `Context[]` | Static list. Shown on the home screen + under `:`. |
-| `searchCallback` | `(scope, query, signal) => Result[] \| Promise<Result[]>` | Scoped + global search. `scope` is `'global'` or `{ contextId }`. Called ONLY for non-empty queries (see §10). |
-| `stepOptionsCallback` | `(ctx, signal) => Option[] \| Promise<Option[]>` | Options for a command step, where `ctx = { commandId, stepId, query, selections }`. For a **static** step the full list is fetched once on entry and filtered client-side; a step marked `search: true` calls this per (debounced) keystroke. |
+| `searchCallback` | `({ scope, term, signal }) => Result[] \| Promise<Result[]>` | Scoped + global search. `scope` is `'global'` or `{ contextId }`. Called ONLY for non-empty queries (see §10). |
+| `getStepOptionsCallback` | `({ commandId, stepId, term, selections, signal }) => Option[] \| Promise<Option[]>` | Options for a command step. For a **static** step the full list is fetched once on entry and filtered client-side; a step marked `isLiveSearch: true` calls this per (debounced) keystroke. |
+| `beforeActionCallback` / `beforeSelectCallback` | `(detail) => unknown` | `false` cancels a command run / a result selection (async OK). |
 | `labels` | `Partial<Labels>` | All UI strings (see §12). i18n is the host's job. |
 | `display` | `'inline' \| 'tokens'` | Step display style. Default `'inline'`. |
 | `size` | `'sm' \| 'lg' \| 'xl' \| null` | Width/height preset (CSS). `null` = default. |
@@ -179,26 +186,27 @@ callbacks, `labels`) are **properties only** — hosts set them in JS / via thei
 
 ### Methods
 
-`open()`, `close()`, `toggle()`, `reset()`. Plus imperative hooks for fully server-driven hosts
+`open()`, `close()`, `toggle()`, `reset()` — also on `el.controller`, the public facade. Plus imperative hooks for fully server-driven hosts
 (used by the keen bridge): `setCommands(list)`, `setContexts(list)` (same as the setters).
 Do **not** add a `setResults()` unless a host needs to push results outside the callback flow —
 prefer the callback path.
 
-### Events (dispatched on the element; `bubbles: true, composed: true`)
+### Events (dispatched on the element; `bubbles: true, composed: false`; camelCase `on*` twin gets the detail first)
 
 | Event | `detail` | When |
 |---|---|---|
-| `cp-open` / `cp-close` | `{}` | Palette opened / closed. |
-| `cp-select` | `{ item, scope }` | A search result (context or global) was chosen. Host performs the effect (navigate, etc.). |
-| `cp-complete` | `{ commandId, selections }` | A command wizard finished. Host performs the effect. |
-| `cp-command` | `{ commandId }` | A command with **no steps** was chosen (instant command). (May fold into `cp-complete` with empty `selections` — your call; document it.) |
-| `cp-ready` | `{}` | Element connected + first render done. |
+| `open` / `close` | context only | Palette opened / closed. |
+| `select` | `{ item, scope }` | A search result (context or global) was chosen. Host performs the effect (navigate, etc.). |
+| `action` | `{ action: 'custom', id, item, source: 'palette', selections, sourceEvent, triggerElement }` | A command ran — at once (no steps, `selections: []`) or after the wizard's last answer. Host performs the effect. (The former `cp-command` / `cp-complete` folded into it.) |
+| `ready` | context only | Element connected + first render done. |
+
+Every detail carries `controller` / `element` (non-enumerable) and the presentation flags.
 
 **Default effect policy (per owner decision #2 — keep the component free of app-navigation
-semantics):** on `cp-select` / `cp-complete` / `cp-command`, the component **closes itself**,
+semantics):** on `select` / `action`, the component **closes itself**,
 and the host does the navigation/toast in its event handler. No "directive returned to the
 component" round-trip in v1. (A future `preventDefault()`-to-keep-open or a reply-directive
-channel can be added later; leave a short `// FUTURE:` note where you emit these so it's easy.)
+channel can be added later. Cancelling is done: `beforeActionCallback` / `beforeSelectCallback` → `false`.)
 
 ---
 
@@ -207,30 +215,31 @@ channel can be added later; leave a short `// FUTURE:` note where you emit these
 ```ts
 export type IconInput = string; // SVG markup, OR a leading-letter name, OR an emoji glyph. See §13.
 
-export interface Command {
+export interface Command extends ActionItem<CommandContext> {   // core /actions
   id: string;
-  shortcut: string;              // e.g. "/go"
-  name: string;
+  trigger: string;               // e.g. "/go"
+  text: string;
   aliases?: string[];
-  hotkey?: string;               // e.g. "g g" (leading-key sequence) or "Ctrl+K" (chord)
+  shortcut?: string;             // e.g. "g g" (leading-key sequence) or "Ctrl+K" (chord)
   description?: string;
   icon?: IconInput;
-  steps?: Step[];                // absent/empty = instant command (fires cp-command)
+  steps?: Step[];                // absent/empty = fires `action` at once
+  // + isVisible / isDisabled / isDanger / tooltip / cssClass / get*Callback(ctx) / onClick(detail)
 }
 
 export interface Step {
   id: string;
   prompt?: string;               // inline connective text, e.g. " in "
   placeholder?: string;
-  freeText?: boolean;            // allow submitting typed text when nothing matches
-  search?: boolean;              // TRUE = live async (per-keystroke stepOptionsCallback);
+  isFreeTextAllowed?: boolean;   // allow submitting typed text when nothing matches
+  isLiveSearch?: boolean;        // TRUE = live async (per-keystroke getStepOptionsCallback);
                                  // FALSE/absent = static (fetched once, filtered client-side)
 }
 
 export interface Context {
   id: string;
-  shortcut: string;              // e.g. ":products" (alias ":p")
-  name: string;
+  trigger: string;               // e.g. ":products" (alias ":p")
+  text: string;
   aliases?: string[];
   description?: string;
   icon?: IconInput;
@@ -238,7 +247,7 @@ export interface Context {
 
 export interface Option {        // a command-step option
   id?: string;
-  label: string;
+  text: string;
   value?: unknown;
   description?: string;
   icon?: IconInput;
@@ -251,8 +260,8 @@ export interface Result {        // a search hit (context or global)
   icon?: IconInput;
   badge?: string;
   badgeVariant?: 'primary'|'success'|'warning'|'danger'|'info'|'secondary';
-  href?: string;                 // host may use it in cp-select
-  [k: string]: unknown;          // pass-through for the host's cp-select handler
+  href?: string;                 // host may use it in `select`
+  [k: string]: unknown;          // pass-through for the host's `select` handler
 }
 
 export type Scope = 'global' | { contextId: string };
@@ -278,13 +287,13 @@ component `await`s it and ignores where it came from.
 
 ```ts
 // global or context search
-el.searchCallback = async (scope, query, signal) => {
+el.searchCallback = async ({ scope, term, signal }) => {
   // local JS, a fetch, or (in keen) a LiveView round-trip — the element doesn't care
   return results;
 };
 
 // command-step options
-el.stepOptionsCallback = async ({ commandId, stepId, query, selections }, signal) => {
+el.getStepOptionsCallback = async ({ commandId, stepId, term, selections, signal }) => {
   return options;
 };
 ```
@@ -297,7 +306,7 @@ exactly like `multiselect.ts` does in its `searchCallback` invocation.
 hook will do, for a `data-search-event="cp:search"` element:
 
 ```js
-el.searchCallback = (scope, query, signal) => new Promise((resolve) => {
+el.searchCallback = ({ scope, term, signal }) => new Promise((resolve) => {
   if (signal?.aborted) return resolve([]);
   let aborted = false;
   signal?.addEventListener('abort', () => { aborted = true; resolve([]); }, { once: true });
@@ -310,7 +319,7 @@ el.searchCallback = (scope, query, signal) => new Promise((resolve) => {
 The keen server's `handle_event("cp:search", %{scope, query}, socket)` just calls the existing
 `Source.search/2` and returns `{:reply, %{results: list}, socket}`. **Keen's `Source` behaviour
 survives almost verbatim** — only the reimplemented state machine in `live.ex` disappears. Same
-for `stepOptionsCallback` ↔ `data-step-options-event` ↔ `Source.step_options/4`. **Design the
+for `getStepOptionsCallback` ↔ `data-step-options-event` ↔ `Source.step_options/4`. **Design the
 callback argument shapes (`scope`, the step `ctx` object) to serialize cleanly to a LiveView
 payload** (plain JSON — no functions, no class instances).
 
@@ -326,10 +335,10 @@ Support two `data-*` attributes whose presence makes the element install a `{:re
 callback itself (so HEEx stays declarative and the host never writes the Promise glue):
 
 - `data-search-event="<lv-event>"` → installs `searchCallback` via `pushEventTo … reply`.
-- `data-step-options-event="<lv-event>"` → installs `stepOptionsCallback` the same way.
+- `data-step-options-event="<lv-event>"` → installs `getStepOptionsCallback` the same way.
 
 In THIS repo, you only need to (a) leave these attributes documented/reserved and (b) make sure
-`searchCallback`/`stepOptionsCallback` are plain overridable properties. The actual `pushEventTo`
+`searchCallback`/`getStepOptionsCallback` are plain overridable properties. The actual `pushEventTo`
 wiring lives in `../keen-web-commandpalette` (a later repo) — but verify your element lets an
 external script assign those properties after `connectedCallback` and re-reads them live.
 
@@ -348,22 +357,22 @@ external script assign those properties after `connectedCallback` and re-reads t
 
 **Filtering split (THIS is the perf contract — it was just built into keen; bake it in here):**
 - **Static, client-side (NO provider call):** the command list (`/`), the context list (`:`),
-  and a **static** command step (`search` falsy). The full candidate set is already in memory
+  and a **static** command step (`isLiveSearch` falsy). The full candidate set is already in memory
   (commands/contexts) or fetched once on step entry; filter by **substring match** over
-  `name + shortcut + aliases + label + value + description` (lower-cased). Zero latency.
+  `text + trigger + aliases + value + description` (lower-cased). Zero latency.
 - **Dynamic, via provider (debounced ~150ms):** `global-search`, `context-search`, and a step
-  marked `search: true`. Call `searchCallback` / `stepOptionsCallback`.
+  marked `isLiveSearch: true`. Call `searchCallback` / `getStepOptionsCallback`.
 
 **Context-search entry (get this right — it's the bug that triggered this whole initiative):**
 - On entering a context (from the home screen, from `:p`, or `:p <query>`): set the input to
-  `"<shortcut> "` (e.g. `":p "`) as a **locked prefix**, show the `Searching in {name}` badge.
+  `"<trigger> "` (e.g. `":p "`) as a **locked prefix**, show the `Searching in {name}` badge.
 - **Empty query → DO NOT call the provider.** Show `typeToSearch` ("Type to search products")
   and an empty list. Core does exactly this; keen's bug was calling search on the empty query
   and dumping "top products".
-- Non-empty query (after the locked prefix) → debounced `searchCallback({contextId}, q)`.
+- Non-empty query (after the locked prefix) → debounced `searchCallback({ scope: { contextId }, term })`.
 
-**Global search:** prepend any command/context whose `name/shortcut/aliases` match the query
-(mirrors core's `global_matches`), THEN append `searchCallback('global', q)` results. A bare
+**Global search:** prepend any command/context whose `text/trigger/aliases` match the query
+(mirrors core's `global_matches`), THEN append `searchCallback({ scope: 'global', term })` results. A bare
 query like "go" must surface the "Go to Page" command even with no `searchCallback`.
 
 **Command step (wizard):**
@@ -371,13 +380,13 @@ query like "go" must surface the "Go to Page" command even with no `searchCallba
   before the current editable portion **locked**; `display: 'tokens'` shows prior picks as badges
   above the input and clears the input each step.
 - Enter/click on an option → record selection → advance to next applicable step (respect a
-  `shouldShow(selections)` predicate if present) → last step fires `cp-complete`.
-- `freeText` step: Enter with no match submits the typed text as the selection.
+  `getIsVisibleCallback({ selections })` predicate if present) → last step fires `action`.
+- `isFreeTextAllowed` step: Enter with no match submits the typed text as the selection.
 
 **Keyboard map (all three impls agree on this — replicate precisely):**
 - `Ctrl/⌘ + K` → toggle.
 - `g <letter>` → leading-key command sequences (modifier-free; inert while typing or while the
-  palette is open; 1200ms window). Resolve the 2nd key against each command's `hotkey` last
+  palette is open; 1200ms window). Resolve the 2nd key against each command's `shortcut` last
   token. (Chosen over `Alt+<letter>`, which on macOS types glyphs — `Option+G` = `©`.)
 - `↑ ↓` → move active item (WRAP). `PgUp/PgDn` → ±`PAGE_STEP` (=8), CLAMP. `Home/End` → ends.
   **Navigation is pure client-side DOM** — never round-trip (keen's old ~230ms/press bug).
@@ -510,14 +519,14 @@ against core; this component becomes the new reference, so it MUST agree with th
   playground. `web-components-core` as dep. `npm run build` produces an empty-but-valid bundle.
 - **M1 — Element shell + open/close + global hotkey.** `web-component.ts` extends `BlissElement`,
   shadow root, CSS injected (even if minimal), `Ctrl/⌘+K` toggles, backdrop + `overlay`
-  scroll-lock, `cp-open`/`cp-close`, focus the input on open. `index.html` can open/close it.
+  scroll-lock, `open`/`close`, focus the input on open. `index.html` can open/close it.
 - **M2 — Idle home + static command/context lists + client filter + keyboard nav.** `commands`
   / `contexts` properties; home render; `/` and `:` list modes; substring `filter.ts`; `↑↓
   PgUp/PgDn Home/End` nav with scroll-into-view; `g <letter>` sequences; footer hints
   (mode-aware). Unit-test the machine transitions + filter.
-- **M3 — Command steps (wizard).** Inline + tokens display, locked prefix, `stepOptionsCallback`
-  (static → fetch-once-then-client-filter; `search:true` → debounced), advance/`shouldShow`,
-  `freeText`, `cp-complete`/`cp-command`. Step-back (Esc/Backspace).
+- **M3 — Command steps (wizard).** Inline + tokens display, locked prefix, `getStepOptionsCallback`
+  (static → fetch-once-then-client-filter; `isLiveSearch` → debounced), advance/`getIsVisibleCallback`,
+  `isFreeTextAllowed`, `action`. Step-back (Esc/Backspace).
 - **M4 — Context + global search (async).** `searchCallback` with scope; context entry with the
   `:prefix ` lock + `typeToSearch` empty state (NO empty-query call); global-search command/
   context prepend; AbortSignal supersession; pagination (`pageSize`, `←→`, `__pagination`);
@@ -547,12 +556,12 @@ against core; this component becomes the new reference, so it MUST agree with th
 2. All keyboard behaviors in §10 pass Playwright. Navigation never awaits a provider.
 3. Context-search shows `Type to search X` on empty query and only calls `searchCallback` for
    non-empty queries. Global-search surfaces matching commands with no `searchCallback` set.
-4. A multi-step command (static step + a `search:true` step + a `freeText` step) completes and
-   fires `cp-complete` with the right `selections`.
+4. A multi-step command (static step + an `isLiveSearch` step + an `isFreeTextAllowed` step) completes and
+   fires `action` with the right `selections`.
 5. Theming: setting `--pa-*`/`--base-*` on the host `:root` restyles the shadow-DOM palette;
    `check:vars` is green; unthemed usage looks correct via `:host` defaults.
 6. DOM matches `core/snippets/command-palette.html`.
-7. The element exposes `searchCallback`/`stepOptionsCallback` as live-assignable properties and
+7. The element exposes `searchCallback`/`getStepOptionsCallback` as live-assignable properties and
    reads `data-search-event`/`data-step-options-event` as reserved bridge hooks (even if the
    wiring itself is implemented later in the keen repo).
 

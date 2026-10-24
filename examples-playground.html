@@ -108,26 +108,28 @@
 <!-- Page wiring -->
 <script type="module">
     import { attachControlsPersistence } from '@keenmate/web-components-devkit/examples';
-    import { commands, contexts, searchCallback, stepOptionsCallback } from './examples-data.js';
+    import { commands, contexts, searchCallback, getStepOptionsCallback } from './examples-data.js';
 
     function wire() {
         const palette = document.getElementById('palette');
         palette.commands = commands;
         palette.contexts = contexts;
         palette.searchCallback = searchCallback;
-        palette.stepOptionsCallback = stepOptionsCallback;
+        palette.getStepOptionsCallback = getStepOptionsCallback;
 
         const log = document.getElementById('pg02-log');
-        for (const name of ['cp-open', 'cp-close', 'cp-select', 'cp-complete', 'cp-command', 'cp-ready']) {
+        // JSON shows the data only: controller / element are non-enumerable; drop the DOM refs of `action`.
+        const brief = (d) => { const { sourceEvent, triggerElement, item, ...rest } = d; return item ? { ...rest, item: item.id } : rest; };
+        for (const name of ['open', 'close', 'select', 'action', 'ready']) {
             palette.addEventListener(name, (e) => {
-                log.textContent = `${name} ${JSON.stringify(e.detail)}\n` + (log.textContent === '—' ? '' : log.textContent);
+                log.textContent = `${name} ${JSON.stringify(brief(e.detail))}\n` + (log.textContent === '—' ? '' : log.textContent);
             });
         }
 
         const bindRadios = (name, apply) => document.querySelectorAll(`input[name="${name}"]`).forEach((r) =>
             r.addEventListener('change', (e) => { if (e.target.checked) apply(e.target.value); }));
         bindRadios('pg01-display', (v) => { palette.display = v; });
-        bindRadios('pg01-size', (v) => { palette.size = v || null; });
+        bindRadios('pg01-size', (v) => (v ? palette.setAttribute('size', v) : palette.removeAttribute('size')));
         bindRadios('pg01-page', (v) => palette.setAttribute('page-size', v));
         bindRadios('pg01-presentation', (v) => palette.setAttribute('mobile-presentation', v));
         bindRadios('pg01-debounce', (v) => palette.setAttribute('search-debounce', v));
@@ -139,7 +141,7 @@
         bindRadios('pg01-confirm-ms', (v) => palette.setAttribute('confirmation-duration', v));
         const customConfirmation = (ctx) => {
             if (ctx.type === 'select') return `Opening <b>${ctx.sentence}</b>…`;
-            return `<b>${ctx.commandName}</b> — ${ctx.selections.map((s) => s.label).join(' → ') || 'ran'}`;
+            return `<b>${ctx.commandText}</b> — ${ctx.selections.map((s) => s.label).join(' → ') || 'ran'}`;
         };
         bindRadios('pg01-confirm-render', (v) => { palette.renderConfirmationCallback = v === 'custom' ? customConfirmation : null; });
 
@@ -153,11 +155,11 @@
             palette.setAttribute('recent-key', on ? 'r' : '');
             palette.setAttribute('favorites-hotkey', on ? 'g f' : '');
         });
-        document.getElementById('pg01-favorites').addEventListener('click', () => palette.openFavorites());
-        document.getElementById('pg01-recent').addEventListener('click', () => palette.openRecent());
+        document.getElementById('pg01-favorites').addEventListener('click', () => palette.controller.openFavorites());
+        document.getElementById('pg01-recent').addEventListener('click', () => palette.controller.openRecent());
 
         document.querySelectorAll('[data-open]').forEach((b) =>
-            b.addEventListener('click', () => palette.openWith(b.dataset.open)));
+            b.addEventListener('click', () => palette.controller.openWith(b.dataset.open)));
 
         attachControlsPersistence('playground');
     }
