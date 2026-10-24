@@ -1,6 +1,6 @@
 {
   "name": "@keenmate/web-commandpalette",
-  "version": "1.0.0-rc02",
+  "version": "1.0.0-rc03",
   "description": "Framework-agnostic command-palette web component — modes, multi-step commands, scoped + global search, keyboard nav; configured via properties, events, and async callbacks.",
   "type": "module",
   "main": "./dist/web-commandpalette.umd.js",

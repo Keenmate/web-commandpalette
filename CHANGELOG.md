@@ -7,8 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Proposed target: **2.0.0-rc01** (package.json unchanged until decided) — a major: the event,
-callback and item API below is breaking, so `^1.x` consumers must not auto-pull it.
+Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the next release
+candidate — but `^1.0.0-rc02` consumers will pull it: the event,
+callback and item API below is breaking.
 
 ### Changed — BREAKING (interaction model, web-components-core rc15)
 
