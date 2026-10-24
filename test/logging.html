@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>e2e fixture — logging</title>
+</head>
+<body>
+  <!-- Two instances (the second warns about hotkey ownership at INIT.warn) and a provider
+       that rejects for the term "fail" (DATA.error "provider failed"). -->
+  <web-command-palette id="palette"></web-command-palette>
+  <web-command-palette id="second"></web-command-palette>
+
+  <script type="module">
+    import { setupStandard, ready } from './fixture-common.js';
+    const el = setupStandard('logging');
+    el.searchCallback = ({ term }) => term === 'fail' ? Promise.reject(new Error('provider down')) : [{ id: 'r', title: `hit ${term}` }];
+    ready();
+  </script>
+</body>
+</html>

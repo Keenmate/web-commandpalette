@@ -71,3 +71,28 @@ test('list modes filter client-side', async ({ page }) => {
   expect(c.search).toEqual([]);
   expect(c.stepOptions).toEqual([]);
 });
+
+test('aliases: "/d " enters the deploy wizard, ":p " the products context', async ({ page }) => {
+  await load(page, 'search');
+  const p = palette(page);
+  await open(page);
+  await page.keyboard.type('/d ');
+  await expect(p.input).toHaveValue('/deploy to ');
+  await expect(p.context).toHaveText('Deploy to Environment');
+  await p.input.fill(':p ');
+  await expect(p.input).toHaveValue(':products ');
+  await expect(p.context).toHaveText('Searching in Products');
+  await page.keyboard.type('x');
+  await expect(p.titles.first()).toHaveText('products x 0');
+});
+
+test('an alias typed without the trailing space only filters the list', async ({ page }) => {
+  await load(page, 'search');
+  const p = palette(page);
+  await open(page);
+  await page.keyboard.type('/d');
+  await expect(p.input).toHaveValue('/d');
+  // Matches on text / trigger / aliases; nothing is entered until the space.
+  await expect(p.titles).toHaveText(['Deploy to Environment', 'Reload Data']);
+  await expect(p.context).toHaveText('Commands');
+});

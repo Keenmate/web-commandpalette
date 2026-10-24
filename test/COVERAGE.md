@@ -68,7 +68,7 @@ Known bugs are in `test/NOTES.md`.
 | Loader / `results--loading` while pending | ✓ | `search-async.spec.ts` | `search-async.html` |
 | `search-debounce` (0 vs 500, superseded during debounce) | ✓ | `search-async.spec.ts` | `search-async.html` |
 | Per-context `searchCallback` / per-step `getOptionsCallback` override | ✓ | `providers.spec.ts` | `providers.html` |
-| Aliases (`/d `, `:p `) | △ | `wizard.spec.ts`, `keyboard.spec.ts` | |
+| Aliases (`/d `, `:p `; no space → filter only) | ✓ | `search.spec.ts` | `search.html` |
 
 ## 5. Wizard (command steps)
 
@@ -123,7 +123,7 @@ Known bugs are in `test/NOTES.md`.
 | Result `group` headings (first-appearance order) | ✓ | `groups.spec.ts` | `groups.html` |
 | Multiple instances: hotkey ownership + hand-over | ✓ | `multi-instance.spec.ts` | `multi-instance.html` |
 | DOM move while open closes cleanly (D1 / CP-1); no rebuild | ✓ | `lifecycle.spec.ts` | `lifecycle.html` |
-| Logging silent by default | ✗ | | |
+| Logging: silent by default (warnings too), errors still print, `enableLogging()` | ✓ | `logging.spec.ts` | `logging.html` |
 
 ## 10. Presentation / theming / RTL
 
@@ -131,12 +131,12 @@ Known bugs are in `test/NOTES.md`.
 | --- | :-: | --- | --- |
 | Phone: fullscreen sheet + close button | ✓ | `mobile.spec.ts` | `mobile.html` |
 | `mobile-presentation="floating"` on a phone | ✓ | `mobile.spec.ts` | `mobile.html` |
-| `mobile-presentation="fullscreen"` on desktop | ✗ | | |
+| `mobile-presentation="fullscreen"` on desktop (+ live switch, ctx flags) | ✓ | `presentation.spec.ts` | `presentation.html` |
 | `--cp-*` fallbacks, host theme pierces the shadow DOM | ✓ | `theming.spec.ts` | `theming.html` |
 | Per-instance themes (`--base-*`, `::part()`), `--base-rem` | ✓ | `theming.spec.ts` | `theming.html` |
 | base-css-variables 2.0 tokens, named icons | ✓ | `theming.spec.ts` | `theming.html` |
 | Theme context (page signals, per-instance override) | ✓ | `theme-context.spec.ts` | `theme-context.html` |
-| `data-theme="dark"` on the host | ✗ | | |
+| `data-theme="dark"` on the host | ✓ | `theme-context.spec.ts` | `theme-context.html` |
 | RTL layout, paging, confirmation | ✓ | `rtl.spec.ts` | `rtl.html` |
 
 ## 11. Example site (smoke only)

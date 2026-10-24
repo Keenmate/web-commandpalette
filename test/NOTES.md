@@ -27,8 +27,10 @@ logger, then `done(null)`).
 
 **Symptom:** when `searchCallback` / `getStepOptionsCallback` rejects or throws, the
 palette shows the local matches (global search) and then the ordinary empty text
-("No results") — indistinguishable from a successful empty search. There is no host
-event, no error label, and with logging off (the default) nothing reaches the console.
+("No results found") — indistinguishable from a successful empty search. There is no
+host event and no error label; the only signal is a `console.error`
+(`[COMMANDPALETTE:DATA] … provider failed`), which prints even with logging at its
+default (pinned by `e2e/logging.spec.ts`).
 
 **What works (pinned by `e2e/search-async.spec.ts`):** no uncaught error, the local
 matches still render, the palette stays usable (typing again searches again).
