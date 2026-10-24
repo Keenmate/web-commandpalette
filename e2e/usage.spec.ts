@@ -1,7 +1,6 @@
-import { expect, test } from '@playwright/test';
-import { events, load, open, palette } from './fixtures';
+import { expect, test, events, load, open, palette } from './fixtures';
 
-test.beforeEach(async ({ page }) => load(page));
+test.beforeEach(async ({ page }) => load(page, 'usage'));
 
 /** Home section headings (the label only, not the "+N · Ctrl F" button). */
 const headings = (page: import('@playwright/test').Page) =>
@@ -101,4 +100,26 @@ test('font sizes follow --base-font-size-* (A)', async ({ page }) => {
   await page.evaluate(() => document.documentElement.style.setProperty('--base-font-size-base', '1.2'));
   await open(page);
   expect(await p.input.evaluate((el) => getComputedStyle(el).fontSize)).toBe('12px');
+});
+
+test('a run through a live step-level picker replays from Recent with Enter, Enter', async ({ page }) => {
+  const p = palette(page);
+  await open(page);
+  await page.keyboard.type('/add-permission wr');
+  await page.keyboard.press('Tab'); // write
+  await expect(p.input).toHaveValue('/add-permission write to ');
+  await page.keyboard.type('pet');
+  await expect(p.titles).toHaveText(['Peter Parker']); // the step's own getOptionsCallback (live, debounced)
+  expect(await page.evaluate(() => (window as unknown as { pickerCalls: string[] }).pickerCalls)).toContain('pet');
+  await page.keyboard.press('Enter');
+  await expect(p.root).not.toHaveClass(/--active/, { timeout: 3000 });
+
+  await open(page);
+  await expect(p.active.locator('.pa-command-palette__item-title')).toHaveText('/add-permission write to Peter Parker');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Enter');
+  await expect.poll(async () => (await events(page)).filter((e) => e.name === 'action').length).toBe(2);
+  for (const r of (await events(page)).filter((e) => e.name === 'action')) {
+    expect(r.detail).toMatchObject({ id: 'add-permission', selections: [{ stepId: 'permission', label: 'write' }, { stepId: 'user', label: 'Peter Parker' }] });
+  }
 });

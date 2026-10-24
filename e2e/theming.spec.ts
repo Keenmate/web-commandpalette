@@ -1,11 +1,10 @@
-import { expect, test } from '@playwright/test';
-import { load, open, palette } from './fixtures';
+import { expect, test, load, open, palette } from './fixtures';
 
 const style = (loc: ReturnType<typeof palette>['container'], prop: string) =>
   loc.evaluate((el, p) => getComputedStyle(el).getPropertyValue(p), prop);
 
 test('unthemed: the --cp-* fallbacks apply at a 10px rem', async ({ page }) => {
-  await load(page);
+  await load(page, 'theming');
   const p = palette(page);
   await open(page);
   expect(await style(p.container, 'max-width')).toBe('608px'); // 60.8rem × 10px
@@ -14,7 +13,8 @@ test('unthemed: the --cp-* fallbacks apply at a 10px rem', async ({ page }) => {
 });
 
 test('a host theme on :root pierces the shadow DOM (--base-* + --base-rem)', async ({ page }) => {
-  await load(page, 'theme');
+  await load(page, 'theming');
+  await page.evaluate(() => { (document.getElementById('host-theme') as HTMLStyleElement).media = 'all'; });
   const p = palette(page);
   await open(page);
   expect(await style(p.container, 'max-width')).toBe(`${60.8 * 16}px`);
@@ -24,7 +24,7 @@ test('a host theme on :root pierces the shadow DOM (--base-* + --base-rem)', asy
 });
 
 test('component knobs: --cp-width on the host, and size presets', async ({ page }) => {
-  await load(page);
+  await load(page, 'theming');
   const p = palette(page);
   await p.host.evaluate((el) => (el as HTMLElement).style.setProperty('--cp-width', '500px'));
   await open(page);
@@ -37,35 +37,46 @@ test('component knobs: --cp-width on the host, and size presets', async ({ page 
   expect(await style(p.container, 'max-width')).toBe('480px');
 });
 
-test('theme gallery (TH01): each card opens its own themed instance; CSS shown matches the source', async ({ page }) => {
-  await page.goto('/examples-theming.html');
-  await page.waitForFunction(() => !!customElements.get('web-command-palette'));
-  const bg = async (id: string) =>
+test('per-instance themes: --base-* / ::part() on one instance leave the others alone', async ({ page }) => {
+  await load(page, 'theming');
+  const bg = (id: string) =>
     page.locator(`#${id}`).evaluate((el) => getComputedStyle(el.shadowRoot!.querySelector('.pa-command-palette__container')!).backgroundColor);
-  for (const [theme, expected] of [['dark', 'rgb(30, 30, 46)'], ['neon', 'rgb(13, 2, 33)'], ['terminal', 'rgb(12, 12, 12)']] as const) {
-    await page.locator(`[data-gallery-theme="${theme}"] [data-theme-open=""]`).click();
-    await expect(page.locator(`#theme-${theme} .pa-command-palette`)).toHaveClass(/--active/);
-    expect(await bg(`theme-${theme}`)).toBe(expected);
+  // Gallery instances have no global hotkey (open-key=""); open them through the API.
+  for (const [id, expected] of [['theme-dark', 'rgb(30, 30, 46)'], ['theme-terminal', 'rgb(12, 12, 12)'], ['palette', 'rgb(255, 255, 255)']] as const) {
+    const p = palette(page, `#${id}`);
+    await p.host.evaluate((el) => (el as unknown as { open(): void }).open());
+    await expect(p.root).toHaveClass(/--active/);
+    expect(await bg(id)).toBe(expected);
     await page.keyboard.press('Escape');
+    await expect(p.root).not.toHaveClass(/--active/);
   }
-  await expect(page.locator('[data-gallery-theme="material"] pre')).toContainText('#theme-material::part(input) {');
+  // ::part(container) / ::part(input) reach into the shadow root.
+  expect(await style(palette(page, '#theme-dark').container, 'border-top-color')).toBe('rgb(49, 50, 68)');
+  expect(await style(palette(page, '#theme-terminal').input, 'border-bottom-color')).toBe('rgb(51, 255, 102)');
   // --base-font-family reaches the input (form controls don't inherit fonts on their own).
-  const font = await page.locator('#theme-terminal').evaluate((el) => getComputedStyle(el.shadowRoot!.querySelector('input')!).fontFamily);
-  expect(font).toContain('monospace');
+  expect(await style(palette(page, '#theme-terminal').input, 'font-family')).toContain('monospace');
 });
 
-test('themes & sizes: the size switches apply to every palette, themed ones included', async ({ page }) => {
-  await page.goto('/examples-theming.html');
-  await page.waitForFunction(() => !!customElements.get('web-command-palette'));
-  await page.locator('input[name="th01-size"][value="lg"]').check();
-  await page.locator('input[name="th01-rem"][value="12px"]').check();
-  await expect(page.locator('#theme-neon')).toHaveAttribute('size', 'lg');
-  await expect(page.locator('#palette')).toHaveAttribute('size', 'lg');
-  expect(await page.locator('#theme-terminal').evaluate((el) => (el as HTMLElement).style.getPropertyValue('--base-rem'))).toBe('12px');
+test('size presets and --base-rem apply per instance, themed ones included', async ({ page }) => {
+  await load(page, 'theming');
+  for (const id of ['palette', 'theme-dark', 'theme-terminal']) {
+    await page.locator(`#${id}`).evaluate((el) => { el.setAttribute('size', 'lg'); (el as HTMLElement).style.setProperty('--base-rem', '12px'); });
+  }
+  const sizes: string[] = [];
+  for (const id of ['palette', 'theme-dark', 'theme-terminal']) {
+    const p = palette(page, `#${id}`);
+    await expect(p.root).toHaveClass(/pa-command-palette--lg/);
+    sizes.push(await style(p.container, 'max-width'));
+  }
+  // Same preset + same rem → the same width everywhere, and larger than the 10px-rem default.
+  expect(new Set(sizes).size).toBe(1);
+  await page.locator('#palette').evaluate((el) => (el as HTMLElement).style.removeProperty('--base-rem'));
+  const at10 = parseFloat(await style(palette(page).container, 'max-width'));
+  expect(parseFloat(sizes[0])).toBeCloseTo(at10 * 1.2, 0);
 });
 
 test('base-css-variables 2.0: control outline, focus halo, focused cursor row and hover read the shared tokens', async ({ page }) => {
-  await load(page);
+  await load(page, 'theming');
   const p = palette(page);
   await p.host.evaluate((el) => {
     const s = (el as HTMLElement).style;
@@ -96,7 +107,7 @@ test('base-css-variables 2.0: control outline, focus halo, focused cursor row an
 });
 
 test('item icons by name draw the shared --base-icon-* glyph; unknown names draw nothing', async ({ page }) => {
-  await load(page);
+  await load(page, 'theming');
   const p = palette(page);
   await p.host.evaluate((el) => {
     (el as HTMLElement).style.setProperty('--base-icon-search', 'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22/%3E")');

@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { expect, load, test, type Page } from './fixtures';
 
 /**
  * Dark / light via @keenmate/web-components-core's theme context: core detects the
@@ -9,16 +9,12 @@ import { test, expect, type Page } from '@playwright/test';
  * no prefers-color-scheme rule (same as web-multiselect / web-treeview).
  */
 
-const PAGE = '/test/fixture.html';
 const HOSTS = ['web-command-palette'];
 
 const scheme = (page: Page, sel: string) =>
   page.locator(sel).first().evaluate((el) => getComputedStyle(el).colorScheme);
 
-async function open(page: Page) {
-  await page.goto(PAGE);
-  await page.locator(HOSTS[0]).first().waitFor({ state: 'attached' });
-}
+const open = (page: Page) => load(page, 'theme-context');
 
 test('no page signal + OS dark → inherits the page (normal), no data-context-theme', async ({ browser }) => {
   const context = await browser.newContext({ colorScheme: 'dark' });

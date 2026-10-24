@@ -1,5 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
-import { palette } from './fixtures';
+import { expect, load, palette, test, type Page } from './fixtures';
 
 /**
  * The KeenMate interaction model (web-components-core `/actions`, SPEC §12.5 / §12.12):
@@ -15,8 +14,6 @@ import { palette } from './fixtures';
  * Fixture: test/interaction-model.html.
  */
 
-const PAGE = '/test/interaction-model.html';
-
 const log = (page: Page) => page.evaluate(() => (window as any).__log as string[]);
 const details = (page: Page) => page.evaluate(() => (window as any).__details as any[]);
 const ctxs = (page: Page) => page.evaluate(() => (window as any).__ctx as Record<string, any>);
@@ -25,15 +22,13 @@ const setVeto = (page: Page, v: string) => page.evaluate((x) => { (window as any
 const openPalette = (page: Page) => page.evaluate(() => (document.getElementById('palette') as any).controller.open());
 
 test.beforeEach(async ({ page }) => {
-  await page.goto(PAGE);
-  await page.waitForFunction(() => (window as any).ready === true);
+  await load(page, 'interaction-model');
   await expect.poll(() => log(page)).toContain('event:ready');
   await clear(page);
 });
 
 test('ready fired once with its twin; open / close carry the context; twins get the same detail', async ({ page }) => {
-  await page.goto(PAGE);
-  await page.waitForFunction(() => (window as any).ready === true);
+  await load(page, 'interaction-model');
   await expect.poll(() => log(page)).toEqual(['on:ready', 'event:ready']);
   await clear(page);
   await openPalette(page);

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>e2e fixture — theming</title>
+  <style>body { font-family: system-ui, sans-serif; }</style>
+  <!-- Enabled by a test (media → all): a host theme on :root that must pierce the shadow DOM. -->
+  <style id="host-theme" media="not all">
+    :root { --base-primary-color: rgb(255, 0, 128); --base-rem: 16px; }
+  </style>
+  <!-- Per-instance themes through --base-* / --cp-* / ::part() only (as on the theming example page). -->
+  <style>
+    #theme-dark { --base-main-bg: #1e1e2e; --base-input-bg: #181825; --base-text-color-1: #cdd6f4; }
+    #theme-dark::part(container) { border: 1px solid rgb(49, 50, 68); }
+    #theme-terminal { --base-font-family: ui-monospace, Consolas, monospace; --base-main-bg: #0c0c0c; }
+    #theme-terminal::part(input) { border-bottom: 2px solid rgb(51, 255, 102); }
+  </style>
+</head>
+<body>
+  <web-command-palette id="palette"></web-command-palette>
+  <web-command-palette id="theme-dark" open-key="" favorites-hotkey=""></web-command-palette>
+  <web-command-palette id="theme-terminal" open-key="" favorites-hotkey=""></web-command-palette>
+
+  <script type="module">
+    import { setupStandard, commands, ready } from './fixture-common.js';
+    setupStandard('theming');
+    for (const id of ['theme-dark', 'theme-terminal']) document.getElementById(id).commands = commands();
+    ready();
+  </script>
+</body>
+</html>

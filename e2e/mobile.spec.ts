@@ -1,10 +1,9 @@
-import { expect, test } from '@playwright/test';
-import { load, palette } from './fixtures';
+import { expect, test, load, palette } from './fixtures';
 
 // Runs in the `mobile` project (Pixel 7: coarse pointer, no hover).
 
 test('touch phone: opens as a fullscreen sheet with a close button', async ({ page }) => {
-  await load(page);
+  await load(page, 'mobile');
   const p = palette(page);
   await page.locator('#opener').tap();
   await expect(p.root).toHaveClass(/pa-command-palette--active/);
@@ -20,7 +19,7 @@ test('touch phone: opens as a fullscreen sheet with a close button', async ({ pa
 });
 
 test('mobile-presentation="floating" forces the dialog', async ({ page }) => {
-  await load(page);
+  await load(page, 'mobile');
   const p = palette(page);
   await p.host.evaluate((el) => el.setAttribute('mobile-presentation', 'floating'));
   await page.locator('#opener').tap();

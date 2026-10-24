@@ -1,7 +1,6 @@
-import { expect, test } from '@playwright/test';
-import { events, load, open, palette } from './fixtures';
+import { expect, test, events, load, open, palette } from './fixtures';
 
-test.beforeEach(async ({ page }) => load(page));
+test.beforeEach(async ({ page }) => load(page, 'confirmation'));
 
 const panel = (page: import('@playwright/test').Page) => palette(page).host.locator('.cp-confirm');
 

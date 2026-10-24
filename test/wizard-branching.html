@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>e2e fixture — wizard branching</title>
+</head>
+<body>
+  <web-command-palette id="palette" confirmation="false"></web-command-palette>
+
+  <script type="module">
+    import { recordEvents, ready } from './fixture-common.js';
+    const el = document.getElementById('palette');
+    recordEvents(el, 'wizard');
+    window.visibleCalls = [];
+    el.commands = [
+      {
+        id: 'report', trigger: '/report', text: 'Run Report',
+        steps: [
+          { id: 'report', options: [
+            { id: 'sales', text: 'Product Sales', value: { id: 'sales', needsRange: true } },
+            { id: 'inventory', text: 'Inventory Status', value: { id: 'inventory', needsRange: false } },
+          ] },
+          { id: 'range', prompt: ' for ',
+            getIsVisibleCallback: ({ selections }) => {
+              window.visibleCalls.push(selections.map((s) => s.stepId));
+              return selections[0]?.value?.needsRange === true;
+            },
+            options: [{ text: 'Last 7 days', value: 7 }, { text: 'Last 30 days', value: 30 }] },
+        ],
+      },
+      {
+        id: 'assign-admin', trigger: '/assign-admin', text: 'Assign Admin',
+        steps: [
+          { id: 'user', options: [{ text: 'John Doe', value: 'john' }, { text: 'Jane Smith', value: 'jane' }] },
+          { id: 'target', prompt: ' to ', options: [
+            { id: 'group', text: 'group', steps: [{ id: 'group', options: [{ text: 'Finance' }, { text: 'Engineering' }] }] },
+            { id: 'site', text: 'site', steps: [{ id: 'site', options: [{ text: 'Intranet' }, { text: 'HR Portal' }] }] },
+          ] },
+        ],
+      },
+    ];
+    ready();
+  </script>
+</body>
+</html>

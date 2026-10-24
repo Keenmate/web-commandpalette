@@ -1,7 +1,6 @@
-import { expect, test } from '@playwright/test';
-import { activeTitle, calls, hints, load, open, palette } from './fixtures';
+import { expect, test, activeTitle, calls, hints, load, open, palette } from './fixtures';
 
-test.beforeEach(async ({ page }) => load(page));
+test.beforeEach(async ({ page }) => load(page, 'keyboard'));
 
 test('↑↓ wrap, PgUp/PgDn clamp, Home/End jump', async ({ page }) => {
   await open(page);

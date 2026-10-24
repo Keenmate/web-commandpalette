@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>e2e fixture — usage</title>
+  <style>body { font-family: system-ui, sans-serif; min-height: 200vh; }</style>
+</head>
+<body>
+  <input id="outside" placeholder="outside input">
+  <button id="opener" type="button">open</button>
+  <web-command-palette id="palette"></web-command-palette>
+
+  <script type="module">
+    import { setupStandard, ready } from './fixture-common.js';
+    const el = setupStandard('usage');
+    // A live (isLiveSearch) step with its own getOptionsCallback — replayed from Recent.
+    window.pickerCalls = [];
+    const people = ['Peter Parker', 'Jane Smith', 'John Doe'];
+    el.commands = [...el.commands, {
+      id: 'add-permission', trigger: '/add-permission', text: 'Add Permission',
+      steps: [
+        { id: 'permission', options: [{ id: 'read', text: 'read' }, { id: 'write', text: 'write' }] },
+        { id: 'user', prompt: ' to ', isLiveSearch: true, getOptionsCallback: ({ term }) => {
+          window.pickerCalls.push(term);
+          return new Promise((r) => setTimeout(() => r(people.filter((p) => p.toLowerCase().includes(term.toLowerCase())).map((text) => ({ text }))), 30));
+        } },
+      ],
+    }];
+    ready();
+  </script>
+</body>
+</html>

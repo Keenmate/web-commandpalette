@@ -62,7 +62,7 @@ nginx, port 12410; see BUILD.md). Don't run the publish targets unless the user 
 - `npm run build` — `cem analyze` → Vite library build into `dist/` → `check:vars:strict`
 - `npm run build:examples` / `preview:examples` — the static examples site in `dist-examples/` (served on 12401)
 - `npm run test:unit` — vitest (happy-dom), specs in `test/unit/`. Single file: `npx vitest run test/unit/palette.test.ts`; by name: `npx vitest run -t "context search"`
-- `npm run test:e2e` — Playwright against the dev server (reused if running); specs in `e2e/`, fixture page `test/fixture.html`. Single spec: `npx playwright test e2e/wizard.spec.ts`. `e2e/mobile.spec.ts` runs only in the `mobile` (Pixel 7) project
+- `npm run test:e2e` — Playwright against the dev server (reused if running); specs in `e2e/`, one fixture page per spec `test/<area>.html` (shared pieces in `test/fixture-common.js`); import `test`/`expect` from `e2e/fixtures.ts` (pageerror guard); coverage in `test/COVERAGE.md`, findings in `test/NOTES.md`. Single spec: `npx playwright test e2e/wizard.spec.ts`. `e2e/mobile.spec.ts` runs only in the `mobile` (Pixel 7) project
 - `npm run check:vars` — `kmwc check-vars`: validate `component-variables.manifest.json` against the built bundle (the shadow CSS is inlined there), in `consumed` mode
 
 ## Architecture

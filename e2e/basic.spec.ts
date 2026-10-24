@@ -1,7 +1,6 @@
-import { expect, test } from '@playwright/test';
-import { events, load, open, palette } from './fixtures';
+import { expect, test, events, load, open, palette } from './fixtures';
 
-test.beforeEach(async ({ page }) => load(page));
+test.beforeEach(async ({ page }) => load(page, 'basic'));
 
 test('Ctrl+K toggles the palette, focuses the input, fires open/close', async ({ page }) => {
   const p = palette(page);

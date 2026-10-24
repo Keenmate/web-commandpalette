@@ -1,7 +1,6 @@
-import { expect, test } from '@playwright/test';
-import { calls, events, load, open, palette } from './fixtures';
+import { expect, test, calls, events, load, open, palette } from './fixtures';
 
-test.beforeEach(async ({ page }) => load(page));
+test.beforeEach(async ({ page }) => load(page, 'wizard'));
 
 test('static step + isLiveSearch step + isFreeTextAllowed step → action with the right selections', async ({ page }) => {
   const p = palette(page);
@@ -67,4 +66,64 @@ test('tokens display: answers become removable badges above an empty input', asy
   // Backspace at 0 steps back to the command list.
   await page.keyboard.press('Backspace');
   await expect(p.input).toHaveValue('/');
+});
+
+test.describe('branching (wizard-branching.html)', () => {
+  test.beforeEach(async ({ page }) => load(page, 'wizard-branching'));
+
+  test('getIsVisibleCallback false skips the step: the command completes after the first answer', async ({ page }) => {
+    const p = palette(page);
+    await open(page);
+    await page.keyboard.type('/report inv');
+    await expect(p.titles).toHaveText(['Inventory Status']);
+    await page.keyboard.press('Enter');
+    await expect(p.root).not.toHaveClass(/--active/);
+    const done = (await events(page)).filter((e) => e.name === 'action');
+    expect(done).toHaveLength(1);
+    expect(done[0].detail).toMatchObject({ id: 'report', selections: [{ stepId: 'report', label: 'Inventory Status' }] });
+    expect((done[0].detail as { selections: unknown[] }).selections).toHaveLength(1);
+    // The callback saw the answers so far.
+    expect(await page.evaluate(() => (window as unknown as { visibleCalls: string[][] }).visibleCalls)).toContainEqual(['report']);
+  });
+
+  test('getIsVisibleCallback true keeps the step', async ({ page }) => {
+    const p = palette(page);
+    await open(page);
+    await page.keyboard.type('/report sal');
+    await page.keyboard.press('Enter');
+    await expect(p.input).toHaveValue('/report Product Sales for ');
+    await expect(p.titles).toHaveText(['Last 7 days', 'Last 30 days']);
+    await page.keyboard.press('Enter');
+    const done = (await events(page)).find((e) => e.name === 'action');
+    expect((done?.detail as { selections: Array<{ stepId: string }> }).selections.map((s) => s.stepId)).toEqual(['report', 'range']);
+  });
+
+  test('an option with its own steps forks the wizard', async ({ page }) => {
+    const p = palette(page);
+    await open(page);
+    await page.keyboard.type('/assign-admin ');
+    await page.keyboard.press('Enter'); // John Doe
+    await page.keyboard.type('si');
+    await page.keyboard.press('Enter'); // site
+    await expect(p.input).toHaveValue('/assign-admin John Doe to site ');
+    await expect(p.titles).toHaveText(['Intranet', 'HR Portal']);
+    await page.keyboard.type('hr');
+    await page.keyboard.press('Enter');
+    const done = (await events(page)).find((e) => e.name === 'action');
+    expect(done?.detail).toMatchObject({
+      id: 'assign-admin',
+      selections: [{ stepId: 'user', label: 'John Doe' }, { stepId: 'target', label: 'site' }, { stepId: 'site', label: 'HR Portal' }],
+    });
+  });
+
+  test('the other branch offers the other step', async ({ page }) => {
+    const p = palette(page);
+    await open(page);
+    await page.keyboard.type('/assign-admin ');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('gr');
+    await page.keyboard.press('Enter');
+    await expect(p.input).toHaveValue('/assign-admin John Doe to group ');
+    await expect(p.titles).toHaveText(['Finance', 'Engineering']);
+  });
 });

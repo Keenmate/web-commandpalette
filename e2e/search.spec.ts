@@ -1,8 +1,7 @@
-import { expect, test } from '@playwright/test';
-import { calls, events, load, open, palette } from './fixtures';
+import { expect, test, calls, events, load, open, palette } from './fixtures';
 
 test('context search: empty query shows "Type to search X" and never calls the provider', async ({ page }) => {
-  await load(page);
+  await load(page, 'search');
   const p = palette(page);
   await open(page);
   await page.keyboard.type(':p ');
@@ -15,7 +14,7 @@ test('context search: empty query shows "Type to search X" and never calls the p
 });
 
 test('context search: entered from the home screen too, then searches non-empty queries only', async ({ page }) => {
-  await load(page);
+  await load(page, 'search');
   const p = palette(page);
   await open(page);
   await p.items.filter({ hasText: 'Products' }).click();
@@ -32,7 +31,8 @@ test('context search: entered from the home screen too, then searches non-empty 
 });
 
 test('global search prepends matching commands even with NO searchCallback', async ({ page }) => {
-  await load(page, 'nosearch');
+  await load(page, 'search');
+  await palette(page).host.evaluate((el) => { (el as unknown as { searchCallback: unknown }).searchCallback = null; });
   const p = palette(page);
   await open(page);
   await page.keyboard.type('go');
@@ -43,7 +43,7 @@ test('global search prepends matching commands even with NO searchCallback', asy
 });
 
 test('global search: local matches first, then provider hits (debounced, one call)', async ({ page }) => {
-  await load(page);
+  await load(page, 'search');
   const p = palette(page);
   await open(page);
   await page.keyboard.type('deploy');
@@ -56,7 +56,7 @@ test('global search: local matches first, then provider hits (debounced, one cal
 });
 
 test('list modes filter client-side', async ({ page }) => {
-  await load(page);
+  await load(page, 'search');
   const p = palette(page);
   await open(page);
   await page.keyboard.type('/');

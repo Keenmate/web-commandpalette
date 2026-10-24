@@ -1,7 +1,6 @@
-import { expect, test } from '@playwright/test';
-import { load, open, palette } from './fixtures';
+import { expect, test, load, open, palette } from './fixtures';
 
-test.beforeEach(async ({ page }) => load(page));
+test.beforeEach(async ({ page }) => load(page, 'rtl'));
 
 const box = async (l: import('@playwright/test').Locator) => (await l.boundingBox())!;
 
