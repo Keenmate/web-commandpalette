@@ -21,7 +21,6 @@ test('page-size sets the results per page', async ({ page }) => {
 });
 
 test('page-size changed while open re-pages the current results', async ({ page }) => {
-  test.fail(true, 'NOTES.md #5');
   const p = palette(page);
   await open(page);
   await p.input.fill('many');
@@ -46,9 +45,6 @@ test('removing page-size resets it to the default (8)', async ({ page }) => {
   await p.input.fill('many');
   await expect(p.pagination).toHaveText('Page 1 of 5 · 20 results');
   await attr(page, 'page-size', null);
-  // Re-run the search (a live re-page of the current list is NOTES.md #5).
-  await p.input.fill('man');
-  await p.input.fill('many');
   await expect(p.pagination).toHaveText('Page 1 of 3 · 20 results');
   await expect(p.items).toHaveCount(8);
 });

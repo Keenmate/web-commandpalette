@@ -98,6 +98,9 @@ contexts / options with the new field names.
 - Example pages: the size radios set `size = null` for the default, which the converter rejects
   (a console warning on every load of the playground / theming pages) — they remove the
   attribute instead.
+- `page-size` changed while the palette is open now re-pages the current search results right
+  away (the first visible row stays on screen); it used to apply only from the next keystroke
+  (test/NOTES.md #5).
 
 ## [1.0.0-rc02] - 2026-10-19
 

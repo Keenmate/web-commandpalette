@@ -426,6 +426,25 @@ describe('global search', () => {
     expect(search).toHaveBeenCalledTimes(1);
   });
 
+  it('pageSizeChanged re-pages the current results, keeping the first visible row (NOTES #5)', async () => {
+    const hits = Array.from({ length: 20 }, (_, i) => ({ id: String(i), title: `Hit ${i}` }));
+    const search = vi.fn(() => hits);
+    const h = harness({ search, commands: [], contexts: [], pageSize: 8 });
+    const { m } = h;
+    m.setInput('hit');
+    await vi.advanceTimersByTimeAsync(150);
+    m.turnPage(1); // rows 8..15
+    h.host.state.pageSize = 5;
+    m.pageSizeChanged();
+    expect(m.pageText).toBe('Page 2 of 4 · 20 results');
+    expect(titles(m)).toEqual(['Hit 5', 'Hit 6', 'Hit 7', 'Hit 8', 'Hit 9']);
+    h.host.state.pageSize = 50;
+    m.pageSizeChanged();
+    expect(m.pageText).toBeNull();
+    expect(m.items).toHaveLength(20);
+    expect(search).toHaveBeenCalledTimes(1);
+  });
+
   it('a throwing provider degrades to the local matches', async () => {
     const error = vi.fn();
     const h = harness({ search: () => { throw new Error('boom'); } });

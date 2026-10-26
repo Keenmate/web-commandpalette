@@ -603,7 +603,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     if ('mobilePresentation' in partial) this.#applyPresentation(getEnvironment());
     if ('commands' in partial || 'contexts' in partial) this.#engine.refresh();
     if ('display' in partial) this.#engine.displayChanged();
-    if ('pageSize' in partial) this.#engine.refresh();
+    if ('pageSize' in partial) this.#engine.pageSizeChanged();
     if ('usageStorage' in partial || 'usageKey' in partial || 'loadUsageCallback' in partial) this.#applyUsage();
     else if ('recentLimit' in partial || 'favoritesLimit' in partial) this.#engine.refresh();
     if ('favoriteKey' in partial || 'favoritesKey' in partial || 'recentKey' in partial) {

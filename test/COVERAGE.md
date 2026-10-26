@@ -117,7 +117,7 @@ Known bugs are in `test/NOTES.md`.
 | Feature | Status | Spec | Fixture |
 | --- | :-: | --- | --- |
 | `size` presets | ✓ | `theming.spec.ts` | `theming.html` |
-| `page-size` (+ live change: NOTES #5, `test.fail`) | △ | `attributes.spec.ts` | `attributes.html` |
+| `page-size` (+ live change while open re-pages, NOTES #5 fixed) | ✓ | `attributes.spec.ts` | `attributes.html` |
 | Attribute removal resets to default (`page-size`, `display`, `size`, `usage-storage`) | ✓ | `attributes.spec.ts` | `attributes.html` |
 | `labels` (custom, English fallback, live reassignment) | ✓ | `labels.spec.ts` | `labels.html` |
 | Result `group` headings (first-appearance order) | ✓ | `groups.spec.ts` | `groups.html` |

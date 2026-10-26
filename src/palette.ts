@@ -441,6 +441,20 @@ export class PaletteEngine {
     this.#changed();
   }
 
+  /**
+   * `page-size` changed — re-page the current search results client-side, keeping the
+   * first visible row on screen. Other modes don't paginate; a pending provider call
+   * pages its results with the new size when it lands.
+   */
+  pageSizeChanged(): void {
+    if (this.mode !== 'context-search' && this.mode !== 'global-search') return;
+    const size = Math.max(1, this.#host.pageSize());
+    const first = this.items.length ? this.#allResults.indexOf(this.items[0]!) : 0;
+    this.totalPages = Math.max(1, Math.ceil(this.#allResults.length / size));
+    this.#showPage(Math.floor(Math.max(0, first) / size) + 1);
+    this.#changed();
+  }
+
   /** `display` changed — re-lay the current step's input/tokens, keeping the typed query. */
   displayChanged(): void {
     if (this.mode !== 'command-step') return;
