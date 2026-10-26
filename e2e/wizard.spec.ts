@@ -50,6 +50,21 @@ test('the inline prefix is locked: selection-delete into it is blocked', async (
   await expect(p.input).toHaveValue('/go us');
 });
 
+test('tokens display: a "$" pattern in an answer is kept verbatim in the remove label', async ({ page }) => {
+  const p = palette(page);
+  await p.host.evaluate((el) => {
+    el.setAttribute('display', 'tokens');
+    (el as unknown as { commands: unknown[] }).commands = [{
+      id: 'price', trigger: '/price', text: 'Price',
+      steps: [{ id: 'a', options: [{ id: 'x', text: "R$&D $' $$", value: 'x' }] }, { id: 'b', isFreeTextAllowed: true }],
+    }];
+  });
+  await open(page);
+  await page.keyboard.type('/price ');
+  await page.keyboard.press('Enter');
+  await expect(p.tokens.locator('.pa-badge__remove')).toHaveAttribute('aria-label', "Remove R$&D $' $$");
+});
+
 test('tokens display: answers become removable badges above an empty input', async ({ page }) => {
   const p = palette(page);
   await p.host.evaluate((el) => el.setAttribute('display', 'tokens'));

@@ -86,3 +86,15 @@ current results" (was `test.fail(true, 'NOTES.md #5')`).
 `displayChanged()`), which re-slices the kept full result list with the new size in the
 search modes, keeping the first visible row on screen. The e2e spec is green (marker
 removed); unit test in `test/unit/palette.test.ts`.
+
+## 6. A `$` pattern in a token's answer garbles its "Remove …" label — FIXED
+
+**Where:** `src/render.ts` `tokensHtml()` — `labels.removeToken.replace('{name}', t.label)`.
+
+**Symptom:** `String.prototype.replace` with a string replacement expands `$&`, `$'`, `` $` ``
+and `$$`, so an answer like `R$&D` (an option text, or typed free text) gave the badge's
+remove button `aria-label="Remove R{name}D"`.
+
+**Fix (2026-10-26):** uses the same `{name}` placeholder fill as every other label (a
+replacer function). Pinned by `e2e/wizard.spec.ts` "tokens display: a "$" pattern in an
+answer is kept verbatim in the remove label".

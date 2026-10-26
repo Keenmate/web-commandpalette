@@ -217,7 +217,7 @@ function tokensHtml(tokens: TokenView[] | null, labels: Labels): string {
         case 'selection':
           return (
             `<span class="pa-badge"><bdi>${escapeHtml(t.label)}</bdi>` +
-            `<button type="button" class="pa-badge__remove" data-token="${t.index}" aria-label="${escapeHtml(labels.removeToken.replace('{name}', t.label))}">` +
+            `<button type="button" class="pa-badge__remove" data-token="${t.index}" aria-label="${escapeHtml(fill(labels.removeToken, { name: t.label }))}">` +
             `<span class="pa-icon pa-icon--remove" aria-hidden="true"></span></button></span>`
           );
       }

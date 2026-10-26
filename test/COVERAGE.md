@@ -76,7 +76,7 @@ Known bugs are in `test/NOTES.md`.
 | --- | :-: | --- | --- |
 | Static / live / free-text steps → `action` selections | ✓ | `wizard.spec.ts` | `wizard.html` |
 | Locked inline prefix | ✓ | `wizard.spec.ts` | `wizard.html` |
-| `display="tokens"` | ✓ | `wizard.spec.ts` | `wizard.html` |
+| `display="tokens"` (+ remove label keeps `$` patterns verbatim, NOTES #6) | ✓ | `wizard.spec.ts` | `wizard.html` |
 | `getIsVisibleCallback` skips / keeps a step | ✓ | `wizard.spec.ts` | `wizard-branching.html` |
 | Option with its own `steps` forks the wizard | ✓ | `wizard.spec.ts` | `wizard-branching.html` |
 

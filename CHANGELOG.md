@@ -101,6 +101,8 @@ contexts / options with the new field names.
 - `page-size` changed while the palette is open now re-pages the current search results right
   away (the first visible row stays on screen); it used to apply only from the next keystroke
   (test/NOTES.md #5).
+- `display="tokens"`: an answer containing a `$` replacement pattern (`$&`, `$'`, `$$`) no longer
+  garbles its badge's "Remove …" label (test/NOTES.md #6).
 
 ## [1.0.0-rc02] - 2026-10-19
 
