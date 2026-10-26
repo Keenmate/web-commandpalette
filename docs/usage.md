@@ -145,7 +145,7 @@ All plain JSON (so a server can send them verbatim), except the optional JS-only
 (`get*Callback`, `onClick`, `Step.getOptionsCallback`, `Context.searchCallback`).
 
 ```ts
-// A command is a core ActionItem<CommandContext> (isActive / getIsActiveCallback aren't used).
+// A command is a core ActionItem<CommandContext> (isToggled / getIsToggledCallback aren't used).
 interface Command {
   id: string;
   trigger: string;           // "/deploy" — the slash token that runs it

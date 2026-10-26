@@ -80,10 +80,10 @@ export interface CommandContext extends PaletteContext {
  * click on a command without `steps`, or the last answer of a wizard — runs
  * `beforeActionCallback` → `onClick` → the `action` event (`source: 'palette'`).
  * The palette has no built-in actions, so `action` is always `'custom'` and `id`
- * identifies the command. `isActive` / `getIsActiveCallback` are not supported
+ * identifies the command. `isToggled` / `getIsToggledCallback` are not supported
  * (palette rows are not toggles).
  */
-export interface Command extends Omit<ActionItem<CommandContext, never>, 'id' | 'text' | 'isActive' | 'getIsActiveCallback'> {
+export interface Command extends Omit<ActionItem<CommandContext, never>, 'id' | 'text' | 'isToggled' | 'getIsToggledCallback'> {
   id: string;
   /** The slash token that runs it, e.g. `"/go"`. */
   trigger: string;

@@ -41,7 +41,9 @@ Enter / click on a command without `steps`, the last wizard answer, or its `g <l
 goes through core `runAction`: `beforeActionCallback(detail)` → the command's `onClick(detail)` →
 `onAction` → the `action` event. The palette has no built-in actions: `action` is always
 `'custom'`, `id` identifies the command. The event is dispatched a microtask later than
-`cp-command` / `cp-complete` were (the before-hook may be async).
+`cp-command` / `cp-complete` were (the before-hook may be async). Palette rows are not toggles:
+`Command` omits core's toggle state (`isToggled` / `getIsToggledCallback`, renamed from
+`isActive` / `getIsActiveCallback` in core).
 
 | Old | New |
 |---|---|
