@@ -341,7 +341,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   #select(item: Result, scope: Scope): boolean | Promise<boolean> {
     const detail: SelectEventDetail = this.#ctx({ item, scope });
     const proceed = (gate: BeforeCallbackResult): boolean => {
-      if (gate.isCancelled) {
+      if (gate.isRejected) {
         this.log.INTERACTION.debug('select vetoed', item);
         return false;
       }
