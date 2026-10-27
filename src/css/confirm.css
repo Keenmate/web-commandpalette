@@ -1,5 +1,5 @@
 /* ==============================================================================
-   CONFIRMATION — for `confirmation-duration` ms after a command ran, the dialog
+   FEEDBACK — for `feedback-duration` ms after a command ran, the dialog
    collapses to one line (✓, what ran, "Done", a countdown bar) instead of vanishing
    ============================================================================== */
 
