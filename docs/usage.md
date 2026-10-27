@@ -102,9 +102,9 @@ a `{:reply}`-backed `searchCallback` / `getStepOptionsCallback` (it pushes the c
 |---|---|
 | `isOpen` | Whether the palette is open. |
 | `open()` / `close()` / `toggle()` | Open on the home screen / close and reset / either. |
-| `openWith(query)` | Open pre-filled, e.g. `'/deploy '`, `':products laptop'`, `'mac'`. |
+| `openWith(term)` | Open pre-filled, e.g. `'/deploy '`, `':products laptop'`, `'mac'`. |
 | `reset()` | Back to the home screen (stays open). |
-| `setCommands(list)` / `setContexts(list)` | Same as assigning the properties. |
+| `commands` / `contexts` | The same properties as on the element (assignable). |
 | `openFavorites()` / `openRecent()` | Open on the full favorites / recent list. |
 
 The same methods exist on the element. The DOM-free `PaletteEngine` behind it is exported for

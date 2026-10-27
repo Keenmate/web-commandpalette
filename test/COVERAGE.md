@@ -33,11 +33,11 @@ Known bugs are in `test/NOTES.md`.
 
 | Feature | Status | Spec | Fixture |
 | --- | :-: | --- | --- |
-| `openWith(query)` | ✓ | `basic.spec.ts` | `basic.html` |
+| `openWith(term)` | ✓ | `basic.spec.ts` | `basic.html` |
 | `open` / `close` / `toggle` / `isOpen`, one event each; focus restored | ✓ | `api.spec.ts` | `api.html` |
 | `reset()` returns home while open | ✓ | `api.spec.ts` | `api.html` |
 | `openFavorites()` / `openRecent()` | ✓ | `api.spec.ts` | `api.html` |
-| `commands` / `contexts` reassignment + `setCommands` / `setContexts` while open | ✓ | `api.spec.ts` | `api.html` |
+| `commands` / `contexts` reassignment (element + `el.controller`) while open | ✓ | `api.spec.ts` | `api.html` |
 | `open` attribute opens/closes (CP-4, `test.fail`) | ✗ | `api.spec.ts` | `api.html` |
 | `el.controller` facade, ctx `controller` / `element` | ✓ | `interaction-model.spec.ts` | `interaction-model.html` |
 

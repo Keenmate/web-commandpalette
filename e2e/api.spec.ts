@@ -2,17 +2,22 @@ import { events, expect, load, open, palette, test, type Page } from './fixtures
 
 /**
  * The imperative API (`el.*`, mirrored on `el.controller`): open / close / toggle /
- * reset / openWith / openFavorites / openRecent / setCommands / setContexts, `isOpen`,
- * and live reassignment of `commands` / `contexts`. Fixture: test/api.html.
+ * reset / openWith / openFavorites / openRecent, `isOpen`, and live reassignment of
+ * `commands` / `contexts` (element and controller). Fixture: test/api.html.
  */
 
 type El = HTMLElement & {
   open(): void; close(): void; toggle(): void; reset(): void;
   openFavorites(): void; openRecent(): void;
-  setCommands(l: unknown[]): void; setContexts(l: unknown[]): void;
   commands: unknown[]; contexts: unknown[]; isOpen: boolean;
-  controller: { open(): void; close(): void; toggle(): void; isOpen: boolean };
+  controller: { open(): void; close(): void; toggle(): void; isOpen: boolean; commands: unknown[]; contexts: unknown[] };
 };
+
+/** Assign `commands` / `contexts` through `el.controller` (the same property as on the element). */
+const assignViaController = (page: Page, key: 'commands' | 'contexts', list: unknown[]) =>
+  page.evaluate(([k, l]) => {
+    (document.getElementById('palette') as unknown as El).controller[k as 'commands' | 'contexts'] = l as unknown[];
+  }, [key, list] as const);
 
 const call = (page: Page, method: string, ...args: unknown[]) =>
   page.evaluate(([m, a]) => {
@@ -92,14 +97,15 @@ test('openFavorites() / openRecent() open on the full lists (one open event)', a
   expect(await names(page)).toEqual(['open', 'close', 'open', 'close']);
 });
 
-test('commands reassigned while open re-render the home screen; setCommands() does the same', async ({ page }) => {
+test('commands reassigned while open re-render the home screen; so does controller.commands', async ({ page }) => {
   const p = palette(page);
   await open(page);
   await page.evaluate(() => {
     (document.getElementById('palette') as unknown as El).commands = [{ id: 'a', trigger: '/alpha', text: 'Alpha' }];
   });
   await expect(p.titles).toHaveText(['Alpha', 'Products', 'Users']);
-  await call(page, 'setCommands', [{ id: 'b', trigger: '/beta', text: 'Beta' }, { id: 'c', trigger: '/gamma', text: 'Gamma' }]);
+  await assignViaController(page, 'commands', [{ id: 'b', trigger: '/beta', text: 'Beta' }, { id: 'c', trigger: '/gamma', text: 'Gamma' }]);
+  expect(await page.evaluate(() => (document.getElementById('palette') as unknown as El).controller.commands.length)).toBe(2);
   await expect(p.titles).toHaveText(['Beta', 'Gamma', 'Products', 'Users']);
   // The new set is live for triggers too.
   await p.input.fill('/gam');
@@ -108,14 +114,14 @@ test('commands reassigned while open re-render the home screen; setCommands() do
   await expect.poll(async () => (await events(page)).find((e) => e.name === 'action')?.detail).toMatchObject({ id: 'c' });
 });
 
-test('contexts reassigned while open re-render; setContexts() does the same', async ({ page }) => {
+test('contexts reassigned while open re-render; so does controller.contexts', async ({ page }) => {
   const p = palette(page);
   await open(page);
   await page.evaluate(() => {
     (document.getElementById('palette') as unknown as El).contexts = [{ id: 'orders', trigger: ':orders', text: 'Orders' }];
   });
   await expect(p.titles).toHaveText(['Deploy to Environment', 'Go to Page', 'Reload Data', 'Orders']);
-  await call(page, 'setContexts', [{ id: 'docs', trigger: ':docs', text: 'Docs' }]);
+  await assignViaController(page, 'contexts', [{ id: 'docs', trigger: ':docs', text: 'Docs' }]);
   await expect(p.titles.last()).toHaveText('Docs');
   await p.input.fill(':');
   await expect(p.titles).toHaveText(['Docs']);
@@ -125,7 +131,7 @@ test('commands reassigned while a wizard runs keep the current step usable', asy
   const p = palette(page);
   await call(page, 'openWith', '/go ');
   await expect(p.titles).toHaveText(['Home', 'Users']);
-  await call(page, 'setCommands', [{ id: 'reload', trigger: '/reload', text: 'Reload Data' }]);
+  await assignViaController(page, 'commands', [{ id: 'reload', trigger: '/reload', text: 'Reload Data' }]);
   // No page error, the palette still answers the keyboard.
   await page.keyboard.press('Escape');
   await expect(p.root).toHaveClass(/--active/);

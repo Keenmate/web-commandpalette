@@ -56,7 +56,7 @@ test('el.controller is the public facade (no engine)', async ({ page }) => {
     c.close();
     return { keys: Object.keys(c).sort(), before, open, after: c.isOpen, value, hasEngine: 'engine' in el || 'machine' in el };
   });
-  expect(facade.keys).toEqual(['close', 'isOpen', 'open', 'openFavorites', 'openRecent', 'openWith', 'reset', 'setCommands', 'setContexts', 'toggle']);
+  expect(facade.keys).toEqual(['close', 'commands', 'contexts', 'isOpen', 'open', 'openFavorites', 'openRecent', 'openWith', 'reset', 'toggle']);
   expect(facade).toMatchObject({ before: false, open: true, after: false, value: '/assign', hasEngine: false });
 });
 

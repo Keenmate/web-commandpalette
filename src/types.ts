@@ -36,6 +36,10 @@ export type MaybePromise<T> = T | Promise<T>;
 export interface CommandPaletteController {
   /** Whether the palette is open. */
   readonly isOpen: boolean;
+  /** The commands (same as `el.commands`; assigning re-renders). */
+  commands: Command[];
+  /** The search contexts (same as `el.contexts`). */
+  contexts: Context[];
   /** Open on the home screen. No-op when already open. */
   open(): void;
   /** Close and reset. No-op when already closed. */
@@ -44,16 +48,12 @@ export interface CommandPaletteController {
   toggle(): void;
   /** Back to the home screen (stays open). */
   reset(): void;
-  /** Open pre-filled with `query` (`'/deploy'`, `':products laptop'`), run through the normal input pipeline. */
-  openWith(query: string): void;
+  /** Open pre-filled with `term` (`'/deploy'`, `':products laptop'`), run through the normal input pipeline. */
+  openWith(term: string): void;
   /** Open on the full favorites list (what `g f` does). */
   openFavorites(): void;
   /** Open on the full recently-used list. */
   openRecent(): void;
-  /** Same as assigning `commands`. */
-  setCommands(list: Command[]): void;
-  /** Same as assigning `contexts`. */
-  setContexts(list: Context[]): void;
 }
 
 /**
@@ -198,7 +198,7 @@ export type Scope = 'global' | { contextId: string };
 export interface SearchContext extends PaletteContext {
   /** `'global'` or `{ contextId }`. */
   scope: Scope;
-  /** The (non-empty, trimmed) query. */
+  /** The (non-empty, trimmed) search term. */
   term: string;
   /** Aborted when the request is superseded or the palette closes. Non-enumerable. */
   readonly signal: AbortSignal;

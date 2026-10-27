@@ -308,8 +308,8 @@ export class PaletteEngine {
     return this.#plan[this.stepIndex] ?? null;
   }
 
-  /** The editable part of the input (after the locked prefix). */
-  get query(): string {
+  /** The editable part of the input (after the locked prefix) — the search term. */
+  get term(): string {
     return this.input.slice(this.lockedLength);
   }
 

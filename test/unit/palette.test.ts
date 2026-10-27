@@ -100,7 +100,7 @@ describe('command list (/)', () => {
     const { m } = harness();
     m.setInput('/go rep');
     expect(m.input).toBe('/go rep');
-    expect(m.query).toBe('rep');
+    expect(m.term).toBe('rep');
     expect(titles(m)).toEqual(['Reports']);
   });
 

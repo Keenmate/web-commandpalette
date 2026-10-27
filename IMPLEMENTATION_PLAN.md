@@ -186,8 +186,9 @@ callbacks, `labels`) are **properties only** — hosts set them in JS / via thei
 
 ### Methods
 
-`open()`, `close()`, `toggle()`, `reset()` — also on `el.controller`, the public facade. Plus imperative hooks for fully server-driven hosts
-(used by the keen bridge): `setCommands(list)`, `setContexts(list)` (same as the setters).
+`open()`, `close()`, `toggle()`, `reset()` — also on `el.controller`, the public facade. Server-driven hosts
+(the keen bridge) assign the `commands` / `contexts` properties — on the element or on `el.controller`
+(2026-10-27 naming pass: the `setCommands()` / `setContexts()` duplicates were removed).
 Do **not** add a `setResults()` unless a host needs to push results outside the callback flow —
 prefer the callback path.
 

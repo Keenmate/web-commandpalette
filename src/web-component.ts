@@ -157,7 +157,7 @@ const EVENTS = [
 
 /** The public facade's methods — each delegates to the element method of the same name. */
 const CONTROLLER_METHODS = [
-  'open', 'close', 'toggle', 'reset', 'openWith', 'openFavorites', 'openRecent', 'setCommands', 'setContexts',
+  'open', 'close', 'toggle', 'reset', 'openWith', 'openFavorites', 'openRecent',
 ] as const satisfies readonly (keyof CommandPaletteController)[];
 
 /** What the one-line feedback needs, captured when the effect fired. */
@@ -645,6 +645,19 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
       get isOpen(): boolean {
         return el.isOpen;
       },
+      // State = the same-named property on element and controller (no set*() duplicates).
+      get commands(): Command[] {
+        return el.commands;
+      },
+      set commands(list: Command[]) {
+        el.commands = list;
+      },
+      get contexts(): Context[] {
+        return el.contexts;
+      },
+      set contexts(list: Context[]) {
+        el.contexts = list;
+      },
     } as CommandPaletteController;
     for (const name of CONTROLLER_METHODS) {
       Object.defineProperty(controller, name, {
@@ -760,15 +773,10 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.#engine.reset();
   }
 
-  /** Open pre-filled with `query` (e.g. `'/deploy'`, `':products laptop'`), run through the normal input pipeline. */
-  openWith(query: string): void {
+  /** Open pre-filled with `term` (e.g. `'/deploy'`, `':products laptop'`), run through the normal input pipeline. */
+  openWith(term: string): void {
     this.open();
-    this.#engine.setInput(query ?? '');
-  }
-
-  /** Same as assigning `commands` (imperative hook for server-driven hosts). */
-  setCommands(list: Command[]): void {
-    this.commands = list;
+    this.#engine.setInput(term ?? '');
   }
 
   /** Open on the full favorites list (what `g f` does). No-op list when favorites are off. */
@@ -781,11 +789,6 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   openRecent(): void {
     this.open();
     if (this.#engine.usageView !== 'recent') this.#engine.showUsage('recent');
-  }
-
-  /** Same as assigning `contexts`. */
-  setContexts(list: Context[]): void {
-    this.contexts = list;
   }
 }
 

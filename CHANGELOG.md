@@ -25,6 +25,10 @@ The cross-component naming pass (one vocabulary for all KeenMate web components)
   `confirmationDuration` / `confirmation-duration` → `feedbackDuration` / **`feedback-duration`**;
   `renderConfirmationCallback` → **`renderFeedbackCallback`**; types `ConfirmationContext` /
   `RenderConfirmationCallback` → `FeedbackContext` / `RenderFeedbackCallback`.
+- **`setCommands(list)` / `setContexts(list)` removed** (element and controller) — assign the
+  `commands` / `contexts` properties. `el.controller` now has the same `commands` / `contexts`
+  properties (state is one same-named property on both surfaces).
+- **`openWith(query)` → `openWith(term)`** (parameter name; the search text is `term` everywhere).
 
 ### Changed — BREAKING (interaction model, web-components-core rc15)
 
