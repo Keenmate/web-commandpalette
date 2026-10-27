@@ -46,19 +46,19 @@ test('any key dismisses it immediately; Ctrl+K during it opens a fresh palette',
   await expect(p.input).toHaveValue('');
 });
 
-test('confirmation="false" closes right away', async ({ page }) => {
+test('show-feedback="false" closes right away', async ({ page }) => {
   const p = palette(page);
-  await p.host.evaluate((el) => el.setAttribute('confirmation', 'false'));
+  await p.host.evaluate((el) => el.setAttribute('show-feedback', 'false'));
   await open(page);
   await page.keyboard.type('/reload');
   await page.keyboard.press('Enter');
   await expect(p.root).not.toHaveClass(/--active/, { timeout: 300 });
 });
 
-test('renderConfirmationCallback: custom content, or false to skip', async ({ page }) => {
+test('renderFeedbackCallback: custom content, or false to skip', async ({ page }) => {
   const p = palette(page);
   await p.host.evaluate((el) => {
-    (el as unknown as { renderConfirmationCallback: unknown }).renderConfirmationCallback = (ctx: { type: string; commandId?: string; sentence: string }) =>
+    (el as unknown as { renderFeedbackCallback: unknown }).renderFeedbackCallback = (ctx: { type: string; commandId?: string; sentence: string }) =>
       ctx.commandId === 'reload' ? false : `<b class="custom">Ran ${ctx.sentence}</b>`;
   });
   await open(page);
@@ -73,16 +73,16 @@ test('renderConfirmationCallback: custom content, or false to skip', async ({ pa
   await expect(p.root).not.toHaveClass(/--active/, { timeout: 300 });
 });
 
-test('confirmation-duration="0" closes right away; a custom duration holds the line that long', async ({ page }) => {
+test('feedback-duration="0" closes right away; a custom duration holds the line that long', async ({ page }) => {
   const p = palette(page);
-  await p.host.evaluate((el) => el.setAttribute('confirmation-duration', '0'));
+  await p.host.evaluate((el) => el.setAttribute('feedback-duration', '0'));
   await open(page);
   await page.keyboard.type('/reload');
   await page.keyboard.press('Enter');
   await expect(p.root).not.toHaveClass(/--active/, { timeout: 300 });
   await expect(panel(page)).toBeHidden();
 
-  await p.host.evaluate((el) => el.setAttribute('confirmation-duration', '400'));
+  await p.host.evaluate((el) => el.setAttribute('feedback-duration', '400'));
   await open(page);
   await page.keyboard.type('/reload');
   await page.keyboard.press('Enter');
@@ -99,7 +99,7 @@ test('a search-result select gets no confirmation by default, a custom one when 
   await expect(p.root).not.toHaveClass(/--active/, { timeout: 300 });
 
   await p.host.evaluate((el) => {
-    (el as unknown as { renderConfirmationCallback: unknown }).renderConfirmationCallback = (ctx: { type: string; sentence: string; item?: { id: string } }) =>
+    (el as unknown as { renderFeedbackCallback: unknown }).renderFeedbackCallback = (ctx: { type: string; sentence: string; item?: { id: string } }) =>
       ctx.type === 'select' ? `<span class="custom-select">Opened ${ctx.sentence} (${ctx.item?.id})</span>` : null;
   });
   await open(page);

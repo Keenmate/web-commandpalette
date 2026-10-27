@@ -70,9 +70,9 @@ Objects and functions are **properties only** — set them from JS (or a framewo
 | `usageKey` | `string` | `localStorage` key. Default `'web-commandpalette:usage'` — put the user id in it. |
 | `favoritesLimit` / `recentLimit` | `number` | Rows each home section shows. Default `3`; `0` hides the section. |
 | `favoriteKey` / `favoritesKey` / `recentKey` | `string` | Ctrl/⌘ + key while open: star the active row / show all favorites / show all recent. Defaults `d` / `f` / `r`; `''` disables. |
-| `renderConfirmationCallback` | `(ctx) => string \| HTMLElement \| null \| false` | Custom confirmation content; `false` skips it. See [Confirmation](#confirmation). |
-| `isConfirmationShown` | `boolean` | Show the confirmation panel after a command ran. Default `true` (attribute `confirmation`). |
-| `confirmationDuration` | `number` | How long it stays (ms). Default `1500`; `0` = off. |
+| `renderFeedbackCallback` | `(ctx) => string \| HTMLElement \| null \| false` | Custom feedback content; `false` skips it. See [Feedback](#feedback). |
+| `isFeedbackShown` | `boolean` | Show the one-line feedback after a command ran. Default `true` (attribute `show-feedback`). |
+| `feedbackDuration` | `number` | How long it stays (ms). Default `1500`; `0` = off. |
 | `favoritesHotkey` / `recentHotkey` | `string` | `g <letter>` sequence (palette closed) that opens on that list. Defaults `'g f'` / off. |
 | `onOpen` / `onClose` / `onSelect` / `onAction` / `onReady` | `(detail) => void` | Event twins — see [Events](#events). |
 | `controller` *(read-only)* | `CommandPaletteController` | The public facade. |
@@ -85,7 +85,7 @@ LiveView bridge after `connectedCallback`.
 
 `display`, `size`, `page-size`, `open-key`, `search-debounce`, `mobile-presentation`,
 `usage-storage`, `usage-key`, `favorites-limit`, `recent-limit`, `favorite-key`, `favorites-key`,
-`recent-key`, `favorites-hotkey`, `recent-hotkey`, `confirmation`, `confirmation-duration`.
+`recent-key`, `favorites-hotkey`, `recent-hotkey`, `show-feedback`, `feedback-duration`.
 `open` is **reflected** (present while open) — use the controller to open/close.
 
 Reserved for the Phoenix LiveView bridge (`@keenmate/keen-web-commandpalette`):
@@ -158,7 +158,7 @@ palette.beforeActionCallback = async ({ item }) => item.isDanger ? confirm(`Run 
 ```
 
 The palette **closes itself** after `select` / `action` (after a brief
-[confirmation](#confirmation) for commands); the host performs the effect (navigate, toast, …).
+[feedback line](#feedback) for commands); the host performs the effect (navigate, toast, …).
 
 ## Data shapes
 
@@ -327,21 +327,21 @@ interface UsageEntry {
 The element keeps at most 50 non-favorite entries in `localStorage`; with callbacks, pruning is up
 to the server. `usage-storage="none"` turns stars and both sections off.
 
-## Confirmation
+## Feedback
 
 After a wizard completes or an instant command runs, the dialog doesn't just vanish: for
-`confirmation-duration` ms (default 1500) it collapses to a single line — ✓, what ran, **Done**
+`feedback-duration` ms (default 1500) it collapses to a single line — ✓, what ran, **Done**
 and a countdown bar — then closes. A wizard reads as the sentence the user built, answers in bold
 (`/deploy to **Staging** branch **main**`); an instant command shows its text.
 
 - The `action` event fires **immediately**; only the close waits.
   `close` fires when the panel goes.
 - Any key or click dismisses it; <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd> goes straight to a fresh palette.
-- `confirmation="false"` (or `confirmation-duration="0"`) turns it off.
+- `show-feedback="false"` (or `feedback-duration="0"`) turns it off.
 - Search-result selections (`select`) get no panel by default — they usually navigate away.
 
 ```js
-palette.renderConfirmationCallback = (ctx) => {
+palette.renderFeedbackCallback = (ctx) => {
   // ctx = { type: 'action' | 'select', commandId?, commandText?, selections?,
   //         sentence, item?, scope?, duration } + controller / element / presentation
   if (ctx.type === 'select') return `Opening <b>${ctx.sentence}</b>…`;   // opt search results in
@@ -358,10 +358,10 @@ stay), `null` for the default, or `false` to close right away.
 Set `dir="rtl"` on the element or any ancestor (`<html dir="rtl">` is enough); the palette follows
 the effective direction, also when it changes at runtime.
 
-- The layout mirrors: icons on the right, keycaps and the ☆ on the left, the confirmation starting
+- The layout mirrors: icons on the right, keycaps and the ☆ on the left, the feedback line starting
   on the right. The CSS uses logical properties only.
 - ←/→ paging swaps: → (toward the inline start) is the previous page, ← the next.
-- Mixed text keeps its order: titles, descriptions, keycaps, badges and the confirmation are
+- Mixed text keeps its order: titles, descriptions, keycaps, badges and the feedback line are
   bidi-isolated, so `/deploy to Staging` stays `/deploy to Staging` in an RTL row, and Hebrew or
   Arabic command names (`/דוח עבור`) read right-to-left. Translate the strings with `labels`.
 

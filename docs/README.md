@@ -5,7 +5,7 @@ see the root [`README.md`](../README.md).)
 
 - **[Usage](./usage.md)** — how the palette behaves (modes, keyboard), every property, attribute,
   method and event, the data shapes (`Command`, `Step`, `Context`, `Option`, `Result`), step
-  pickers and branching, async search, result groups, favorites & recents, the confirmation, RTL,
+  pickers and branching, async search, result groups, favorites & recents, the feedback line, RTL,
   icons, labels and logging.
 - **[Theming](./theming.md)** — the `--cp-*` / `--base-*` namespaces, `--base-rem` sizing,
   `--base-font-size-*`, the `--cp-*` knobs, replaceable icons, size presets, shadow parts.

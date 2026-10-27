@@ -273,10 +273,10 @@ export type LoadUsageCallback = (ctx: PaletteContext) => MaybePromise<UsageEntry
 /** Upsert `ctx.entry` (insert or replace by `key`). */
 export type SaveUsageCallback = (ctx: PaletteContext & { entry: UsageEntry }) => MaybePromise<void>;
 
-// ── confirmation ────────────────────────────────────────────────────────────
+// ── feedback ────────────────────────────────────────────────────────────
 
-/** What `renderConfirmationCallback` gets. */
-export interface ConfirmationContext extends PaletteContext {
+/** What `renderFeedbackCallback` gets. */
+export interface FeedbackContext extends PaletteContext {
   /** Which effect just fired: a command ran (`action`) or a search result was chosen (`select`). */
   type: 'action' | 'select';
   commandId?: string;
@@ -293,10 +293,10 @@ export interface ConfirmationContext extends PaletteContext {
 }
 
 /**
- * Render the confirmation panel. Return markup or an element to replace the default,
- * `null`/`undefined` for the default, or `false` to skip the confirmation this time.
+ * Render the feedback panel. Return markup or an element to replace the default,
+ * `null`/`undefined` for the default, or `false` to skip the feedback this time.
  */
-export type RenderConfirmationCallback = (ctx: ConfirmationContext) => string | HTMLElement | null | undefined | false;
+export type RenderFeedbackCallback = (ctx: FeedbackContext) => string | HTMLElement | null | undefined | false;
 
 // ── before-hooks ────────────────────────────────────────────────────────────
 
@@ -368,7 +368,7 @@ export interface Labels {
   noFavorites: string;
   /** Recent list with nothing used yet. */
   noRecent: string;
-  /** Confirmation panel heading after a command ran. */
+  /** Feedback panel heading after a command ran. */
   done: string;
 }
 

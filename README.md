@@ -23,7 +23,7 @@ top; the CSS is the component's own (plain CSS in the shadow root).
 - Async search with debounce and `AbortSignal` cancellation; empty scoped queries never hit the server.
 - Favorites and recently used items (incl. completed runs, replayable with <kbd>Tab</kbd> / <kbd>Enter</kbd>),
   stored in `localStorage` or your backend.
-- A short confirmation of what ran, instead of the dialog just vanishing.
+- A short feedback line of what ran, instead of the dialog just vanishing.
 - Full keyboard control, `g <letter>` hotkeys, RTL, i18n `labels`, a fullscreen sheet on phones.
 
 ## What's New in v1.0.0-rc01
@@ -36,7 +36,7 @@ top; the CSS is the component's own (plain CSS in the shadow root).
 
 - **Favorites and recents, replayable in two keystrokes** — Star any row with <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>D</kbd>. The Recent list (ranked by frequency and recency) remembers instant commands, finished runs with their answers, contexts and chosen results. Replaying a run offers each remembered answer first: <kbd>Enter</kbd> accepts the rest and runs it, <kbd>Tab</kbd> steps through one answer at a time, and typing replaces an answer. The home screen shows only a few rows (`favorites-limit` / `recent-limit`). <kbd>Ctrl</kbd>+<kbd>F</kbd> / <kbd>R</kbd> or `g f` opens the full lists, and all of these keys are configurable. Usage is stored in `localStorage` per `usage-key`, or in your backend through `loadUsageCallback` / `saveUsageCallback`.
 
-- **A confirmation instead of a vanishing dialog** — When a command runs, the dialog used to disappear at once, which left users unsure anything had happened. It now shrinks, with an animation, to a one-line summary like ✓ `/deploy to Staging branch main` Done for `confirmation-duration` ms (default 1500). The `cp-complete` / `cp-command` event still fires immediately. Turn it off with `confirmation="false"`, or replace or skip it per run with `renderConfirmationCallback`.
+- **A feedback line instead of a vanishing dialog** — When a command runs, the dialog used to disappear at once, which left users unsure anything had happened. It now shrinks, with an animation, to a one-line summary like ✓ `/deploy to Staging branch main` Done for `feedback-duration` ms (default 1500). The `cp-complete` / `cp-command` event still fires immediately. Turn it off with `show-feedback="false"`, or replace or skip it per run with `renderFeedbackCallback`.
 
 - **Theming on the shared `--base-*` variables, plus its own `--cp-*` knobs** — The CSS is the component's own plain CSS, inlined into the shadow root. It reads only the shared `--base-*` variables (`@keenmate/base-css-variables` 2.0) and the component's `--cp-*` knobs. Font sizes follow `--base-font-size-*` and the font follows `--base-font-family`. Sizing scales with `--base-rem` and `size="sm|lg|xl"`. Icons (check, close, star) and the results scrollbar can be themed through `--cp-icon-*` and `--cp-scrollbar-*`. Shadow parts expose `palette`, `container`, `input`, `results` and `footer`. The examples site has a theme gallery with seven styles and size switches.
 
@@ -117,7 +117,7 @@ The palette closes itself after `select` / `action`; the host performs the effec
 takes one `ctx`, and every ctx and event detail carries `controller` (`el.controller`, the public
 facade) and `element`. See [docs/usage.md](./docs/usage.md) for the full API and
 [docs/examples.md](./docs/examples.md) for recipes (step pickers, branching wizards, favorites on
-the server, custom confirmation).
+the server, custom feedback line).
 
 ## Editor IntelliSense
 
@@ -170,7 +170,7 @@ Details — single tests, the CSS pipeline, publishing, the example-site image �
 
 | Layer | File | Role |
 |-------|------|------|
-| Element | `src/web-component.ts` | `CommandPaletteElement` — the `static inputs` / `static events` tables (IDE metadata is generated from them), overlay, presentation, confirmation |
+| Element | `src/web-component.ts` | `CommandPaletteElement` — the `static inputs` / `static events` tables (IDE metadata is generated from them), overlay, presentation, feedback line |
 | Logic | `src/palette.ts` | `PaletteEngine` — DOM-free modes, wizard, filtering, async search, pagination |
 | Logic | `src/usage.ts` | `UsageStore` — favorites + recents, frecency, pluggable persistence |
 | Render | `src/render.ts` | builds the shadow DOM once and patches it |

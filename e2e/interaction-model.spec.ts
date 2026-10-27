@@ -193,14 +193,14 @@ test('a click on a row: triggerElement is the row; the g-sequence shortcut runs 
   expect(await fromKeys).toBe('reload:keydown:none');
 });
 
-test('renderConfirmationCallback gets { type: "action", commandText, sentence } + the context', async ({ page }) => {
+test('renderFeedbackCallback gets { type: "action", commandText, sentence } + the context', async ({ page }) => {
   const p = palette(page);
-  await page.evaluate(() => document.getElementById('palette')!.setAttribute('confirmation', 'true'));
+  await page.evaluate(() => document.getElementById('palette')!.setAttribute('show-feedback', 'true'));
   await openPalette(page);
   await p.input.fill('/reload');
   await page.keyboard.press('Enter');
-  await expect.poll(async () => (await ctxs(page)).confirmation?.json?.type).toBe('action');
-  const c = (await ctxs(page)).confirmation;
+  await expect.poll(async () => (await ctxs(page)).feedback?.json?.type).toBe('action');
+  const c = (await ctxs(page)).feedback;
   expect(c.json).toMatchObject({ type: 'action', commandId: 'reload', commandText: 'Reload', selections: [], sentence: '/reload' });
   expect(c.hasController && c.elementIsHost).toBe(true);
 });

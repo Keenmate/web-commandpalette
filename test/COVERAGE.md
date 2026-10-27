@@ -86,9 +86,9 @@ Known bugs are in `test/NOTES.md`.
 | --- | :-: | --- | --- |
 | ✓ Done line, `action` first, `close` after | ✓ | `confirmation.spec.ts` | `confirmation.html` |
 | Any key dismisses; Ctrl+K opens fresh | ✓ | `confirmation.spec.ts` | `confirmation.html` |
-| `confirmation="false"` | ✓ | `confirmation.spec.ts` | `confirmation.html` |
-| `renderConfirmationCallback` custom / `false` | ✓ | `confirmation.spec.ts` | `confirmation.html` |
-| `confirmation-duration` (`0` + custom) | ✓ | `confirmation.spec.ts` | `confirmation.html` |
+| `show-feedback="false"` | ✓ | `confirmation.spec.ts` | `confirmation.html` |
+| `renderFeedbackCallback` custom / `false` | ✓ | `confirmation.spec.ts` | `confirmation.html` |
+| `feedback-duration` (`0` + custom) | ✓ | `confirmation.spec.ts` | `confirmation.html` |
 | Select: none by default, custom render when the callback returns content | ✓ | `confirmation.spec.ts` | `confirmation.html` |
 
 ## 7. Favorites / recents (usage)

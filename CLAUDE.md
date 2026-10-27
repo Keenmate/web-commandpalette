@@ -137,8 +137,8 @@ See plan §10. These are the bugs that motivated the project.
   `signal` (like `controller` / `element`) is attached non-enumerable so `JSON.stringify(ctx)` stays data. `data-search-event` /
   `data-step-options-event` are reserved for the future `../keen-web-commandpalette` bridge.
 - The component closes itself after `select` / `action` (unless a before-hook returned `false`), and the host
-  performs the effect. Commands first collapse to the one-line confirmation (`#showConfirmation` in the
-  element, `.cp-confirming` hides everything but `.cp-confirm`; the event still fires immediately, `close` follows) — while `#confirmTimer` is set,
+  performs the effect. Commands first collapse to the one-line feedback (`show-feedback`) (`#showFeedback` in the
+  element, `.cp-confirming` hides everything but `.cp-confirm`; the event still fires immediately, `close` follows) — while `#feedbackTimer` is set,
   `#render()` must not repaint over it. The engine reports terminal effects through `host.effect()`, whose answer (`false` = vetoed, a Promise
   = later) decides whether usage is recorded or the wizard steps back to its last answer. Keep-open after a
   successful effect and a reply-directive channel (toast / keep-open) are still future work.

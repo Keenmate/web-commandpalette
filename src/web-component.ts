@@ -45,14 +45,14 @@ import {
   type BeforeSelectCallback,
   type Command,
   type CommandPaletteController,
-  type ConfirmationContext,
+  type FeedbackContext,
   type Context,
   type Display,
   type Labels,
   type LoadUsageCallback,
   type PaletteContext,
   type PaletteEventDetail,
-  type RenderConfirmationCallback,
+  type RenderFeedbackCallback,
   type Result,
   type SaveUsageCallback,
   type Scope,
@@ -88,8 +88,8 @@ const INPUTS: readonly InputDef[] = [
     description: 'Runs before a search result fires `select` (`ctx = { item, scope }`). Return `false` (async OK) to cancel: no event, nothing recorded, the palette stays open. Other return values continue.' },
   { configKey: 'loadUsageCallback', converter: toFunction(), on: 'update', type: '(ctx: PaletteContext) => UsageEntry[] | Promise<UsageEntry[]>',
     description: 'Load favorites/recents from the host (e.g. per user, from the server) instead of `localStorage`. Called on connect and when this or `usage-key` changes.' },
-  { configKey: 'renderConfirmationCallback', converter: toFunction(), on: 'none', type: '(ctx: ConfirmationContext) => string | HTMLElement | null | false',
-    description: 'Render the text of the one-line confirmation shown after a command ran (the ✓, "Done" and countdown stay). `ctx = { type, commandId?, commandText?, selections?, sentence, item?, scope?, duration }` + `controller` / `element`; `type` is `action` or `select`. Return markup / an element to replace the default, `null` for the default, or `false` to skip it this time. Search-result selections (`type: "select"`) get no confirmation unless this returns content.' },
+  { configKey: 'renderFeedbackCallback', converter: toFunction(), on: 'none', type: '(ctx: FeedbackContext) => string | HTMLElement | null | false',
+    description: 'Render the text of the one-line feedback shown after a command ran (the ✓, "Done" and countdown stay). `ctx = { type, commandId?, commandText?, selections?, sentence, item?, scope?, duration }` + `controller` / `element`; `type` is `action` or `select`. Return markup / an element to replace the default, `null` for the default, or `false` to skip it this time. Search-result selections (`type: "select"`) get no feedback unless this returns content.' },
   { configKey: 'saveUsageCallback', converter: toFunction(), on: 'none', type: '(ctx: { entry: UsageEntry }) => void | Promise<void>',
     description: 'Upsert one favorite/recent entry (`ctx.entry`, by `entry.key`) — called on every use and every star toggle when `loadUsageCallback` is set.' },
 
@@ -104,10 +104,10 @@ const INPUTS: readonly InputDef[] = [
     description: "Key that toggles the palette together with Ctrl/⌘. Default `k`. Set `''` to disable the global hotkey." },
   { configKey: 'searchDebounce', attribute: 'search-debounce', converter: toInt({ min: 0, default: 150 }), on: 'none',
     description: 'Debounce (ms) before a provider call in global search, context search and `isLiveSearch` steps. Static lists never call a provider.' },
-  { configKey: 'isConfirmationShown', attribute: 'confirmation', converter: toBool('default-true'), on: 'none',
-    description: 'After a command ran, collapse the dialog to one line for `confirmation-duration` ms showing what ran (✓ `/deploy to Staging branch main` · Done) instead of vanishing. The `action` event fires first; `close` follows when it goes. Any key or click dismisses it. `confirmation="false"` turns it off.' },
-  { configKey: 'confirmationDuration', attribute: 'confirmation-duration', converter: toInt({ min: 0, default: 1500 }), on: 'none',
-    description: 'How long the confirmation stays (ms). Default 1500; `0` turns it off.' },
+  { configKey: 'isFeedbackShown', attribute: 'show-feedback', converter: toBool('default-true'), on: 'none',
+    description: 'After a command ran, collapse the dialog to one line for `feedback-duration` ms showing what ran (✓ `/deploy to Staging branch main` · Done) instead of vanishing. The `action` event fires first; `close` follows when it goes. Any key or click dismisses it. `show-feedback="false"` turns it off.' },
+  { configKey: 'feedbackDuration', attribute: 'feedback-duration', converter: toInt({ min: 0, default: 1500 }), on: 'none',
+    description: 'How long the feedback stays (ms). Default 1500; `0` turns it off.' },
   { configKey: 'usageStorage', attribute: 'usage-storage', converter: toEnum(['local', 'none'] as const, { default: 'local' }), shouldReflect: true, on: 'update',
     description: 'Favorites + recents. `local` (default) keeps them in `localStorage` under `usage-key` — or in the host, via `loadUsageCallback` / `saveUsageCallback`, when those are set; `none` turns stars and the Favorites/Recent sections off.' },
   { configKey: 'usageKey', attribute: 'usage-key', converter: toText({ default: 'web-commandpalette:usage' }), on: 'update',
@@ -160,7 +160,7 @@ const CONTROLLER_METHODS = [
   'open', 'close', 'toggle', 'reset', 'openWith', 'openFavorites', 'openRecent', 'setCommands', 'setContexts',
 ] as const satisfies readonly (keyof CommandPaletteController)[];
 
-/** What the one-line confirmation needs, captured when the effect fired. */
+/** What the one-line feedback needs, captured when the effect fired. */
 type Done =
   | { type: 'action'; command: Command; selections: Selection[]; sentence: string; parts: TokenView[] }
   | { type: 'select'; item: Result; scope: Scope };
@@ -198,9 +198,9 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   declare recentKey: string;
   declare favoritesHotkey: string;
   declare recentHotkey: string | null;
-  declare isConfirmationShown: boolean;
-  declare confirmationDuration: number;
-  declare renderConfirmationCallback: RenderConfirmationCallback | null;
+  declare isFeedbackShown: boolean;
+  declare feedbackDuration: number;
+  declare renderFeedbackCallback: RenderFeedbackCallback | null;
   declare display: Display;
   declare size: 'sm' | 'lg' | 'xl' | null;
   declare pageSize: number;
@@ -227,8 +227,8 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   #releaseScroll: (() => void) | null = null;
   #releaseInset: (() => void) | null = null;
   #returnFocus: HTMLElement | null = null;
-  /** Set while the one-line confirmation is showing. */
-  #confirmTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Set while the one-line feedback is showing. */
+  #feedbackTimer: ReturnType<typeof setTimeout> | null = null;
   /** The event / row behind the engine call in progress (for the `action` detail). */
   #trigger: Trigger | null = null;
 
@@ -322,7 +322,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
    * A terminal outcome from the engine. `select` and `action` go through their
    * before-hook; the answer (`false` = vetoed) goes back to the engine, which
    * records usage or restores its state. The palette closes (or shows the
-   * confirmation) only when the effect went ahead.
+   * feedback) only when the effect went ahead.
    */
   #onEffect(effect: Effect): EffectOutcome {
     switch (effect.type) {
@@ -389,28 +389,28 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     });
   }
 
-  /** The effect went ahead: show the confirmation, else close. */
+  /** The effect went ahead: show the feedback, else close. */
   #afterEffect(done: Done): void {
     if (!this.#isOpen) return;
-    if (!this.#showConfirmation(done)) this.close();
+    if (!this.#showFeedback(done)) this.close();
   }
 
   #render(): void {
-    if (this.#isOpen && !this.#confirmTimer) this.#renderer.render(this.#engine, this.#labels);
+    if (this.#isOpen && !this.#feedbackTimer) this.#renderer.render(this.#engine, this.#labels);
   }
 
   /**
-   * Collapse to the one-line confirmation and close after `confirmation-duration`.
+   * Collapse to the one-line feedback and close after `feedback-duration`.
    * Returns false when there's nothing to confirm (off, `0` ms, a search result
    * without custom content, or the callback said `false`).
    */
-  #showConfirmation(done: Done): boolean {
-    if (this.config.isConfirmationShown === false) return false;
-    const duration = (this.config.confirmationDuration as number | undefined) ?? 1500;
+  #showFeedback(done: Done): boolean {
+    if (this.config.isFeedbackShown === false) return false;
+    const duration = (this.config.feedbackDuration as number | undefined) ?? 1500;
     if (duration <= 0) return false;
 
     const command = done.type === 'action' ? done.command : null;
-    const ctx: ConfirmationContext = this.#ctx(
+    const ctx: FeedbackContext = this.#ctx(
       done.type === 'select'
         ? { type: 'select' as const, sentence: done.item.title, item: done.item, scope: done.scope, duration }
         : {
@@ -423,13 +423,13 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
           },
     );
 
-    let custom: ReturnType<RenderConfirmationCallback> = null;
-    const cb = this.config.renderConfirmationCallback as RenderConfirmationCallback | null;
+    let custom: ReturnType<RenderFeedbackCallback> = null;
+    const cb = this.config.renderFeedbackCallback as RenderFeedbackCallback | null;
     if (cb) {
       try {
         custom = cb(ctx);
       } catch (err) {
-        this.log.UI.error('renderConfirmationCallback failed', err);
+        this.log.UI.error('renderFeedbackCallback failed', err);
       }
     }
     if (custom === false) return false;
@@ -448,7 +448,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
         parts: done.type === 'action' ? done.parts : [],
       });
     }
-    // Shrink from the dialog's current height to the confirmation's (min-height)
+    // Shrink from the dialog's current height to the feedback's (min-height)
     // height with a transition, rather than snapping. The phone sheet is full-height
     // anyway — the line just centres in it.
     const { container } = this.#shell;
@@ -463,15 +463,15 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     }
     confirm.focus();
     live.textContent = `${this.#labels.done}: ${ctx.sentence}`;
-    this.log.UI.debug('confirmation', ctx);
-    this.#confirmTimer = setTimeout(() => this.close(), duration);
+    this.log.UI.debug('feedback', ctx);
+    this.#feedbackTimer = setTimeout(() => this.close(), duration);
     return true;
   }
 
-  #endConfirmation(): void {
-    if (!this.#confirmTimer) return;
-    clearTimeout(this.#confirmTimer);
-    this.#confirmTimer = null;
+  #endFeedback(): void {
+    if (!this.#feedbackTimer) return;
+    clearTimeout(this.#feedbackTimer);
+    this.#feedbackTimer = null;
     this.#shell.confirm.hidden = true;
     this.#shell.confirm.replaceChildren();
     this.#shell.container.style.height = '';
@@ -553,13 +553,13 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
 
     // Focus trap: Tab inside the input selects (handled above); from anywhere else
     // in the dialog (the fullscreen close button) Tab returns to the input.
-    // The one-line confirmation holds focus: any plain key or a click dismisses it.
+    // The one-line feedback holds focus: any plain key or a click dismisses it.
     // Chords (Ctrl/⌘+K…) and lone modifiers pass through to the global toggle.
     this.#shell.confirm.addEventListener('click', () => this.close());
     container.addEventListener('keydown', (e) => {
       // `e.target !== input`: the Enter that finished the command is still bubbling
-      // from the input when the confirmation appears — it must not dismiss it.
-      if (this.#confirmTimer && e.target !== input) {
+      // from the input when the feedback appears — it must not dismiss it.
+      if (this.#feedbackTimer && e.target !== input) {
         if (e.ctrlKey || e.metaKey || e.altKey || ['Shift', 'Control', 'Meta', 'Alt'].includes(e.key)) return;
         e.preventDefault();
         this.close();
@@ -703,8 +703,8 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
 
   /** Open on the home screen. No-op when already open. */
   open(): void {
-    // Re-opening during a confirmation (e.g. `g d` right after a run) starts fresh.
-    if (this.#confirmTimer) this.close();
+    // Re-opening while the feedback shows (e.g. `g d` right after a run) starts fresh.
+    if (this.#feedbackTimer) this.close();
     if (this.#isOpen) return;
     this.flush();
     // One overlay at a time: dismiss any open KM popovers (closed palette ignores its own dismiss).
@@ -727,7 +727,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   /** Close and reset. No-op when already closed. */
   close(): void {
     if (!this.#isOpen) return;
-    this.#endConfirmation();
+    this.#endFeedback();
     this.#isOpen = false;
     this.#engine.dispose();
     this.#engine.reset();
@@ -749,8 +749,8 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
 
   /** Open when closed, close when open. */
   toggle(): void {
-    // During a confirmation the user is moving on: Ctrl/⌘+K opens a fresh palette.
-    if (this.#isOpen && !this.#confirmTimer) this.close();
+    // While the feedback shows, the user is moving on: Ctrl/⌘+K opens a fresh palette.
+    if (this.#isOpen && !this.#feedbackTimer) this.close();
     else this.open();
   }
 

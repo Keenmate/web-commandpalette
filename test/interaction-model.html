@@ -6,7 +6,7 @@
   <title>e2e fixture — interaction model</title>
 </head>
 <body>
-  <web-command-palette id="palette" defer confirmation="false"></web-command-palette>
+  <web-command-palette id="palette" defer show-feedback="false"></web-command-palette>
 
   <script type="module">
     import '../src/index.ts';
@@ -79,8 +79,8 @@
       window.__ctx.search = { ...describeCtx(ctx), hasSignal: ctx.signal instanceof AbortSignal };
       return [{ id: 'p1', title: `Person ${ctx.term}` }];
     };
-    palette.renderConfirmationCallback = (ctx) => {
-      window.__ctx.confirmation = describeCtx(ctx);
+    palette.renderFeedbackCallback = (ctx) => {
+      window.__ctx.feedback = describeCtx(ctx);
       return null;
     };
     // `defer` held the first build while the listeners / twins were wired; build now (core fires `ready`).

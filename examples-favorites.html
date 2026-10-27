@@ -140,25 +140,25 @@ const pickGroup = {               placeholder: 'Group…', getOptionsCallback: (
 </div>
 
 <!-- ============================================================= -->
-<!-- FR06 · Confirmation                                              -->
+<!-- FR06 · Feedback                                              -->
 <!-- ============================================================= -->
 <div class="card">
-    <h2>FR06 · Confirmation</h2>
+    <h2>FR06 · Feedback</h2>
     <p>
         When a command finishes, the dialog briefly collapses to one line showing what ran (✓ <code>/deploy to
         Staging branch main</code> · Done) instead of vanishing the moment you press <kbd>Enter</kbd>. The <code>action</code> event still fires
         immediately; only the closing waits. Any key or click dismisses it, and <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>
-        goes straight to a fresh palette. <code>renderConfirmationCallback(ctx)</code> can replace the content,
-        return <code>false</code> to skip the confirmation, or opt search-result selections in. By default they get none,
+        goes straight to a fresh palette. <code>renderFeedbackCallback(ctx)</code> can replace the content,
+        return <code>false</code> to skip the feedback, or opt search-result selections in. By default they get none,
         because they usually navigate away.
     </p>
     <div class="controls">
-        <span><code>confirmation</code>:</span>
+        <span><code>show-feedback</code>:</span>
         <label><input type="radio" name="fr06-on" value="true" checked> on</label>
         <label><input type="radio" name="fr06-on" value="false"> off</label>
     </div>
     <div class="controls">
-        <span><code>confirmation-duration</code>:</span>
+        <span><code>feedback-duration</code>:</span>
         <label><input type="radio" name="fr06-duration" value="800"> 800 ms</label>
         <label><input type="radio" name="fr06-duration" value="1500" checked> 1500 ms</label>
         <label><input type="radio" name="fr06-duration" value="3000"> 3000 ms</label>
@@ -168,7 +168,7 @@ const pickGroup = {               placeholder: 'Group…', getOptionsCallback: (
         <label><input type="radio" name="fr06-render" value="default" checked> default</label>
         <label><input type="radio" name="fr06-render" value="custom"> custom callback (+ search results)</label>
     </div>
-<pre>palette.renderConfirmationCallback = (ctx) =&gt; {
+<pre>palette.renderFeedbackCallback = (ctx) =&gt; {
     if (ctx.type === 'select') return `Opening &lt;b&gt;${ctx.sentence}&lt;/b&gt;…`;
     if (ctx.commandId === 'reload') return false;             // no confirmation for this one
     return `&lt;b&gt;${ctx.commandText}&lt;/b&gt; queued — ${ctx.selections.map((s) =&gt; s.label).join(' → ')}`;
@@ -311,14 +311,14 @@ const pickGroup = {               placeholder: 'Group…', getOptionsCallback: (
         });
 
         // FR06 — confirmation
-        radio('fr06-on', (v) => palette.setAttribute('confirmation', v));
-        radio('fr06-duration', (ms) => palette.setAttribute('confirmation-duration', ms));
+        radio('fr06-on', (v) => palette.setAttribute('show-feedback', v));
+        radio('fr06-duration', (ms) => palette.setAttribute('feedback-duration', ms));
         const customConfirmation = (ctx) => {
             if (ctx.type === 'select') return `Opening <b>${ctx.sentence}</b>…`;
             if (ctx.commandId === 'reload') return false;
             return `<b>${ctx.commandText}</b> queued — ${ctx.selections.map((s) => s.label).join(' → ') || 'no answers'}`;
         };
-        radio('fr06-render', (v) => { palette.renderConfirmationCallback = v === 'custom' ? customConfirmation : null; });
+        radio('fr06-render', (v) => { palette.renderFeedbackCallback = v === 'custom' ? customConfirmation : null; });
 
         attachControlsPersistence('favorites');
     }

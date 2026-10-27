@@ -20,6 +20,11 @@ The cross-component naming pass (one vocabulary for all KeenMate web components)
   Use `el.isReady`, the `ready` attribute / `:state(ready)`, `await el.whenReady()`, or hold the
   build with the core **`defer`** attribute (`shouldDefer`) and call **`el.release()`** once
   listeners / config are set. `el.destroy()` (core) tears the element down for good.
+- **Confirmation → feedback** (it is post-run feedback, not a confirm prompt):
+  `isConfirmationShown` / attribute `confirmation` → `isFeedbackShown` / **`show-feedback`**;
+  `confirmationDuration` / `confirmation-duration` → `feedbackDuration` / **`feedback-duration`**;
+  `renderConfirmationCallback` → **`renderFeedbackCallback`**; types `ConfirmationContext` /
+  `RenderConfirmationCallback` → `FeedbackContext` / `RenderFeedbackCallback`.
 
 ### Changed — BREAKING (interaction model, web-components-core rc15)
 

@@ -47,20 +47,20 @@
         <label><input type="radio" name="pg01-debounce" value="400"> 400</label>
     </div>
     <div class="controls">
-        <span><code>confirmation</code>:</span>
+        <span><code>show-feedback</code>:</span>
         <label><input type="radio" name="pg01-confirmation" value="true" checked> on</label>
         <label><input type="radio" name="pg01-confirmation" value="false"> off</label>
     </div>
     <div class="controls">
-        <span><code>confirmation-duration</code>:</span>
+        <span><code>feedback-duration</code>:</span>
         <label><input type="radio" name="pg01-confirm-ms" value="800"> 800 ms</label>
         <label><input type="radio" name="pg01-confirm-ms" value="1500" checked> 1500 ms</label>
         <label><input type="radio" name="pg01-confirm-ms" value="3000"> 3000 ms</label>
     </div>
     <div class="controls">
-        <span>confirmation content:</span>
+        <span>feedback content:</span>
         <label><input type="radio" name="pg01-confirm-render" value="default" checked> default</label>
-        <label><input type="radio" name="pg01-confirm-render" value="custom"> renderConfirmationCallback (+ search results)</label>
+        <label><input type="radio" name="pg01-confirm-render" value="custom"> renderFeedbackCallback (+ search results)</label>
     </div>
     <div class="controls">
         <span><code>usage-storage</code>:</span>
@@ -137,13 +137,13 @@
         bindRadios('pg01-dir', (v) => palette.setAttribute('dir', v));
 
         // Confirmation
-        bindRadios('pg01-confirmation', (v) => palette.setAttribute('confirmation', v));
-        bindRadios('pg01-confirm-ms', (v) => palette.setAttribute('confirmation-duration', v));
+        bindRadios('pg01-confirmation', (v) => palette.setAttribute('show-feedback', v));
+        bindRadios('pg01-confirm-ms', (v) => palette.setAttribute('feedback-duration', v));
         const customConfirmation = (ctx) => {
             if (ctx.type === 'select') return `Opening <b>${ctx.sentence}</b>…`;
             return `<b>${ctx.commandText}</b> — ${ctx.selections.map((s) => s.label).join(' → ') || 'ran'}`;
         };
-        bindRadios('pg01-confirm-render', (v) => { palette.renderConfirmationCallback = v === 'custom' ? customConfirmation : null; });
+        bindRadios('pg01-confirm-render', (v) => { palette.renderFeedbackCallback = v === 'custom' ? customConfirmation : null; });
 
         // Favorites + recents
         bindRadios('pg01-usage', (v) => palette.setAttribute('usage-storage', v));
