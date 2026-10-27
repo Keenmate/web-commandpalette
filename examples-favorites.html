@@ -47,7 +47,7 @@ const pickGroup = {               placeholder: 'Group…', getOptionsCallback: (
         Run a few commands, then reopen the palette: the home screen starts with <b>Recent</b>, ranked by how often
         and how recently you used each item. Commands, completed runs, contexts and search results are all remembered.
         Star the active row with <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>D</kbd> or the ☆ button to pin it under <b>Favorites</b>.
-        The home screen keeps both sections short (<code>favorites-limit</code> / <code>recent-limit</code>, 3 by default).
+        The home screen keeps both sections short (<code>max-favorite-count</code> / <code>max-recent-count</code>, 3 by default).
         The full lists are one chord away: <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>F</kbd> for favorites and
         <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>R</kbd> for recent (type to filter). Or click the section heading's “+N” control. With the palette
         closed, <kbd>g</kbd> <kbd>f</kbd> opens it straight on favorites.
@@ -60,7 +60,7 @@ const pickGroup = {               placeholder: 'Group…', getOptionsCallback: (
         <label><input type="radio" name="fr02-user" value="bob"> bob</label>
     </div>
     <div class="controls">
-        <span><code>favorites-limit</code> + <code>recent-limit</code>:</span>
+        <span><code>max-favorite-count</code> + <code>max-recent-count</code>:</span>
         <label><input type="radio" name="fr02-limit" value="1"> 1</label>
         <label><input type="radio" name="fr02-limit" value="3" checked> 3</label>
         <label><input type="radio" name="fr02-limit" value="5"> 5</label>
@@ -274,7 +274,7 @@ const pickGroup = {               placeholder: 'Group…', getOptionsCallback: (
         const radio = (name, fn) => document.querySelectorAll(`input[name="${name}"]`).forEach((r) =>
             r.addEventListener('change', (e) => { if (e.target.checked) fn(e.target.value); }));
         radio('fr02-user', (user) => palette.setAttribute('usage-key', `demo:usage:${user}`));
-        radio('fr02-limit', (n) => { palette.setAttribute('favorites-limit', n); palette.setAttribute('recent-limit', n); });
+        radio('fr02-limit', (n) => { palette.setAttribute('max-favorite-count', n); palette.setAttribute('max-recent-count', n); });
         radio('fr02-storage', (v) => palette.setAttribute('usage-storage', v));
         document.getElementById('fr02-favorites').addEventListener('click', () => palette.controller.openFavorites());
         document.getElementById('fr02-clear').addEventListener('click', () => {

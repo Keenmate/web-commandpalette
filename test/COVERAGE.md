@@ -100,7 +100,7 @@ Known bugs are in `test/NOTES.md`.
 | Ctrl+D / star toggle favorites | ✓ | `usage.spec.ts` | `usage.html` |
 | `usage-storage="none"` | ✓ | `usage.spec.ts` | `usage.html` |
 | Ctrl+F / Ctrl+R full lists | ✓ | `usage.spec.ts` | `usage.html` |
-| `favorites-limit` / `recent-limit` (`1` → "+N", `0` hides) | ✓ | `usage-limits.spec.ts` | `usage-limits.html` |
+| `max-favorite-count` / `max-recent-count` (`1` → "+N", `0` hides) | ✓ | `usage-limits.spec.ts` | `usage-limits.html` |
 | `usage-key` isolation + live switch | ✓ | `usage-limits.spec.ts` | `usage-limits.html` |
 | `loadUsageCallback` (async) / `saveUsageCallback({ entry })`; save-without-load (CP-3, current behaviour) | ✓ | `usage-host.spec.ts` | `usage-host.html` |
 

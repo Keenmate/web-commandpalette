@@ -68,7 +68,7 @@ Objects and functions are **properties only** — set them from JS (or a framewo
 | `mobilePresentation` | `'auto' \| 'floating' \| 'fullscreen'` | `auto`: fullscreen sheet on touch phones only. |
 | `usageStorage` | `'local' \| 'none'` | Favorites + recents on (default) or off. |
 | `usageKey` | `string` | `localStorage` key. Default `'web-commandpalette:usage'` — put the user id in it. |
-| `favoritesLimit` / `recentLimit` | `number` | Rows each home section shows. Default `3`; `0` hides the section. |
+| `maxFavoriteCount` / `maxRecentCount` | `number` | Rows each home section shows. Default `3`; `0` hides the section. |
 | `favoriteKey` / `favoritesKey` / `recentKey` | `string` | Ctrl/⌘ + key while open: star the active row / show all favorites / show all recent. Defaults `d` / `f` / `r`; `''` disables. |
 | `renderFeedbackCallback` | `(ctx) => string \| HTMLElement \| null \| false` | Custom feedback content; `false` skips it. See [Feedback](#feedback). |
 | `isFeedbackShown` | `boolean` | Show the one-line feedback after a command ran. Default `true` (attribute `show-feedback`). |
@@ -84,7 +84,7 @@ LiveView bridge after `connectedCallback`.
 ## Attributes
 
 `display`, `size`, `page-size`, `open-key`, `search-debounce`, `mobile-presentation`,
-`usage-storage`, `usage-key`, `favorites-limit`, `recent-limit`, `favorite-key`, `favorites-key`,
+`usage-storage`, `usage-key`, `max-favorite-count`, `max-recent-count`, `favorite-key`, `favorites-key`,
 `recent-key`, `favorites-hotkey`, `recent-hotkey`, `show-feedback`, `feedback-duration`.
 `open` is **reflected** (present while open) — use the controller to open/close.
 
@@ -281,7 +281,7 @@ palette.searchCallback = async ({ term }) => [
 
 On by default. The home screen starts with **Favorites** (starred) and **Recent** (ranked by
 frequency × recency), then Commands and Search. The two remembered sections stay compact: at most
-`favorites-limit` / `recent-limit` one-line rows (default 3 each), with a “+N · Ctrl F” control at
+`max-favorite-count` / `max-recent-count` one-line rows (default 3 each), with a “+N · Ctrl F” control at
 the heading's end.
 
 - **Full lists**: <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>F</kbd> shows every favorite,

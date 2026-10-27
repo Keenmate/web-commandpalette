@@ -52,9 +52,9 @@ export interface PaletteEngineHost {
   /** Favorites/recents store, or null when disabled. */
   usage?(): UsageStore | null;
   /** How many recent entries the home screen shows. */
-  recentLimit?(): number;
+  maxRecentCount?(): number;
   /** How many favorites the home screen shows. */
-  favoritesLimit?(): number;
+  maxFavoriteCount?(): number;
   /** The star shortcut's keycap text (for `labels.noFavorites`). */
   starKey?(): string;
   /** State changed — re-render. */
@@ -543,8 +543,8 @@ export class PaletteEngine {
     this.homeMore = { favorites: 0, recent: 0 };
     const star = <T extends ViewItem>(item: T): T => (store && item.key ? { ...item, favorite: store.isFavorite(item.key) } : item);
     this.#setItems([
-      ...(store ? capped('favorites', this.#host.favoritesLimit?.() ?? 3) : []),
-      ...(store ? capped('recent', this.#host.recentLimit?.() ?? 3) : []),
+      ...(store ? capped('favorites', this.#host.maxFavoriteCount?.() ?? 3) : []),
+      ...(store ? capped('recent', this.#host.maxRecentCount?.() ?? 3) : []),
       ...this.#commandItems(this.#commands(), 'commands').map(star),
       ...this.#host.contexts().map((c) => star(contextItem(c, 'contexts'))),
     ]);

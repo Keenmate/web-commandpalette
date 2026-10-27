@@ -53,7 +53,7 @@ interface HostState {
   debounce: number;
   /** Turn favorites/recents on (in-memory). */
   usage: boolean;
-  recentLimit: number;
+  maxRecentCount: number;
 }
 
 export function harness(over: Partial<HostState> = {}): Harness {
@@ -68,7 +68,7 @@ export function harness(over: Partial<HostState> = {}): Harness {
     pageSize: 8,
     debounce: 150,
     usage: false,
-    recentLimit: 5,
+    maxRecentCount: 5,
     ...over,
   };
   const saved: UsageEntry[] = [];
@@ -87,7 +87,7 @@ export function harness(over: Partial<HostState> = {}): Harness {
     debounceMs: () => state.debounce,
     labels: () => DEFAULT_LABELS,
     usage: () => store,
-    recentLimit: () => state.recentLimit,
+    maxRecentCount: () => state.maxRecentCount,
     changed: () => changed(),
     effect: (e: Effect) => {
       effects.push(e.type === 'action' ? { type: 'action', commandId: e.command.id, selections: e.selections } : e);

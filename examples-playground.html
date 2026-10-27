@@ -68,7 +68,7 @@
         <label><input type="radio" name="pg01-usage" value="none"> none</label>
     </div>
     <div class="controls">
-        <span><code>favorites-limit</code> / <code>recent-limit</code>:</span>
+        <span><code>max-favorite-count</code> / <code>max-recent-count</code>:</span>
         <label><input type="radio" name="pg01-limit" value="0"> 0</label>
         <label><input type="radio" name="pg01-limit" value="3" checked> 3</label>
         <label><input type="radio" name="pg01-limit" value="5"> 5</label>
@@ -147,7 +147,7 @@
 
         // Favorites + recents
         bindRadios('pg01-usage', (v) => palette.setAttribute('usage-storage', v));
-        bindRadios('pg01-limit', (v) => { palette.setAttribute('favorites-limit', v); palette.setAttribute('recent-limit', v); });
+        bindRadios('pg01-limit', (v) => { palette.setAttribute('max-favorite-count', v); palette.setAttribute('max-recent-count', v); });
         bindRadios('pg01-keys', (v) => {
             const on = v === 'on';
             palette.setAttribute('favorite-key', on ? 'd' : '');

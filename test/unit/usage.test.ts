@@ -127,14 +127,14 @@ describe('favorites + recents', () => {
     expect(sections(m)).toEqual(['commands', 'contexts']);
   });
 
-  it('recentLimit caps the Recent section; 0 hides it', () => {
-    const { m, host } = harness({ usage: true, recentLimit: 1 });
+  it('maxRecentCount caps the Recent section; 0 hides it', () => {
+    const { m, host } = harness({ usage: true, maxRecentCount: 1 });
     m.setInput('/signout');
     m.select();
     m.enterContext(CONTEXTS[1]);
     m.reset();
     expect(m.items.filter((i) => i.section === 'recent')).toHaveLength(1);
-    host.state.recentLimit = 0;
+    host.state.maxRecentCount = 0;
     m.reset();
     expect(sections(m)).toEqual(['commands', 'contexts']);
   });
@@ -151,7 +151,7 @@ describe('compact home + full lists (Ctrl/⌘+F / R)', () => {
   }
 
   it('home caps Recent/Favorites, rows are one-line, homeMore counts the rest', () => {
-    const { m } = harness({ usage: true, recentLimit: 2 });
+    const { m } = harness({ usage: true, maxRecentCount: 2 });
     useGo(m, ['Home', 'Users', 'Reports']);
     const recent = m.items.filter((i) => i.section === 'recent');
     expect(recent).toHaveLength(2);
@@ -160,7 +160,7 @@ describe('compact home + full lists (Ctrl/⌘+F / R)', () => {
   });
 
   it('showUsage lists everything with meta; typing filters; Esc goes home; the same key toggles', () => {
-    const { m } = harness({ usage: true, recentLimit: 1 });
+    const { m } = harness({ usage: true, maxRecentCount: 1 });
     useGo(m, ['Home', 'Users', 'Reports']);
     m.showUsage('recent');
     expect(m.mode).toBe('recent-list');

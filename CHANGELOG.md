@@ -29,6 +29,8 @@ The cross-component naming pass (one vocabulary for all KeenMate web components)
   `commands` / `contexts` properties. `el.controller` now has the same `commands` / `contexts`
   properties (state is one same-named property on both surfaces).
 - **`openWith(query)` → `openWith(term)`** (parameter name; the search text is `term` everywhere).
+- **Limits are `max*Count`**: `favoritesLimit` / `favorites-limit` → **`maxFavoriteCount`** /
+  **`max-favorite-count`**; `recentLimit` / `recent-limit` → **`maxRecentCount`** / **`max-recent-count`**.
 
 ### Changed — BREAKING (interaction model, web-components-core rc15)
 

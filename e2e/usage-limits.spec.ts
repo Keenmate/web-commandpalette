@@ -2,7 +2,7 @@ import { expect, load, open, palette, test, type Page } from './fixtures';
 
 /**
  * Home-screen caps for favorites / recents and `usage-key` isolation.
- * Fixture: test/usage-limits.html (confirmation off so runs close at once).
+ * Fixture: test/usage-limits.html (feedback off so runs close at once).
  */
 
 const attr = (page: Page, name: string, value: string) =>
@@ -34,8 +34,8 @@ async function runTwo(page: Page): Promise<void> {
 
 test.beforeEach(async ({ page }) => load(page, 'usage-limits'));
 
-test('favorites-limit="1": one row, the heading says "+1"', async ({ page }) => {
-  await attr(page, 'favorites-limit', '1');
+test('max-favorite-count="1": one row, the heading says "+1"', async ({ page }) => {
+  await attr(page, 'max-favorite-count', '1');
   await starTwo(page);
   await expect(section(page, 'Favorites').locator('.pa-command-palette__item')).toHaveCount(1);
   await expect(section(page, 'Favorites').locator('.cp-more')).toContainText('+1');
@@ -47,23 +47,23 @@ test('favorites default limit (3) shows both, with no "+N"', async ({ page }) =>
   await expect(section(page, 'Favorites').locator('.cp-more')).not.toContainText('+');
 });
 
-test('favorites-limit="0" hides the section; Ctrl+F still lists them', async ({ page }) => {
+test('max-favorite-count="0" hides the section; Ctrl+F still lists them', async ({ page }) => {
   const p = palette(page);
   await starTwo(page);
-  await attr(page, 'favorites-limit', '0');
+  await attr(page, 'max-favorite-count', '0');
   await expect.poll(() => headings(page)).toEqual(['Commands', 'Search']);
   await page.keyboard.press('Control+f');
   await expect(p.context).toHaveText('Favorites');
   await expect(p.titles).toHaveCount(2);
 });
 
-test('recent-limit="1": one row, the heading says "+1"; "0" hides it', async ({ page }) => {
-  await attr(page, 'recent-limit', '1');
+test('max-recent-count="1": one row, the heading says "+1"; "0" hides it', async ({ page }) => {
+  await attr(page, 'max-recent-count', '1');
   await runTwo(page);
   await open(page);
   await expect(section(page, 'Recent').locator('.pa-command-palette__item')).toHaveCount(1);
   await expect(section(page, 'Recent').locator('.cp-more')).toContainText('+1');
-  await attr(page, 'recent-limit', '0');
+  await attr(page, 'max-recent-count', '0');
   await expect.poll(() => headings(page)).toEqual(['Commands', 'Search']);
 });
 

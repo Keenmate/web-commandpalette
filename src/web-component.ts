@@ -112,9 +112,9 @@ const INPUTS: readonly InputDef[] = [
     description: 'Favorites + recents. `local` (default) keeps them in `localStorage` under `usage-key` — or in the host, via `loadUsageCallback` / `saveUsageCallback`, when those are set; `none` turns stars and the Favorites/Recent sections off.' },
   { configKey: 'usageKey', attribute: 'usage-key', converter: toText({ default: 'web-commandpalette:usage' }), on: 'update',
     description: '`localStorage` key for favorites/recents. Put the user id in it (`cp:usage:42`) so users sharing a browser never see each other’s.' },
-  { configKey: 'favoritesLimit', attribute: 'favorites-limit', converter: toInt({ min: 0, default: 3 }), on: 'update',
+  { configKey: 'maxFavoriteCount', attribute: 'max-favorite-count', converter: toInt({ min: 0, default: 3 }), on: 'update',
     description: 'How many favorites the home screen shows (one-line rows). The heading shows how many more there are; all of them are behind `favorites-key` / `favorites-hotkey`. `0` hides the section.' },
-  { configKey: 'recentLimit', attribute: 'recent-limit', converter: toInt({ min: 0, default: 3 }), on: 'update',
+  { configKey: 'maxRecentCount', attribute: 'max-recent-count', converter: toInt({ min: 0, default: 3 }), on: 'update',
     description: 'How many recently/frequently used items the home screen shows (one-line rows). All of them are behind `recent-key` / `recent-hotkey`. `0` hides the section.' },
   { configKey: 'favoriteKey', attribute: 'favorite-key', converter: toText({ default: 'd', isEmptyAllowed: true }), on: 'update',
     description: "Ctrl/⌘ + this key stars/unstars the active row while the palette is open. Default `d`; `''` disables." },
@@ -191,8 +191,8 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   declare saveUsageCallback: SaveUsageCallback | null;
   declare usageStorage: 'local' | 'none';
   declare usageKey: string;
-  declare recentLimit: number;
-  declare favoritesLimit: number;
+  declare maxRecentCount: number;
+  declare maxFavoriteCount: number;
   declare favoriteKey: string;
   declare favoritesKey: string;
   declare recentKey: string;
@@ -293,8 +293,8 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
       debounceMs: () => (this.config.searchDebounce as number) ?? 150,
       labels: () => this.#labels,
       usage: () => this.#usage,
-      recentLimit: () => (this.config.recentLimit as number) ?? 3,
-      favoritesLimit: () => (this.config.favoritesLimit as number) ?? 3,
+      maxRecentCount: () => (this.config.maxRecentCount as number) ?? 3,
+      maxFavoriteCount: () => (this.config.maxFavoriteCount as number) ?? 3,
       starKey: () => chordKeycap(this.#keys().favorite),
       changed: () => this.#render(),
       effect: (effect) => this.#onEffect(effect),
@@ -598,7 +598,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     if ('display' in partial) this.#engine.displayChanged();
     if ('pageSize' in partial) this.#engine.pageSizeChanged();
     if ('usageStorage' in partial || 'usageKey' in partial || 'loadUsageCallback' in partial) this.#applyUsage();
-    else if ('recentLimit' in partial || 'favoritesLimit' in partial) this.#engine.refresh();
+    else if ('maxRecentCount' in partial || 'maxFavoriteCount' in partial) this.#engine.refresh();
     if ('favoriteKey' in partial || 'favoritesKey' in partial || 'recentKey' in partial) {
       this.#renderer.keys = this.#keys();
       this.#renderer.invalidate();
