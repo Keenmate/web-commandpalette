@@ -321,7 +321,8 @@ export interface Labels {
   placeholder: string;
   /** Step input placeholder when the step defines none. */
   filterPlaceholder: string;
-  emptyText: string;
+  /** No results / nothing to list. */
+  empty: string;
   /** Loader text. */
   searching: string;
   /** Context pill in context search; `{name}`. */
@@ -376,7 +377,7 @@ export interface Labels {
 export const DEFAULT_LABELS: Labels = {
   placeholder: 'Type / for commands, : to search, or just start typing…',
   filterPlaceholder: 'Type to filter…',
-  emptyText: 'No results found',
+  empty: 'No results found',
   searching: 'Searching…',
   searchingIn: 'Searching in {name}',
   typeToSearch: 'Type to search {name}',

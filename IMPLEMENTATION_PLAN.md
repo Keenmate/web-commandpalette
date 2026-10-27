@@ -269,7 +269,7 @@ export type Scope = 'global' | { contextId: string };
 
 export interface Labels {
   placeholder: string;           // idle input placeholder
-  emptyText: string;             // "No results found"
+  empty: string;                 // "No results found"
   searching: string;             // loader text
   searchingIn: string;           // badge; supports {name}
   typeToSearch: string;          // empty-context prompt; supports {name}

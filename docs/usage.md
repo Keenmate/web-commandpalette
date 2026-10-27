@@ -379,7 +379,7 @@ the effective direction, also when it changes at runtime.
 palette.labels = { placeholder: 'Hledat…', typeToSearch: 'Začněte psát pro hledání v {name}', favorites: 'Oblíbené', recent: 'Nedávné' };
 ```
 
-Keys: `placeholder`, `filterPlaceholder`, `emptyText`, `searching`, `searchingIn` `{name}`,
+Keys: `placeholder`, `filterPlaceholder`, `empty`, `searching`, `searchingIn` `{name}`,
 `typeToSearch` `{name}`, `commands`, `search`, `searchContexts`, `pageOf` `{page} {total} {count}`,
 `navigate`, `select`, `back`, `close`, `pages`, `fullscreenTitle`, `dialogLabel`,
 `removeToken` `{name}`, `resultsCount` `{count}`.

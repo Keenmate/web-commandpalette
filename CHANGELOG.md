@@ -37,6 +37,8 @@ The cross-component naming pass (one vocabulary for all KeenMate web components)
   `UsageEntry.item` → `result` (persisted: a recent / favorite search result stored by an earlier
   rc has no `result` and is skipped — it comes back the next time it is chosen). The engine's
   `select` effect carries `result` too.
+- **`labels.emptyText` → `labels.empty`** (the empty-list text has one key in every component).
+  All other UI strings were already `labels` keys.
 
 ### Changed — BREAKING (interaction model, web-components-core rc15)
 

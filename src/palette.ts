@@ -611,7 +611,7 @@ export class PaletteEngine {
     const all = this.#usageItems(view, false);
     const labels = this.#host.labels();
     this.emptyText = all.length
-      ? labels.emptyText
+      ? labels.empty
       : view === 'favorites'
         ? fill(labels.noFavorites, { key: this.#host.starKey?.() ?? 'Ctrl D' })
         : labels.noRecent;
@@ -661,7 +661,7 @@ export class PaletteEngine {
     this.mode = 'command-list';
     this.highlight = needle;
     this.isLoading = false;
-    this.emptyText = this.#host.labels().emptyText;
+    this.emptyText = this.#host.labels().empty;
     this.#setItems(this.#starred(this.#commandItems(filterCommands(this.#commands(), needle))));
   }
 
@@ -862,7 +862,7 @@ export class PaletteEngine {
   #applyStepFilter(): void {
     const opts = filterOptions(this.#stepOptions ?? [], this.#stepQuery);
     this.isLoading = false;
-    this.emptyText = this.#host.labels().emptyText;
+    this.emptyText = this.#host.labels().empty;
     this.#setItems(this.#stepItems(opts));
   }
 
@@ -883,7 +883,7 @@ export class PaletteEngine {
         const list = (options ?? []) as Option[];
         if (isLive) {
           this.isLoading = false;
-          this.emptyText = this.#host.labels().emptyText;
+          this.emptyText = this.#host.labels().empty;
           this.#setItems(this.#stepItems(list));
         } else {
           this.#stepOptions = list;
@@ -977,7 +977,7 @@ export class PaletteEngine {
     this.mode = 'context-list';
     this.highlight = needle;
     this.isLoading = false;
-    this.emptyText = this.#host.labels().emptyText;
+    this.emptyText = this.#host.labels().empty;
     this.#setItems(this.#starred(filterContexts(this.#host.contexts(), needle).map((c) => contextItem(c))));
   }
 
@@ -1028,7 +1028,7 @@ export class PaletteEngine {
     ]);
     if (!this.#host.searchCallback()) {
       this.isLoading = false;
-      this.emptyText = this.#host.labels().emptyText;
+      this.emptyText = this.#host.labels().empty;
       this.#setResults(local);
       return;
     }
@@ -1059,7 +1059,7 @@ export class PaletteEngine {
       const call = this.#searchFor(scope);
       if (!call) {
         this.isLoading = false;
-        this.emptyText = this.#host.labels().emptyText;
+        this.emptyText = this.#host.labels().empty;
         this.#setResults(prefix);
         this.#changed();
         return;
@@ -1068,7 +1068,7 @@ export class PaletteEngine {
         (signal) => call(signal) as Result[] | PromiseLike<Result[]>,
         (results) => {
           this.isLoading = false;
-          this.emptyText = this.#host.labels().emptyText;
+          this.emptyText = this.#host.labels().empty;
           this.#setResults([...prefix, ...this.#starred(((results ?? []) as Result[]).map((r) => resultItem(r, scope)))]);
         },
       );
