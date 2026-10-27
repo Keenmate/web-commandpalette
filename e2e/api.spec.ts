@@ -24,7 +24,7 @@ const names = async (page: Page) => (await events(page)).map((e) => e.name).filt
 
 test.beforeEach(async ({ page }) => {
   await load(page, 'api');
-  await expect.poll(async () => (await events(page)).map((e) => e.name)).toEqual(['ready']);
+  await expect(palette(page).host).toHaveAttribute('ready', '');
 });
 
 test('open() / close() are idempotent; isOpen follows; each fires its event once', async ({ page }) => {

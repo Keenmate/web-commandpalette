@@ -7,7 +7,7 @@
 </head>
 <body>
   <input id="outside" placeholder="outside input">
-  <div id="slot-a"><web-command-palette id="palette" confirmation="false"></web-command-palette></div>
+  <div id="slot-a"><web-command-palette id="palette" defer confirmation="false"></web-command-palette></div>
   <div id="slot-b"></div>
 
   <script type="module">
@@ -18,6 +18,7 @@
       const target = el.parentElement.id === 'slot-a' ? 'slot-b' : 'slot-a';
       document.getElementById(target).appendChild(el);
     };
+    el.release(); // `defer` held the build until the event recorder was wired (core `ready`)
     ready();
   </script>
 </body>

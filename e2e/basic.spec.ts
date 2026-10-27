@@ -12,7 +12,9 @@ test('Ctrl+K toggles the palette, focuses the input, fires open/close', async ({
   await expect(p.root).not.toHaveClass(/--active/);
   await expect(p.host).not.toHaveAttribute('open');
   const names = (await events(page)).map((e) => e.name);
-  expect(names).toEqual(['ready', 'open', 'close']);
+  // `ready` (core) fired during upgrade, before the fixture's listeners: the host carries the attribute.
+  expect(names).toEqual(['open', 'close']);
+  await expect(p.host).toHaveAttribute('ready', '');
 });
 
 test('home screen lists commands and contexts with keycaps', async ({ page }) => {

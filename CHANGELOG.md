@@ -11,6 +11,16 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Changed — BREAKING (naming unification, web-components-core naming pass)
+
+The cross-component naming pass (one vocabulary for all KeenMate web components). No aliases.
+
+- **`ready` comes from core** (`BlissElement`): it fires once right after the first build —
+  during upgrade, no longer a microtask later, so a listener added after the `import` misses it.
+  Use `el.isReady`, the `ready` attribute / `:state(ready)`, `await el.whenReady()`, or hold the
+  build with the core **`defer`** attribute (`shouldDefer`) and call **`el.release()`** once
+  listeners / config are set. `el.destroy()` (core) tears the element down for good.
+
 ### Changed — BREAKING (interaction model, web-components-core rc15)
 
 Events, callbacks and commands follow the shared KeenMate interaction model

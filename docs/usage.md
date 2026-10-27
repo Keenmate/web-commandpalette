@@ -110,6 +110,27 @@ a `{:reply}`-backed `searchCallback` / `getStepOptionsCallback` (it pushes the c
 The same methods exist on the element. The DOM-free `PaletteEngine` behind it is exported for
 standalone use only; the element never exposes it.
 
+## Lifecycle
+
+The ready / defer / destroy lifecycle comes from web-components-core's `BlissElement`:
+
+- **`ready`** fires once, right after the first build — during upgrade for a plain
+  `<web-command-palette>` (so a listener added after the `import` misses it). Check
+  `el.isReady`, the `ready` attribute / `:state(ready)`, or `await el.whenReady()` instead.
+- **`defer`** (attribute; property `shouldDefer`) holds the first build until `el.release()` (or
+  removing the attribute) — set up `commands`, callbacks and listeners first, then build once:
+
+  ```html
+  <web-command-palette id="palette" defer></web-command-palette>
+  <script type="module">
+    palette.commands = commands;
+    palette.addEventListener('ready', () => console.log('palette ready'));
+    palette.release();
+  </script>
+  ```
+- **`destroy()`** tears the element down for good (stops what disconnect stops; later
+  reconnects don't rebuild). The palette holds nothing beyond what `disconnect` releases.
+
 ## Events
 
 All bubble and are **not** composed. Each has a camelCase twin property (`el.onAction = (detail) => …`)
@@ -121,7 +142,7 @@ carries `controller` / `element` (non-enumerable) and the presentation flags.
 | `open` / `close` | `onOpen` / `onClose` | context only | Opened / closed (`close` also follows every command and selection). |
 | `select` | `onSelect` | `{ item, scope }` | A search result was chosen. Veto with `beforeSelectCallback`. |
 | `action` | `onAction` | `{ action: 'custom', id, item, source: 'palette', selections, sourceEvent, triggerElement, dataset }` | A command ran — immediately (no `steps`, `selections: []`) or after the wizard's last answer. `id` is the command id, `item` the command. |
-| `ready` | `onReady` | context only | First render done (fires a microtask after upgrade). |
+| `ready` | `onReady` | context only | First build done — once per element lifetime, fired by core `BlissElement` (see [Lifecycle](#lifecycle)). |
 
 A command is a core action item (`@keenmate/web-components-core/actions`), so running one follows
 the shared order: `beforeActionCallback(detail)` (`false` cancels) → the command's

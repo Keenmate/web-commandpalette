@@ -152,7 +152,7 @@ const EVENTS = [
   { name: 'close', description: 'The palette closed (also after a command ran / a result was chosen). Twin: `onClose(detail)`.' },
   { name: 'select', description: "A search result was chosen. `detail = { item, scope }` (`scope` is `'global'` or `{ contextId }`). Perform the effect (navigate…); the palette closes itself. Veto with `beforeSelectCallback`. Twin: `onSelect(detail)`." },
   { name: 'action', description: "A command ran — immediately (no `steps`) or after the wizard's last answer. `detail = { action: 'custom', id, item, source: 'palette', selections, sourceEvent, triggerElement, dataset }` — `id` is the command id, `item` the command, each selection `{ stepId, label, value, optionId?, isFreeText }`. The command's `onClick(detail)` runs first; veto with `beforeActionCallback`. The palette closes itself. Twin: `onAction(detail)`." },
-  { name: 'ready', description: 'The element connected and rendered for the first time. Twin: `onReady(detail)`.' },
+  { name: 'ready', description: 'The palette was built for the first time (once per element lifetime; fired by core `BlissElement`) — at first connect, or when the `defer` gate is released (`el.release()` / removing `defer`). The host then also has the `ready` attribute and matches `:state(ready)`; `el.whenReady()` resolves. Twin: `onReady(detail)`.' },
 ] as const;
 
 /** The public facade's methods — each delegates to the element method of the same name. */
@@ -221,7 +221,6 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   #globalKeys: GlobalKeys;
   #usage: UsageStore | null = null;
   #isOpen = false;
-  #isReady = false;
   #isFullscreen = false;
   #labels: Labels = DEFAULT_LABELS;
   #overlay: OverlayHandle | null = null;
@@ -586,12 +585,6 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.#engine.refresh();
     this.#renderer.invalidate();
     this.#render();
-    if (!this.#isReady && this.isConnected) {
-      this.#isReady = true;
-      // Deferred a microtask: upgrade happens while the defining module is still
-      // evaluating, so a listener added right after `import` would otherwise miss it.
-      queueMicrotask(() => this.emit('ready'));
-    }
   }
 
   protected override update(partial: Record<string, unknown>): void {

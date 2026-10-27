@@ -50,3 +50,22 @@ test('ready fires only once across moves (no rebuild)', async ({ page }) => {
   await page.waitForTimeout(50);
   expect((await events(page)).filter((e) => e.name === 'ready')).toHaveLength(1);
 });
+
+test('core defer gate: `defer` holds the first build, release() builds once and fires ready', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    const el = document.createElement('web-command-palette') as HTMLElement & { release(): void; whenReady(): Promise<void>; isReady: boolean };
+    const log: string[] = [];
+    el.addEventListener('ready', () => log.push('ready'));
+    el.setAttribute('defer', '');
+    document.getElementById('slot-b')!.appendChild(el);
+    await new Promise((r) => setTimeout(r, 30));
+    const before = { attr: el.hasAttribute('ready'), isReady: el.isReady, log: [...log] };
+    el.release();
+    await el.whenReady();
+    const after = { attr: el.hasAttribute('ready'), isReady: el.isReady, state: el.matches(':state(ready)'), log: [...log] };
+    el.remove();
+    return { before, after };
+  });
+  expect(result.before).toEqual({ attr: false, isReady: false, log: [] });
+  expect(result.after).toEqual({ attr: true, isReady: true, state: true, log: ['ready'] });
+});

@@ -6,7 +6,7 @@
   <title>e2e fixture — interaction model</title>
 </head>
 <body>
-  <web-command-palette id="palette" confirmation="false"></web-command-palette>
+  <web-command-palette id="palette" defer confirmation="false"></web-command-palette>
 
   <script type="module">
     import '../src/index.ts';
@@ -83,6 +83,8 @@
       window.__ctx.confirmation = describeCtx(ctx);
       return null;
     };
+    // `defer` held the first build while the listeners / twins were wired; build now (core fires `ready`).
+    palette.release();
     window.ready = true;
   </script>
 </body>
