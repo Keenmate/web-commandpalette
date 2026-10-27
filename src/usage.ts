@@ -19,7 +19,7 @@ export interface UsagePersistence {
 
 /** What a usage entry points at, before it has stats. */
 export type UsageTarget = Pick<UsageEntry, 'kind' | 'label'> &
-  Partial<Pick<UsageEntry, 'commandId' | 'selections' | 'contextId' | 'item' | 'scope'>>;
+  Partial<Pick<UsageEntry, 'commandId' | 'selections' | 'contextId' | 'result' | 'scope'>>;
 
 const scopeKey = (scope: Scope | undefined): string => (!scope || scope === 'global' ? 'global' : scope.contextId);
 
@@ -28,7 +28,7 @@ export function usageKey(t: UsageTarget): string {
   switch (t.kind) {
     case 'command': return `command:${t.commandId}`;
     case 'context': return `context:${t.contextId}`;
-    case 'result': return `result:${scopeKey(t.scope)}:${t.item?.id}`;
+    case 'result': return `result:${scopeKey(t.scope)}:${t.result?.id}`;
     case 'run': return `run:${t.commandId}:${JSON.stringify((t.selections ?? []).map((s) => [s.stepId, s.optionId ?? s.value]))}`;
   }
 }

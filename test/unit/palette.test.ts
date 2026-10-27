@@ -344,7 +344,7 @@ describe('context search (:)', () => {
     expect(titles(m)).toEqual(['iPad Air']);
     expect(m.items[0].badge).toBe('New');
     m.select();
-    expect(effects).toEqual([{ type: 'select', item: results[0], scope: { contextId: 'products' } }]);
+    expect(effects).toEqual([{ type: 'select', result: results[0], scope: { contextId: 'products' } }]);
   });
 
   it('back() returns to the context list', () => {
@@ -386,7 +386,7 @@ describe('global search', () => {
     m.setInput('alice');
     await vi.advanceTimersByTimeAsync(150);
     m.select();
-    expect(effects).toEqual([{ type: 'select', item: hit, scope: 'global' }]);
+    expect(effects).toEqual([{ type: 'select', result: hit, scope: 'global' }]);
   });
 
   it('a superseded request is aborted and its late result ignored', async () => {

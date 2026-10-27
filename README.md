@@ -110,7 +110,7 @@ palette.searchCallback = async ({ scope, term, signal }) => {
   return res.json(); // [{ id, title, subtitle?, icon?, href?, group? }]
 };
 
-palette.addEventListener('select', (e) => (location.href = e.detail.item.href));
+palette.addEventListener('select', (e) => (location.href = e.detail.result.href));
 ```
 
 The palette closes itself after `select` / `action`; the host performs the effect. Every callback

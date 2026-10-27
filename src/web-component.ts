@@ -85,11 +85,11 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'beforeActionCallback', converter: toFunction(), on: 'none', type: '(detail: ActionEventDetail) => unknown',
     description: 'Runs before a command fires `action`, with the same detail. Return `false` (async OK) to cancel: no `onClick`, no event, nothing recorded; a wizard steps back to its last answer and the palette stays open.' },
   { configKey: 'beforeSelectCallback', converter: toFunction(), on: 'none', type: '(ctx: SelectEventDetail) => unknown',
-    description: 'Runs before a search result fires `select` (`ctx = { item, scope }`). Return `false` (async OK) to cancel: no event, nothing recorded, the palette stays open. Other return values continue.' },
+    description: 'Runs before a search result fires `select` (`ctx = { result, scope }`). Return `false` (async OK) to cancel: no event, nothing recorded, the palette stays open. Other return values continue.' },
   { configKey: 'loadUsageCallback', converter: toFunction(), on: 'update', type: '(ctx: PaletteContext) => UsageEntry[] | Promise<UsageEntry[]>',
     description: 'Load favorites/recents from the host (e.g. per user, from the server) instead of `localStorage`. Called on connect and when this or `usage-key` changes.' },
   { configKey: 'renderFeedbackCallback', converter: toFunction(), on: 'none', type: '(ctx: FeedbackContext) => string | HTMLElement | null | false',
-    description: 'Render the text of the one-line feedback shown after a command ran (the ✓, "Done" and countdown stay). `ctx = { type, commandId?, commandText?, selections?, sentence, item?, scope?, duration }` + `controller` / `element`; `type` is `action` or `select`. Return markup / an element to replace the default, `null` for the default, or `false` to skip it this time. Search-result selections (`type: "select"`) get no feedback unless this returns content.' },
+    description: 'Render the text of the one-line feedback shown after a command ran (the ✓, "Done" and countdown stay). `ctx = { type, commandId?, commandText?, selections?, sentence, result?, scope?, duration }` + `controller` / `element`; `type` is `action` or `select`. Return markup / an element to replace the default, `null` for the default, or `false` to skip it this time. Search-result selections (`type: "select"`) get no feedback unless this returns content.' },
   { configKey: 'saveUsageCallback', converter: toFunction(), on: 'none', type: '(ctx: { entry: UsageEntry }) => void | Promise<void>',
     description: 'Upsert one favorite/recent entry (`ctx.entry`, by `entry.key`) — called on every use and every star toggle when `loadUsageCallback` is set.' },
 
@@ -150,7 +150,7 @@ type CommandPaletteEvents = {
 const EVENTS = [
   { name: 'open', description: 'The palette opened. Twin: `onOpen(detail)`.' },
   { name: 'close', description: 'The palette closed (also after a command ran / a result was chosen). Twin: `onClose(detail)`.' },
-  { name: 'select', description: "A search result was chosen. `detail = { item, scope }` (`scope` is `'global'` or `{ contextId }`). Perform the effect (navigate…); the palette closes itself. Veto with `beforeSelectCallback`. Twin: `onSelect(detail)`." },
+  { name: 'select', description: "A search result was chosen. `detail = { result, scope }` (`scope` is `'global'` or `{ contextId }`). Perform the effect (navigate…); the palette closes itself. Veto with `beforeSelectCallback`. Twin: `onSelect(detail)`." },
   { name: 'action', description: "A command ran — immediately (no `steps`) or after the wizard's last answer. `detail = { action: 'custom', id, item, source: 'palette', selections, sourceEvent, triggerElement, dataset }` — `id` is the command id, `item` the command, each selection `{ stepId, label, value, optionId?, isFreeText }`. The command's `onClick(detail)` runs first; veto with `beforeActionCallback`. The palette closes itself. Twin: `onAction(detail)`." },
   { name: 'ready', description: 'The palette was built for the first time (once per element lifetime; fired by core `BlissElement`) — at first connect, or when the `defer` gate is released (`el.release()` / removing `defer`). The host then also has the `ready` attribute and matches `:state(ready)`; `el.whenReady()` resolves. Twin: `onReady(detail)`.' },
 ] as const;
@@ -163,7 +163,7 @@ const CONTROLLER_METHODS = [
 /** What the one-line feedback needs, captured when the effect fired. */
 type Done =
   | { type: 'action'; command: Command; selections: Selection[]; sentence: string; parts: TokenView[] }
-  | { type: 'select'; item: Result; scope: Scope };
+  | { type: 'select'; result: Result; scope: Scope };
 
 /** The event (and row) behind an engine call, for the `action` detail. */
 interface Trigger {
@@ -327,7 +327,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   #onEffect(effect: Effect): EffectOutcome {
     switch (effect.type) {
       case 'select':
-        return this.#select(effect.item, effect.scope);
+        return this.#select(effect.result, effect.scope);
       case 'action':
         return this.#runCommand(effect.command, effect.selections);
       case 'close':
@@ -337,16 +337,16 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   }
 
   /** A search result: `beforeSelectCallback` → `select` → close. Sync hooks keep the flow synchronous. */
-  #select(item: Result, scope: Scope): boolean | Promise<boolean> {
-    const detail: SelectEventDetail = this.#ctx({ item, scope });
+  #select(result: Result, scope: Scope): boolean | Promise<boolean> {
+    const detail: SelectEventDetail = this.#ctx({ result, scope });
     const proceed = (gate: BeforeCallbackResult): boolean => {
       if (gate.isRejected) {
-        this.log.INTERACTION.debug('select vetoed', item);
+        this.log.INTERACTION.debug('select vetoed', result);
         return false;
       }
-      this.log.INTERACTION.debug('select', item);
+      this.log.INTERACTION.debug('select', result);
       this.emit('select', detail);
-      this.#afterEffect({ type: 'select', item, scope });
+      this.#afterEffect({ type: 'select', result, scope });
       return true;
     };
     const gate = runBeforeCallbackEager(this.config.beforeSelectCallback as BeforeSelectCallback | null, detail, 'beforeSelectCallback');
@@ -412,7 +412,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     const command = done.type === 'action' ? done.command : null;
     const ctx: FeedbackContext = this.#ctx(
       done.type === 'select'
-        ? { type: 'select' as const, sentence: done.item.title, item: done.item, scope: done.scope, duration }
+        ? { type: 'select' as const, sentence: done.result.title, result: done.result, scope: done.scope, duration }
         : {
             type: 'action' as const,
             commandId: done.command.id,

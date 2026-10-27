@@ -260,7 +260,7 @@ export interface UsageEntry {
   commandId?: string;
   selections?: Selection[];
   contextId?: string;
-  item?: Result;
+  result?: Result;
   scope?: Scope;
   /** Times used. 0 for an item starred but never used. */
   count: number;
@@ -286,7 +286,8 @@ export interface FeedbackContext extends PaletteContext {
   selections?: Selection[];
   /** `"/deploy to Staging branch main"`, the command trigger, or the result title. */
   sentence: string;
-  item?: Result;
+  /** The chosen search result (`type: 'select'`). */
+  result?: Result;
   scope?: Scope;
   /** How long the panel stays (ms). */
   duration: number;
@@ -429,6 +430,7 @@ export type PaletteEventDetail = PaletteContext;
 
 /** `select` — a search result was chosen. */
 export interface SelectEventDetail extends PaletteContext {
-  item: Result;
+  /** The chosen search result. */
+  result: Result;
   scope: Scope;
 }

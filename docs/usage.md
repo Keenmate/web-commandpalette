@@ -56,7 +56,7 @@ Objects and functions are **properties only** — set them from JS (or a framewo
 | `searchCallback` | `({ scope, term, signal }) => Result[] \| Promise<Result[]>` | Context + global search. `scope` is `'global'` or `{ contextId }`. Called only for **non-empty** terms, debounced. |
 | `getStepOptionsCallback` | `({ commandId, stepId, term, selections, signal }) => Option[] \| Promise<Option[]>` | Fallback for steps without their own `getOptionsCallback`. |
 | `beforeActionCallback` | `(detail) => unknown` | Runs before a command fires `action` (same detail). `false` (async OK) cancels: no `onClick`, no event, nothing recorded; a wizard steps back to its last answer and the palette stays open. |
-| `beforeSelectCallback` | `({ item, scope }) => unknown` | Runs before a search result fires `select`. `false` (async OK) cancels; the palette stays open. Other return values continue. |
+| `beforeSelectCallback` | `({ result, scope }) => unknown` | Runs before a search result fires `select`. `false` (async OK) cancels; the palette stays open. Other return values continue. |
 | `loadUsageCallback` | `(ctx) => UsageEntry[] \| Promise<UsageEntry[]>` | Load favorites/recents from the host instead of `localStorage`. |
 | `saveUsageCallback` | `({ entry }) => void \| Promise<void>` | Upsert one entry (by `entry.key`) on every use / star toggle. |
 | `labels` | `Partial<Labels>` | UI strings; unset keys fall back to English. |
@@ -140,7 +140,7 @@ carries `controller` / `element` (non-enumerable) and the presentation flags.
 | Event | Twin | `detail` | When |
 |---|---|---|---|
 | `open` / `close` | `onOpen` / `onClose` | context only | Opened / closed (`close` also follows every command and selection). |
-| `select` | `onSelect` | `{ item, scope }` | A search result was chosen. Veto with `beforeSelectCallback`. |
+| `select` | `onSelect` | `{ result, scope }` | A search result was chosen. Veto with `beforeSelectCallback`. |
 | `action` | `onAction` | `{ action: 'custom', id, item, source: 'palette', selections, sourceEvent, triggerElement, dataset }` | A command ran — immediately (no `steps`, `selections: []`) or after the wizard's last answer. `id` is the command id, `item` the command. |
 | `ready` | `onReady` | context only | First build done — once per element lifetime, fired by core `BlissElement` (see [Lifecycle](#lifecycle)). |
 
@@ -319,7 +319,7 @@ interface UsageEntry {
   label: string;                                 // a run's whole sentence: "/deploy to Staging branch main"
   commandId?: string; selections?: Selection[];  // command / run
   contextId?: string;                            // context
-  item?: Result; scope?: Scope;                  // result
+  result?: Result; scope?: Scope;                // result
   count: number; lastUsed: number; isFavorite: boolean;
 }
 ```
@@ -343,7 +343,7 @@ and a countdown bar — then closes. A wizard reads as the sentence the user bui
 ```js
 palette.renderFeedbackCallback = (ctx) => {
   // ctx = { type: 'action' | 'select', commandId?, commandText?, selections?,
-  //         sentence, item?, scope?, duration } + controller / element / presentation
+  //         sentence, result?, scope?, duration } + controller / element / presentation
   if (ctx.type === 'select') return `Opening <b>${ctx.sentence}</b>…`;   // opt search results in
   if (ctx.commandId === 'reload') return false;                             // skip for this one
   return null;                                                              // the default panel

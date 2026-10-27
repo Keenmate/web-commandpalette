@@ -71,7 +71,7 @@ export interface PaletteEngineHost {
 }
 
 export type Effect =
-  | { type: 'select'; item: Result; scope: Scope }
+  | { type: 'select'; result: Result; scope: Scope }
   /** A command ran: immediately (no steps) or after the wizard's last answer. */
   | { type: 'action'; command: Command; selections: Selection[] }
   | { type: 'close' };
@@ -188,7 +188,7 @@ function resultItem(r: Result, scope: Scope): ViewItem {
     badgeVariant: r.badgeVariant,
     group: typeof r.group === 'string' && r.group ? r.group : undefined,
     scope,
-    key: usageKey({ kind: 'result', label: r.title, item: r, scope }),
+    key: usageKey({ kind: 'result', label: r.title, result: r, scope }),
     ref: r,
   };
 }
@@ -578,7 +578,7 @@ export class PaletteEngine {
         return c ? { ...base, title: c.text, meta: meta(c.description), icon: c.icon, keys: [c.trigger] } : null;
       }
       case 'result':
-        return e.item ? { ...base, title: e.item.title, meta: meta(e.item.subtitle), icon: e.item.icon } : null;
+        return e.result ? { ...base, title: e.result.title, meta: meta(e.result.subtitle), icon: e.result.icon } : null;
     }
     return null;
   }
@@ -638,7 +638,7 @@ export class PaletteEngine {
       case 'context': { const c = item.ref as Context; return { kind: 'context', label: c.text, contextId: c.id }; }
       case 'result': {
         const r = item.ref as Result;
-        return { kind: 'result', label: r.title, item: cloneResult(r), scope: item.scope ?? 'global' };
+        return { kind: 'result', label: r.title, result: cloneResult(r), scope: item.scope ?? 'global' };
       }
       default: return null;
     }
@@ -1227,7 +1227,7 @@ export class PaletteEngine {
         const r = item.ref as Result;
         const scope: Scope = item.scope ?? (this.mode === 'context-search' && this.context ? { contextId: this.context.id } : 'global');
         this.#cancel();
-        return this.#finish({ type: 'select', item: r, scope }, { kind: 'result', label: r.title, item: cloneResult(r), scope });
+        return this.#finish({ type: 'select', result: r, scope }, { kind: 'result', label: r.title, result: cloneResult(r), scope });
       }
       case 'usage':
         return this.#selectUsage(item.ref as UsageEntry);
@@ -1248,10 +1248,10 @@ export class PaletteEngine {
         return false;
       }
       case 'result': {
-        if (!e.item) return false;
+        if (!e.result) return false;
         const scope = e.scope ?? 'global';
         this.#cancel();
-        return this.#finish({ type: 'select', item: cloneResult(e.item), scope }, { kind: 'result', label: e.item.title, item: e.item, scope });
+        return this.#finish({ type: 'select', result: cloneResult(e.result), scope }, { kind: 'result', label: e.result.title, result: e.result, scope });
       }
     }
     return false;

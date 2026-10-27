@@ -26,7 +26,7 @@ test('context search: entered from the home screen too, then searches non-empty 
   expect((await calls(page)).search).toEqual([{ scope: { contextId: 'products' }, term: 'ipad' }]);
   await page.keyboard.press('Enter');
   const sel = (await events(page)).find((e) => e.name === 'select');
-  expect(sel?.detail).toMatchObject({ item: { id: 'products-0' }, scope: { contextId: 'products' } });
+  expect(sel?.detail).toMatchObject({ result: { id: 'products-0' }, scope: { contextId: 'products' } });
   await expect(p.root).not.toHaveClass(/--active/);
 });
 
@@ -52,7 +52,7 @@ test('global search: local matches first, then provider hits (debounced, one cal
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
   const sel = (await events(page)).find((e) => e.name === 'select');
-  expect(sel?.detail).toMatchObject({ item: { id: 'Global-0' }, scope: 'global' });
+  expect(sel?.detail).toMatchObject({ result: { id: 'Global-0' }, scope: 'global' });
 });
 
 test('list modes filter client-side', async ({ page }) => {

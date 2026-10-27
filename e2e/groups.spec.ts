@@ -28,5 +28,5 @@ test('keyboard order follows the clustered order', async ({ page }) => {
   await page.keyboard.press('ArrowDown');
   await expect(p.active.locator('.pa-command-palette__item-title')).toHaveText('q person B');
   await page.keyboard.press('Enter');
-  await expect.poll(() => page.evaluate(() => (window as unknown as { events: Array<{ name: string; detail: { item?: { id: string } } }> }).events.find((e) => e.name === 'select')?.detail.item?.id)).toBe('b');
+  await expect.poll(() => page.evaluate(() => (window as unknown as { events: Array<{ name: string; detail: { result?: { id: string } } }> }).events.find((e) => e.name === 'select')?.detail.result?.id)).toBe('b');
 });

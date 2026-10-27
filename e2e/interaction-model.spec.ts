@@ -128,7 +128,7 @@ test('an async veto (Promise<false>) also cancels', async ({ page }) => {
   expect(await log(page)).toEqual(['on:open', 'event:open', 'before:reload']);
 });
 
-test('select: beforeSelectCallback → false keeps the palette open; otherwise select fires with { item, scope }', async ({ page }) => {
+test('select: beforeSelectCallback → false keeps the palette open; otherwise select fires with { result, scope }', async ({ page }) => {
   const p = palette(page);
   await setVeto(page, 'select');
   await openPalette(page);
@@ -146,7 +146,7 @@ test('select: beforeSelectCallback → false keeps the palette open; otherwise s
   await page.keyboard.press('Enter');
   await expect(p.root).not.toHaveClass(/--active/);
   const sel = (await details(page)).find((d) => d.name === 'select');
-  expect(sel.json).toMatchObject({ item: { id: 'p1', title: 'Person ann' }, scope: { contextId: 'people' } });
+  expect(sel.json).toMatchObject({ result: { id: 'p1', title: 'Person ann' }, scope: { contextId: 'people' } });
   expect(sel.sameAsTwin && sel.hasController && sel.elementIsHost).toBe(true);
 });
 

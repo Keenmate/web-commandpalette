@@ -31,6 +31,12 @@ The cross-component naming pass (one vocabulary for all KeenMate web components)
 - **`openWith(query)` → `openWith(term)`** (parameter name; the search text is `term` everywhere).
 - **Limits are `max*Count`**: `favoritesLimit` / `favorites-limit` → **`maxFavoriteCount`** /
   **`max-favorite-count`**; `recentLimit` / `recent-limit` → **`maxRecentCount`** / **`max-recent-count`**.
+- **A search result is `result`, not `item`** (`item` is reserved for action items — the `action`
+  detail's `item` is still the command): `select` detail / `onSelect` / `beforeSelectCallback` ctx
+  `{ item, scope }` → **`{ result, scope }`**; `FeedbackContext.item` → `result`;
+  `UsageEntry.item` → `result` (persisted: a recent / favorite search result stored by an earlier
+  rc has no `result` and is skipped — it comes back the next time it is chosen). The engine's
+  `select` effect carries `result` too.
 
 ### Changed — BREAKING (interaction model, web-components-core rc15)
 

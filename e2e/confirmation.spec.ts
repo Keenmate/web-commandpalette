@@ -99,8 +99,8 @@ test('a search-result select gets no confirmation by default, a custom one when 
   await expect(p.root).not.toHaveClass(/--active/, { timeout: 300 });
 
   await p.host.evaluate((el) => {
-    (el as unknown as { renderFeedbackCallback: unknown }).renderFeedbackCallback = (ctx: { type: string; sentence: string; item?: { id: string } }) =>
-      ctx.type === 'select' ? `<span class="custom-select">Opened ${ctx.sentence} (${ctx.item?.id})</span>` : null;
+    (el as unknown as { renderFeedbackCallback: unknown }).renderFeedbackCallback = (ctx: { type: string; sentence: string; result?: { id: string } }) =>
+      ctx.type === 'select' ? `<span class="custom-select">Opened ${ctx.sentence} (${ctx.result?.id})</span>` : null;
   });
   await open(page);
   await p.input.fill('ipad');

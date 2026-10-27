@@ -158,7 +158,7 @@ describe('host veto (effect returns false)', () => {
     h.m.setInput('ali');
     vi.advanceTimersByTime(150);
     h.m.select(h.m.items.findIndex((i) => i.kind === 'result'));
-    expect(h.effects).toEqual([{ type: 'select', item: hit, scope: 'global' }]);
+    expect(h.effects).toEqual([{ type: 'select', result: hit, scope: 'global' }]);
     expect(h.saved).toEqual([]);
   });
 });

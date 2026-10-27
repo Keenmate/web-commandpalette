@@ -30,7 +30,7 @@ searchPill.addEventListener('click', () => palette.controller.openWith(':product
 **Navigate on selection**
 
 ```js
-palette.addEventListener('select', (e) => { if (e.detail.item.href) location.href = e.detail.item.href; });
+palette.addEventListener('select', (e) => { if (e.detail.result.href) location.href = e.detail.result.href; });
 ```
 
 **Server search with `fetch` (abortable)**
