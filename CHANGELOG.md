@@ -15,10 +15,10 @@ callback and item API below is breaking.
 
 The cross-component naming pass (one vocabulary for all KeenMate web components). No aliases.
 
-- **`ready` comes from core** (`BlissElement`): it fires once right after the first build —
-  during upgrade, no longer a microtask later, so a listener added after the `import` misses it.
-  Use `el.isReady`, the `ready` attribute / `:state(ready)`, `await el.whenReady()`, or hold the
-  build with the core **`defer`** attribute (`shouldDefer`) and call **`el.release()`** once
+- **`ready` comes from core** (`BlissElement`): it fires once, on the microtask after the first
+  build (as before), so a listener added right after the `import` / `createElement` still catches
+  it. `el.isReady`, the `ready` attribute / `:state(ready)` and `await el.whenReady()` flip at the
+  same moment. Or hold the build with the core **`defer`** attribute (`shouldDefer`) and call **`el.release()`** once
   listeners / config are set. `el.destroy()` (core) tears the element down for good.
 - **Confirmation → feedback** (it is post-run feedback, not a confirm prompt):
   `isConfirmationShown` / attribute `confirmation` → `isFeedbackShown` / **`show-feedback`**;

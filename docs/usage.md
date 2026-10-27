@@ -116,9 +116,9 @@ standalone use only; the element never exposes it.
 
 The ready / defer / destroy lifecycle comes from web-components-core's `BlissElement`:
 
-- **`ready`** fires once, right after the first build — during upgrade for a plain
-  `<web-command-palette>` (so a listener added after the `import` misses it). Check
-  `el.isReady`, the `ready` attribute / `:state(ready)`, or `await el.whenReady()` instead.
+- **`ready`** fires once, on the microtask after the first build — a listener added right after
+  the `import` / `createElement` still catches it. `el.isReady`, the `ready` attribute /
+  `:state(ready)` and `await el.whenReady()` flip at the same moment.
 - **`defer`** (attribute; property `shouldDefer`) holds the first build until `el.release()` (or
   removing the attribute) — set up `commands`, callbacks and listeners first, then build once:
 

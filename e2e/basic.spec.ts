@@ -12,8 +12,8 @@ test('Ctrl+K toggles the palette, focuses the input, fires open/close', async ({
   await expect(p.root).not.toHaveClass(/--active/);
   await expect(p.host).not.toHaveAttribute('open');
   const names = (await events(page)).map((e) => e.name);
-  // `ready` (core) fired during upgrade, before the fixture's listeners: the host carries the attribute.
-  expect(names).toEqual(['open', 'close']);
+  // `ready` (core) fires on the microtask after the first build, so the fixture's listeners catch it.
+  expect(names).toEqual(['ready', 'open', 'close']);
   await expect(p.host).toHaveAttribute('ready', '');
 });
 
