@@ -117,10 +117,35 @@ instead of `cp-select` / `cp-complete` / `cp-command`, install `searchCallback({
 signal })` / `getStepOptionsCallback(ctx)` (push `term`, not `query`), and send commands /
 contexts / options with the new field names.
 
+### Changed — standalone colors follow the contract
+
+Without `@keenmate/base-css-variables` on the page the fallbacks had drifted from the contract.
+Inputs now fall back to the contract defaults and every derived color to the contract formula on
+the `--cp-*` input, so the palette looks the same with or without the contract, and a standalone
+`--cp-accent-color` brings its tint and on-accent text along.
+
+- **Accent** `#3b82f6` (was sky `#0ea5e9`), the contract's default primary since
+  base-css-variables 2.0.0-rc05.
+- **Text on fills** (the accent, every badge variant) is black or white by APCA contrast, the
+  contract's formula on the fill (was a fixed `#ffffff`). The danger badge is `#dc2626` (was `#ef4444`).
+- **Surfaces / borders:** new `--cp-page-bg` (`--base-page-bg`); `--cp-subtle-bg` (keycaps) is
+  derived from it, `--cp-border-color` and `--cp-hover-bg` from `--cp-bg` — the contract's OKLCH
+  steps (were hand-set slate values and an 8% text mix).
+- **Placeholder** falls back to `--cp-text-color-3` (the contract alias).
+- **isDanger row title** reads `--base-danger-text-color` (the role as text on a surface;
+  `#721c24` / `#f87171`), not the fill color.
+- **Disabled row opacity** `0.65` (was `0.4`); **z-index** `7601` standalone (one above the
+  contract's popover, was `10500`); check glyph = the contract's (stroke 2).
+- `check:contract` (`base-contract-check src`) runs in `npm run build`; `contract-check.json`
+  allows `--base-rem` (10px standalone) and `--base-font-family` (inherits the page font).
+  `e2e/contract-parity.spec.ts` + `test/contract-parity.html` compare every color token
+  standalone vs. with the contract (light / dark, custom accent). devDependency
+  `@keenmate/base-css-variables` `^2.0.0-rc05`.
+
 ### Added
 
 - New CSS knobs `--cp-item-disabled-opacity` (`--base-disabled-opacity`) and
-  `--cp-item-danger-color` (`--base-danger-color`); row classes `cp__item--disabled` /
+  `--cp-item-danger-color` (`--base-danger-text-color`); row classes `cp__item--disabled` /
   `cp__item--danger`.
 - `e2e/interaction-model.spec.ts` + `test/interaction-model.html`; unit `test/unit/interaction.test.ts`.
 

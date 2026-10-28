@@ -11,7 +11,7 @@ The component reads **only** its own `--cp-*` knobs and the shared Keenmate `--b
 
 ```css
 :host {
-  --cp-accent-color: var(--base-primary-color, #0ea5e9);
+  --cp-accent-color: var(--base-primary-color, #3b82f6);
   --cp-item-active-outline: var(--base-focused-outline, 1px solid var(--cp-accent-color));
 }
 ```
@@ -27,8 +27,13 @@ So:
 - **a `--cp-*` override** goes on the element itself, or a rule that matches it:
   `web-command-palette { --cp-width: 680px; }` (a `--cp-*` set only on an ancestor is shadowed by
   the `:host` default);
-- **an unthemed page** gets the Corporate look, light or dark (the fallbacks are `light-dark()`
-  pairs, following the page's `color-scheme`).
+- **an unthemed page** gets the contract's default look, light or dark (the fallbacks are
+  `light-dark()` pairs, following the page's `color-scheme`). The fallbacks *are* the contract:
+  inputs fall back to its defaults (accent `#3b82f6`, `--cp-bg`, `--cp-page-bg`, text), and every
+  derived color (tints, hover, borders, keycaps, text on the accent and on the badges) to the
+  contract's formula on the `--cp-*` input — so `web-command-palette { --cp-accent-color: … }`
+  brings its tint and on-accent text along, and the palette looks the same with or without
+  `base-variables.css` (`npm run check:contract` and `e2e/contract-parity.spec.ts` keep it so).
 
 (`--_cp-*` names are private plumbing — don't set them.)
 
@@ -76,7 +81,7 @@ Keycaps use the same font by default; `--cp-key-font-family` changes them.
 | `--cp-backdrop-bg` | Backdrop colour |
 | `--cp-backdrop-filter` | Backdrop filter (`none` to disable the blur) |
 | `--cp-item-hover-bg` / `-item-active-bg` | Row backgrounds |
-| `--cp-item-disabled-opacity` / `-item-danger-color` | A disabled command row (`isDisabled`, default `--base-disabled-opacity`) / a destructive one's title (`isDanger`, default `--base-danger-color`) |
+| `--cp-item-disabled-opacity` / `-item-danger-color` | A disabled command row (`isDisabled`, default `--base-disabled-opacity`) / a destructive one's title (`isDanger`, default `--base-danger-text-color`) |
 | `--cp-highlight-bg` / `-highlight-text` | `<mark>` query highlight |
 | `--cp-key-bg` / `-key-text` / `-key-font-size` / `-key-font-weight` | Keycaps |
 | `--cp-scrollbar-thumb-bg` / `-thumb-bg-hover` / `-track-bg` | Results scrollbar colours (default: `--base-border-color` thumb on a transparent track) |

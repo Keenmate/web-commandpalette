@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>e2e fixture — contract parity</title>
+  <style>body { font-family: system-ui, sans-serif; }</style>
+</head>
+<body>
+  <!-- Targeted by e2e/contract-parity.spec.ts: one plain instance, no theme of its own.
+       The spec renders it with and without @keenmate/base-css-variables. -->
+  <web-command-palette id="palette"></web-command-palette>
+
+  <script type="module">
+    import { setupStandard, ready } from './fixture-common.js';
+    setupStandard('contract-parity');
+    ready();
+  </script>
+</body>
+</html>

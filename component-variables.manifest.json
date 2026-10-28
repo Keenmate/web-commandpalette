@@ -27,7 +27,12 @@
     {
       "name": "base-danger-color",
       "required": false,
-      "usage": "danger badge background; title of an isDanger command row"
+      "usage": "danger badge background"
+    },
+    {
+      "name": "base-danger-text-color",
+      "required": false,
+      "usage": "Title of an isDanger command row"
     },
     {
       "name": "base-disabled-opacity",
@@ -365,6 +370,11 @@
       "usage": "Backdrop scrim"
     },
     {
+      "name": "base-page-bg",
+      "required": false,
+      "usage": "Page canvas; the keycap surface is derived from it"
+    },
+    {
       "name": "base-primary-bg-subtle",
       "required": false,
       "usage": "Primary tint: scope pill, row icon box (and the active row when --base-highlighted-bg is absent)"
@@ -531,6 +541,10 @@
     {
       "name": "cp-bg",
       "usage": "Dialog surface"
+    },
+    {
+      "name": "cp-page-bg",
+      "usage": "Page canvas the keycap surface (--cp-subtle-bg) is derived from"
     },
     {
       "name": "cp-border",
@@ -798,7 +812,7 @@
     },
     {
       "name": "cp-item-danger-color",
-      "usage": "Title color of a destructive (isDanger) command row (--base-danger-color)"
+      "usage": "Title color of a destructive (isDanger) command row (--base-danger-text-color)"
     },
     {
       "name": "cp-item-disabled-opacity",
@@ -938,7 +952,7 @@
     },
     {
       "name": "cp-z-index",
-      "usage": "Stacking of the overlay: one step above --base-z-popover (10500 without the base layer)"
+      "usage": "Stacking of the overlay: one step above --base-z-popover (7601 without the base layer)"
     }
   ]
 }
