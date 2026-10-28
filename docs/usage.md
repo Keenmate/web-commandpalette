@@ -381,10 +381,18 @@ the effective direction, also when it changes at runtime.
 palette.labels = { placeholder: 'Hledat…', typeToSearch: 'Začněte psát pro hledání v {name}', favorites: 'Oblíbené', recent: 'Nedávné' };
 ```
 
-Keys: `placeholder`, `filterPlaceholder`, `empty`, `searching`, `searchingIn` `{name}`,
+Keys: `placeholder`, `filterPlaceholder`, `noResults`, `searching`, `searchingIn` `{name}`,
 `typeToSearch` `{name}`, `commands`, `search`, `searchContexts`, `pageOf` `{page} {total} {count}`,
 `navigate`, `select`, `back`, `close`, `pages`, `fullscreenTitle`, `dialogLabel`,
 `removeToken` `{name}`, `resultsCount` `{count}`.
+
+`noResults` = a search / filter matched nothing (the favorites / recent lists use `noFavorites`
+`{key}` / `noRecent` while nothing is starred / used yet).
+
+All labels are **text**: they are escaped on insertion (never parsed as HTML), and so are the
+`{name}` / `{count}` … values filled into them. A key set to `''` is deliberately empty — the
+string is not rendered (an `''` footer hint label hides that hint; an `''` aria label removes
+the attribute). A missing / `undefined` key falls back to the English default.
 
 ## Logging
 

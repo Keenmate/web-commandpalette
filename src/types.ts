@@ -315,14 +315,18 @@ export type BeforeSelectCallback = (ctx: SelectEventDetail) => unknown;
  */
 export type BeforeActionCallback = (detail: ActionEventDetail) => unknown;
 
-/** Every visible string. `{name}`, `{page}`, `{total}`, `{count}` are placeholders. */
+/**
+ * Every visible string. `{name}`, `{page}`, `{total}`, `{count}` are placeholders.
+ * All labels are text (escaped on insertion, never parsed as HTML). `''` = deliberately
+ * empty (render nothing); a missing / `undefined` key = the English default.
+ */
 export interface Labels {
   /** Idle input placeholder. */
   placeholder: string;
   /** Step input placeholder when the step defines none. */
   filterPlaceholder: string;
-  /** No results / nothing to list. */
-  empty: string;
+  /** A search / filter matched nothing. */
+  noResults: string;
   /** Loader text. */
   searching: string;
   /** Context pill in context search; `{name}`. */
@@ -377,7 +381,7 @@ export interface Labels {
 export const DEFAULT_LABELS: Labels = {
   placeholder: 'Type / for commands, : to search, or just start typing…',
   filterPlaceholder: 'Type to filter…',
-  empty: 'No results found',
+  noResults: 'No results found',
   searching: 'Searching…',
   searchingIn: 'Searching in {name}',
   typeToSearch: 'Type to search {name}',
@@ -406,6 +410,21 @@ export const DEFAULT_LABELS: Labels = {
   noRecent: 'Nothing used yet',
   done: 'Done',
 };
+
+/**
+ * The one label resolver (the future seam for core `/locale`): defaults, overlaid by the
+ * given keys. `''` is kept (deliberately empty); `undefined` / `null` falls back to the default.
+ */
+export function resolveLabels(custom: Partial<Labels> | null | undefined): Labels {
+  const out: Labels = { ...DEFAULT_LABELS };
+  if (custom) {
+    for (const key of Object.keys(custom) as (keyof Labels)[]) {
+      const v = custom[key];
+      if (typeof v === 'string') out[key] = v;
+    }
+  }
+  return out;
+}
 
 /** Palette modes (IMPLEMENTATION_PLAN §10). */
 export type Mode =

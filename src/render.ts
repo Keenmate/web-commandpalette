@@ -148,8 +148,11 @@ function itemHtml(item: ViewItem, index: number, active: boolean, needle: string
 /** A heading + rows. `more` = an optional control at the heading's end (e.g. "+2 · Ctrl F"). */
 function sectionHtml(heading: string, rows: string, more = ''): string {
   return (
-    `<div class="pa-command-palette__home-section" role="group" aria-label="${escapeHtml(heading)}">` +
-    `<div class="pa-command-palette__home-heading cp-heading"><span aria-hidden="true">${escapeHtml(heading)}</span>${more}</div>${rows}</div>`
+    `<div class="pa-command-palette__home-section" role="group"${heading ? ` aria-label="${escapeHtml(heading)}"` : ''}>` +
+    (heading || more
+      ? `<div class="pa-command-palette__home-heading cp-heading">${heading ? `<span aria-hidden="true">${escapeHtml(heading)}</span>` : ''}${more}</div>`
+      : '') +
+    `${rows}</div>`
   );
 }
 
@@ -227,8 +230,9 @@ function tokensHtml(tokens: TokenView[] | null, labels: Labels): string {
 
 function footerHtml(m: PaletteEngine, ctx: RenderContext): string {
   const { labels } = ctx;
+  // A label set to '' hides that hint (L4: '' = deliberately empty).
   const hint = (key: string, text: string): string =>
-    `<div class="pa-command-palette__hint"><span class="pa-command-palette__key">${escapeHtml(key)}</span><span>${escapeHtml(text)}</span></div>`;
+    !text ? '' : `<div class="pa-command-palette__hint"><span class="pa-command-palette__key">${escapeHtml(key)}</span><span>${escapeHtml(text)}</span></div>`;
   // Mode-aware (IMPLEMENTATION_PLAN §10): ←→ only when paginated, ⌫ only where it
   // steps back, Esc reads Back/Close accordingly. In a wizard Tab = next step, and
   // Enter runs the rest of a replayed run. The star hint follows the active row.

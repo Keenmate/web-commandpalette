@@ -41,8 +41,11 @@ The cross-component naming pass (one vocabulary for all KeenMate web components)
   `select` effect carries `result` too.
 - **Event `select` → `result-select`** (twin `onSelect` → **`onResultSelect`**; detail unchanged
   `{ result, scope }`; still vetoed by `beforeSelectCallback`).
-- **`labels.emptyText` → `labels.empty`** (the empty-list text has one key in every component).
-  All other UI strings were already `labels` keys.
+- **`labels.emptyText` → `labels.noResults`** (default "No results found" — a search / filter
+  matched nothing; `noFavorites` / `noRecent` stay). All other UI strings were already `labels` keys.
+- **`labels`: `''` is deliberately empty** — the string is not rendered (an `''` hint label hides
+  the hint, an `''` aria label removes the attribute); a missing / `undefined` key falls back to the
+  English default (an explicit `undefined` used to blank the label). Labels are text (escaped).
 
 ### Changed — BREAKING (interaction model, web-components-core rc15)
 

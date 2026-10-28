@@ -40,6 +40,7 @@ import { GlobalKeys, handleInputKeydown, sequenceLetter, type PaletteKeys } from
 import { UsageStore, localStoragePersistence, type UsagePersistence } from './usage';
 import {
   DEFAULT_LABELS,
+  resolveLabels,
   type ActionEventDetail,
   type BeforeActionCallback,
   type BeforeSelectCallback,
@@ -75,7 +76,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'contexts', converter: toObjectArray(), on: 'update', type: 'Context[]',
     description: 'Search contexts, listed on the home screen and under `:`. `{ id, trigger, text, aliases?, description?, icon?, searchCallback? }`. Entering one locks the input to `"<trigger> "` and searches via `searchCallback({ scope: { contextId }, term, signal })`.' },
   { configKey: 'labels', converter: toValue({ validate: isPlainObject }), on: 'update', type: 'Partial<Labels>',
-    description: 'UI strings (i18n). Partial — unset keys fall back to English. `{name}` / `{page}` / `{total}` / `{count}` placeholders are interpolated.' },
+    description: 'UI strings (i18n). Partial — unset (`undefined`) keys fall back to English; an empty string renders nothing. Text, escaped (never HTML). `{name}` / `{page}` / `{total}` / `{count}` placeholders are interpolated.' },
 
   // ── Callbacks (property-only, read live on every call) ───────────────────
   { configKey: 'searchCallback', converter: toFunction(), on: 'none', type: '(ctx: SearchContext) => Result[] | Promise<Result[]>',
@@ -462,7 +463,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
       container.style.height = `${to}px`;
     }
     confirm.focus();
-    live.textContent = `${this.#labels.done}: ${ctx.sentence}`;
+    live.textContent = this.#labels.done ? `${this.#labels.done}: ${ctx.sentence}` : ctx.sentence;
     this.log.UI.debug('feedback', ctx);
     this.#feedbackTimer = setTimeout(() => this.close(), duration);
     return true;
@@ -675,10 +676,10 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
 
   #applyLabels(): void {
     const custom = this.config.labels as Partial<Labels> | undefined;
-    this.#labels = { ...DEFAULT_LABELS, ...(custom ?? {}) };
+    this.#labels = resolveLabels(custom);
     const { container, closeButton, fullscreenTitle } = this.#shell;
-    container.setAttribute('aria-label', this.#labels.dialogLabel);
-    closeButton.setAttribute('aria-label', this.#labels.close);
+    setOrRemove(container, 'aria-label', this.#labels.dialogLabel);
+    setOrRemove(closeButton, 'aria-label', this.#labels.close);
     fullscreenTitle.textContent = this.#labels.fullscreenTitle;
   }
 
@@ -803,4 +804,10 @@ function deepActiveElement(): HTMLElement | null {
 // wiring happens in index.ts via registerComponent(); both defines are idempotent.
 if (typeof customElements !== 'undefined' && !customElements.get('web-command-palette')) {
   customElements.define('web-command-palette', CommandPaletteElement);
+}
+
+/** `''` (a deliberately empty label) removes the attribute instead of leaving it blank. */
+function setOrRemove(el: Element, name: string, value: string): void {
+  if (value) el.setAttribute(name, value);
+  else el.removeAttribute(name);
 }

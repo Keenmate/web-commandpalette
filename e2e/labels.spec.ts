@@ -37,3 +37,17 @@ test('reassigning labels while open updates the UI', async ({ page }) => {
   // Keys dropped from the new object fall back to English.
   await expect(p.input).toHaveAttribute('placeholder', /Type \/ for commands/);
 });
+
+test("'' renders nothing; undefined keeps the English default", async ({ page }) => {
+  const p = palette(page);
+  await open(page);
+  await p.host.evaluate((el) => {
+    (el as unknown as { labels: unknown }).labels = { navigate: '', noResults: '', dialogLabel: '', placeholder: undefined };
+  });
+  await expect(p.input).toHaveAttribute('placeholder', /Type \/ for commands/);
+  await expect(p.container).not.toHaveAttribute('aria-label');
+  await p.input.fill('/zzz');
+  await expect(p.items).toHaveCount(0);
+  await expect(p.empty).toHaveCount(0);
+  await expect(p.footer.locator('.pa-command-palette__hint', { hasText: '↑↓' })).toHaveCount(0);
+});
