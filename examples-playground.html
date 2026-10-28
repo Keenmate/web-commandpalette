@@ -120,7 +120,7 @@
         const log = document.getElementById('pg02-log');
         // JSON shows the data only: controller / element are non-enumerable; drop the DOM refs of `action`.
         const brief = (d) => { const { sourceEvent, triggerElement, item, ...rest } = d; return item ? { ...rest, item: item.id } : rest; };
-        for (const name of ['open', 'close', 'select', 'action', 'ready']) {
+        for (const name of ['open', 'close', 'result-select', 'action', 'ready']) {
             palette.addEventListener(name, (e) => {
                 log.textContent = `${name} ${JSON.stringify(brief(e.detail))}\n` + (log.textContent === '—' ? '' : log.textContent);
             });

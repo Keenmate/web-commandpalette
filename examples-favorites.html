@@ -265,7 +265,7 @@ const pickGroup = {               placeholder: 'Group…', getOptionsCallback: (
         const out = document.getElementById('fr03-log');
         const write = (line) => { out.textContent = line + '\n\n' + (out.textContent === '—' ? '' : out.textContent); };
         palette.addEventListener('action', (e) => write('action ' + JSON.stringify({ id: e.detail.id, selections: e.detail.selections })));
-        palette.addEventListener('select', (e) => write('select ' + JSON.stringify({ title: e.detail.result.title, scope: e.detail.scope })));
+        palette.addEventListener('result-select', (e) => write('result-select ' + JSON.stringify({ title: e.detail.result.title, scope: e.detail.scope })));
 
         document.querySelectorAll('[data-open]').forEach((b) =>
             b.addEventListener('click', () => palette.controller.openWith(b.dataset.open)));

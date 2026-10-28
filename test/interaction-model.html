@@ -27,7 +27,7 @@
     });
 
     // DOM events + their camelCase twins (the twin runs first, with the same detail).
-    for (const name of ['open', 'close', 'select', 'action', 'ready']) {
+    for (const name of ['open', 'close', 'result-select', 'action', 'ready']) {
       palette.addEventListener(name, (e) => {
         window.__log.push(`event:${name}`);
         window.__details.push({ name, sameAsTwin: window.__lastTwin === e.detail, composed: e.composed, bubbles: e.bubbles, ...describeCtx(e.detail) });
@@ -39,7 +39,7 @@
     };
     palette.onOpen = twin('open');
     palette.onClose = twin('close');
-    palette.onSelect = twin('select');
+    palette.onResultSelect = twin('result-select');
     palette.onAction = twin('action');
     palette.onReady = twin('ready');
 

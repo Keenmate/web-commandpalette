@@ -43,7 +43,7 @@ top; the CSS is the component's own (plain CSS in the shadow root).
 - **RTL, i18n and a phone sheet** — `dir="rtl"` on the element or any ancestor mirrors the layout, which uses logical CSS throughout. It also swaps ←/→ paging and isolates mixed-direction text, so `/deploy …` keeps its order inside Hebrew or Arabic UI. Every visible and announced string comes from the `labels` map. On touch phones, `mobile-presentation="auto"` turns the dialog into a fullscreen sheet that stays above the on-screen keyboard.
 
 > **Breaking change in the next release (2.0) — interaction model.** The `cp-` prefix is gone
-> (`open`, `close`, `select`, `ready`), and `cp-command` / `cp-complete` fold into one `action`
+> (`open`, `close`, `result-select`, `ready`), and `cp-command` / `cp-complete` fold into one `action`
 > event per command run (`detail.id` = the command id, `detail.selections` the wizard answers).
 > `on*` twins receive the event **detail**. Commands are core action items (`name` → `text`,
 > `shortcut` → `trigger`, `hotkey` → `shortcut`, plus `isVisible` / `isDisabled` / `isDanger` /
@@ -110,10 +110,10 @@ palette.searchCallback = async ({ scope, term, signal }) => {
   return res.json(); // [{ id, title, subtitle?, icon?, href?, group? }]
 };
 
-palette.addEventListener('select', (e) => (location.href = e.detail.result.href));
+palette.addEventListener('result-select', (e) => (location.href = e.detail.result.href));
 ```
 
-The palette closes itself after `select` / `action`; the host performs the effect. Every callback
+The palette closes itself after `result-select` / `action`; the host performs the effect. Every callback
 takes one `ctx`, and every ctx and event detail carries `controller` (`el.controller`, the public
 facade) and `element`. See [docs/usage.md](./docs/usage.md) for the full API and
 [docs/examples.md](./docs/examples.md) for recipes (step pickers, branching wizards, favorites on

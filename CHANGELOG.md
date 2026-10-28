@@ -35,8 +35,12 @@ The cross-component naming pass (one vocabulary for all KeenMate web components)
   detail's `item` is still the command): `select` detail / `onSelect` / `beforeSelectCallback` ctx
   `{ item, scope }` → **`{ result, scope }`**; `FeedbackContext.item` → `result`;
   `UsageEntry.item` → `result` (persisted: a recent / favorite search result stored by an earlier
-  rc has no `result` and is skipped — it comes back the next time it is chosen). The engine's
+  rc has no `result` and is skipped — it comes back the next time it is chosen). **Migrate:** clear
+  the stored usage, or map `item` → `result` in your `loadUsageCallback`
+  (`entries.map((e) => e.item && !e.result ? { ...e, result: e.item } : e)`). The engine's
   `select` effect carries `result` too.
+- **Event `select` → `result-select`** (twin `onSelect` → **`onResultSelect`**; detail unchanged
+  `{ result, scope }`; still vetoed by `beforeSelectCallback`).
 - **`labels.emptyText` → `labels.empty`** (the empty-list text has one key in every component).
   All other UI strings were already `labels` keys.
 

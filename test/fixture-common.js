@@ -42,7 +42,7 @@ export function fakeStepOptions({ commandId, stepId, term, selections }) {
   return [];
 }
 
-export const EVENT_NAMES = ['open', 'close', 'select', 'action', 'ready'];
+export const EVENT_NAMES = ['open', 'close', 'result-select', 'action', 'ready'];
 
 /**
  * Record the palette's events: `window.events` (structured, the detail as plain JSON —

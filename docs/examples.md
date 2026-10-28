@@ -5,7 +5,7 @@ http://localhost:12400. The hub (`index.html`) links every page.
 
 | Page | Shows |
 |---|---|
-| [`examples-basic.html`](../examples-basic.html) | The three-line setup, opening (Ctrl/⌘+K, `open-key`, `g`-sequences, `controller.openWith`), the `select` / `action` events, i18n `labels`. |
+| [`examples-basic.html`](../examples-basic.html) | The three-line setup, opening (Ctrl/⌘+K, `open-key`, `g`-sequences, `controller.openWith`), the `result-select` / `action` events, i18n `labels`. |
 | [`examples-commands-steps.html`](../examples-commands-steps.html) | Static steps (inline or fetched once), `isLiveSearch` live steps, `isFreeTextAllowed`, `getIsVisibleCallback`, inline vs tokens display, the `action` event. |
 | [`examples-async-search.html`](../examples-async-search.html) | Scoped context search (no call on an empty query), global search, debounce + abort with a provider-call log, pagination. |
 | [`examples-favorites.html`](../examples-favorites.html) | Reusable pickers (`step.getOptionsCallback`), a branching admin command, favorites + recents (localStorage or `load`/`saveUsageCallback`), replaying a run with Tab/Enter, grouped results, a context with its own `searchCallback`. |
@@ -30,7 +30,7 @@ searchPill.addEventListener('click', () => palette.controller.openWith(':product
 **Navigate on selection**
 
 ```js
-palette.addEventListener('select', (e) => { if (e.detail.result.href) location.href = e.detail.result.href; });
+palette.addEventListener('result-select', (e) => { if (e.detail.result.href) location.href = e.detail.result.href; });
 ```
 
 **Server search with `fetch` (abortable)**

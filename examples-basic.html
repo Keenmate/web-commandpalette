@@ -130,8 +130,8 @@ palette.searchCallback = async ({ scope, term, signal }) =&gt; fetchResults(scop
         let started = false;
         // The data of each detail (controller / element are non-enumerable, so JSON skips them).
         const brief = (name, d) => name === 'action' ? { id: d.id, selections: d.selections }
-            : name === 'select' ? { result: d.result, scope: d.scope } : {};
-        for (const name of ['open', 'close', 'select', 'action']) {
+            : name === 'result-select' ? { result: d.result, scope: d.scope } : {};
+        for (const name of ['open', 'close', 'result-select', 'action']) {
             palette.addEventListener(name, (e) => {
                 const line = `${name} ${JSON.stringify(brief(name, e.detail))}`;
                 log.textContent = started ? `${line}\n${log.textContent}` : line;

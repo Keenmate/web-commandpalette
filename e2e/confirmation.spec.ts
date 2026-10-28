@@ -108,6 +108,6 @@ test('a search-result select gets no confirmation by default, a custom one when 
   await page.keyboard.press('Enter');
   await expect(panel(page).locator('.custom-select')).toHaveText('Opened Global ipad 0 (Global-0)');
   const names = (await events(page)).map((e) => e.name);
-  expect(names.filter((n) => n === 'select')).toHaveLength(2);
+  expect(names.filter((n) => n === 'result-select')).toHaveLength(2);
   await expect(p.root).not.toHaveClass(/--active/, { timeout: 3000 });
 });

@@ -224,7 +224,7 @@ export interface Context {
 }
 
 /**
- * A search hit (context or global). Extra keys pass through to the `select`
+ * A search hit (context or global). Extra keys pass through to the `result-select`
  * handler. A data record, not an action item — and persisted verbatim in usage
  * entries — so it keeps its `title` / `subtitle` pair.
  */
@@ -303,7 +303,7 @@ export type RenderFeedbackCallback = (ctx: FeedbackContext) => string | HTMLElem
 
 /**
  * `beforeSelectCallback(ctx)` — a search result is about to be chosen. Return
- * `false` (or a Promise of it) to cancel: no `select` event, nothing recorded, the
+ * `false` (or a Promise of it) to cancel: no `result-select` event, nothing recorded, the
  * palette stays open. Any other return continues.
  */
 export type BeforeSelectCallback = (ctx: SelectEventDetail) => unknown;
@@ -429,7 +429,7 @@ export type Display = 'inline' | 'tokens';
 /** `open` / `close` / `ready`. */
 export type PaletteEventDetail = PaletteContext;
 
-/** `select` — a search result was chosen. */
+/** `result-select` — a search result was chosen. */
 export interface SelectEventDetail extends PaletteContext {
   /** The chosen search result. */
   result: Result;

@@ -56,7 +56,7 @@ Objects and functions are **properties only** — set them from JS (or a framewo
 | `searchCallback` | `({ scope, term, signal }) => Result[] \| Promise<Result[]>` | Context + global search. `scope` is `'global'` or `{ contextId }`. Called only for **non-empty** terms, debounced. |
 | `getStepOptionsCallback` | `({ commandId, stepId, term, selections, signal }) => Option[] \| Promise<Option[]>` | Fallback for steps without their own `getOptionsCallback`. |
 | `beforeActionCallback` | `(detail) => unknown` | Runs before a command fires `action` (same detail). `false` (async OK) cancels: no `onClick`, no event, nothing recorded; a wizard steps back to its last answer and the palette stays open. |
-| `beforeSelectCallback` | `({ result, scope }) => unknown` | Runs before a search result fires `select`. `false` (async OK) cancels; the palette stays open. Other return values continue. |
+| `beforeSelectCallback` | `({ result, scope }) => unknown` | Runs before a search result fires `result-select`. `false` (async OK) cancels; the palette stays open. Other return values continue. |
 | `loadUsageCallback` | `(ctx) => UsageEntry[] \| Promise<UsageEntry[]>` | Load favorites/recents from the host instead of `localStorage`. |
 | `saveUsageCallback` | `({ entry }) => void \| Promise<void>` | Upsert one entry (by `entry.key`) on every use / star toggle. |
 | `labels` | `Partial<Labels>` | UI strings; unset keys fall back to English. |
@@ -74,7 +74,7 @@ Objects and functions are **properties only** — set them from JS (or a framewo
 | `isFeedbackShown` | `boolean` | Show the one-line feedback after a command ran. Default `true` (attribute `show-feedback`). |
 | `feedbackDuration` | `number` | How long it stays (ms). Default `1500`; `0` = off. |
 | `favoritesHotkey` / `recentHotkey` | `string` | `g <letter>` sequence (palette closed) that opens on that list. Defaults `'g f'` / off. |
-| `onOpen` / `onClose` / `onSelect` / `onAction` / `onReady` | `(detail) => void` | Event twins — see [Events](#events). |
+| `onOpen` / `onClose` / `onResultSelect` / `onAction` / `onReady` | `(detail) => void` | Event twins — see [Events](#events). |
 | `controller` *(read-only)* | `CommandPaletteController` | The public facade. |
 | `isOpen` *(read-only)* | `boolean` | |
 
@@ -142,7 +142,7 @@ carries `controller` / `element` (non-enumerable) and the presentation flags.
 | Event | Twin | `detail` | When |
 |---|---|---|---|
 | `open` / `close` | `onOpen` / `onClose` | context only | Opened / closed (`close` also follows every command and selection). |
-| `select` | `onSelect` | `{ result, scope }` | A search result was chosen. Veto with `beforeSelectCallback`. |
+| `result-select` | `onResultSelect` | `{ result, scope }` | A search result was chosen. Veto with `beforeSelectCallback`. |
 | `action` | `onAction` | `{ action: 'custom', id, item, source: 'palette', selections, sourceEvent, triggerElement, dataset }` | A command ran — immediately (no `steps`, `selections: []`) or after the wizard's last answer. `id` is the command id, `item` the command. |
 | `ready` | `onReady` | context only | First build done — once per element lifetime, fired by core `BlissElement` (see [Lifecycle](#lifecycle)). |
 
@@ -159,7 +159,7 @@ palette.addEventListener('action', (e) => {
 palette.beforeActionCallback = async ({ item }) => item.isDanger ? confirm(`Run ${item.text}?`) : undefined;
 ```
 
-The palette **closes itself** after `select` / `action` (after a brief
+The palette **closes itself** after `result-select` / `action` (after a brief
 [feedback line](#feedback) for commands); the host performs the effect (navigate, toast, …).
 
 ## Data shapes
@@ -340,7 +340,7 @@ and a countdown bar — then closes. A wizard reads as the sentence the user bui
   `close` fires when the panel goes.
 - Any key or click dismisses it; <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd> goes straight to a fresh palette.
 - `show-feedback="false"` (or `feedback-duration="0"`) turns it off.
-- Search-result selections (`select`) get no panel by default — they usually navigate away.
+- Search-result selections (`result-select`) get no panel by default — they usually navigate away.
 
 ```js
 palette.renderFeedbackCallback = (ctx) => {

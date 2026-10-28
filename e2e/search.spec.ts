@@ -25,7 +25,7 @@ test('context search: entered from the home screen too, then searches non-empty 
   await expect(p.titles.first().locator('mark')).toHaveText('ipad');
   expect((await calls(page)).search).toEqual([{ scope: { contextId: 'products' }, term: 'ipad' }]);
   await page.keyboard.press('Enter');
-  const sel = (await events(page)).find((e) => e.name === 'select');
+  const sel = (await events(page)).find((e) => e.name === 'result-select');
   expect(sel?.detail).toMatchObject({ result: { id: 'products-0' }, scope: { contextId: 'products' } });
   await expect(p.root).not.toHaveClass(/--active/);
 });
@@ -51,7 +51,7 @@ test('global search: local matches first, then provider hits (debounced, one cal
   expect((await calls(page)).search).toEqual([{ scope: 'global', term: 'deploy' }]);
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
-  const sel = (await events(page)).find((e) => e.name === 'select');
+  const sel = (await events(page)).find((e) => e.name === 'result-select');
   expect(sel?.detail).toMatchObject({ result: { id: 'Global-0' }, scope: 'global' });
 });
 

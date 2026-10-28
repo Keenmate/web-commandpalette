@@ -2,7 +2,7 @@ import { expect, load, palette, test, type Page } from './fixtures';
 
 /**
  * The KeenMate interaction model (web-components-core `/actions`, SPEC §12.5 / §12.12):
- *   - events `open` / `close` / `select` / `action` / `ready` (no `cp-` prefix), bubbling,
+ *   - events `open` / `close` / `result-select` / `action` / `ready` (no `cp-` prefix), bubbling,
  *     not composed; the camelCase `on*` twin gets the SAME detail first
  *   - a command is a core action item: one `action` event per run (instant or after the
  *     wizard), in the order beforeActionCallback → onClick → onAction → action event
@@ -145,7 +145,7 @@ test('select: beforeSelectCallback → false keeps the palette open; otherwise s
   await setVeto(page, '');
   await page.keyboard.press('Enter');
   await expect(p.root).not.toHaveClass(/--active/);
-  const sel = (await details(page)).find((d) => d.name === 'select');
+  const sel = (await details(page)).find((d) => d.name === 'result-select');
   expect(sel.json).toMatchObject({ result: { id: 'p1', title: 'Person ann' }, scope: { contextId: 'people' } });
   expect(sel.sameAsTwin && sel.hasController && sel.elementIsHost).toBe(true);
 });
