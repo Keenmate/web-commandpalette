@@ -12,6 +12,21 @@ test('unthemed: the --cp-* fallbacks apply at a 10px rem', async ({ page }) => {
   expect(await style(p.input, 'font-size')).toBe('16px');
 });
 
+test('motion: the contract speeds; 0s under reduced motion or when set to 0s', async ({ page }) => {
+  await load(page, 'theming');
+  const p = palette(page);
+  await open(page);
+  const speeds = async () => Promise.all(['fast', 'normal', 'medium'].map((s) => style(p.container, `--cp-transition-${s}`)));
+  expect((await speeds()).map((v) => v.trim())).toEqual(['0.1s', '0.15s', '0.25s']);
+  expect(await style(p.container, 'animation-duration')).toBe('0.15s');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  expect((await speeds()).map((v) => v.trim())).toEqual(['0s', '0s', '0s']);
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await p.host.evaluate((el) => (el as HTMLElement).style.setProperty('--cp-transition-normal', '0s'));
+  expect(await style(p.container, 'animation-duration')).toBe('0s');
+  expect((await style(p.container, '--cp-disabled-opacity')).trim()).toBe('0.65');
+});
+
 test('a host theme on :root pierces the shadow DOM (--base-* + --base-rem)', async ({ page }) => {
   await load(page, 'theming');
   await page.evaluate(() => { (document.getElementById('host-theme') as HTMLStyleElement).media = 'all'; });

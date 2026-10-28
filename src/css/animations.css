@@ -39,14 +39,18 @@
   animation: cp-spin 1s linear infinite;
 }
 
+/* Reduced motion: every transition / animation timed by --cp-transition-* stops (the
+   contract does the same for --base-duration-*; this holds without it). The feedback
+   countdown bar is timed from `feedback-duration`, so it is hidden from the motion instead.
+   The spinner keeps turning: it is the only sign that a search is running. */
 @media (prefers-reduced-motion: reduce) {
-  .cp-confirm__progress,
-  .pa-command-palette__backdrop,
-  .pa-command-palette__container {
-    animation: none;
+  :host {
+    --cp-transition-fast: 0s;
+    --cp-transition-normal: 0s;
+    --cp-transition-medium: 0s;
   }
 
-  .cp-confirming .pa-command-palette__container {
-    transition: none;
+  .cp-confirm__progress {
+    animation: none;
   }
 }

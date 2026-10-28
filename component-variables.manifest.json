@@ -37,7 +37,7 @@
     {
       "name": "base-disabled-opacity",
       "required": false,
-      "usage": "Opacity of a disabled command row"
+      "usage": "Dimming of anything disabled (--cp-disabled-opacity)"
     },
     {
       "name": "base-duration-fast",
@@ -579,6 +579,10 @@
       "usage": "Dialog shadow"
     },
     {
+      "name": "cp-disabled-opacity",
+      "usage": "Dimming of anything disabled (--base-disabled-opacity)"
+    },
+    {
       "name": "cp-easing",
       "usage": "Easing (--base-ease-standard)"
     },
@@ -816,7 +820,7 @@
     },
     {
       "name": "cp-item-disabled-opacity",
-      "usage": "Opacity of a disabled command row (--base-disabled-opacity)"
+      "usage": "Opacity of a disabled command row (--cp-disabled-opacity)"
     },
     {
       "name": "cp-item-hover-bg",
@@ -936,15 +940,15 @@
     },
     {
       "name": "cp-transition-fast",
-      "usage": "Duration (--base-duration-fast)"
+      "usage": "Duration (--base-duration-fast); 0s under prefers-reduced-motion, 0s = motion off"
     },
     {
       "name": "cp-transition-medium",
-      "usage": "Duration (--base-duration-medium)"
+      "usage": "Duration (--base-duration-medium); 0s under prefers-reduced-motion, 0s = motion off"
     },
     {
       "name": "cp-transition-normal",
-      "usage": "Duration (--base-duration-normal)"
+      "usage": "Duration (--base-duration-normal); 0s under prefers-reduced-motion, 0s = motion off"
     },
     {
       "name": "cp-width",

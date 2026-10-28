@@ -71,6 +71,19 @@ The palette uses `--base-font-family` if set, else the page's font — the input
 included (form controls don't inherit fonts on their own, so the component tells them to).
 Keycaps use the same font by default; `--cp-key-font-family` changes them.
 
+## Motion
+
+Durations use the contract's speeds only: `--cp-transition-fast` / `-normal` / `-medium` read
+`--base-duration-fast` / `-normal` / `-medium` (0.1s / 0.15s / 0.25s); easings `--cp-easing` /
+`-easing-out` read `--base-ease-standard` / `--base-ease-out`. There is no attribute for it —
+motion is CSS only:
+
+- **One palette:** `web-command-palette { --cp-transition-fast: 0s; --cp-transition-normal: 0s; --cp-transition-medium: 0s; }`
+- **The whole page:** `:root { --base-duration-fast: 0s; --base-duration-normal: 0s; --base-duration-medium: 0s; --base-duration-slow: 0s; }`
+- **`prefers-reduced-motion: reduce`** sets the `--cp-transition-*` durations to `0s` and hides the
+  feedback countdown bar. The "Searching…" spinner keeps turning (1s per turn): it is the only sign
+  that a search is running.
+
 ## Palette knobs
 
 | Variable | Purpose |
@@ -81,7 +94,8 @@ Keycaps use the same font by default; `--cp-key-font-family` changes them.
 | `--cp-backdrop-bg` | Backdrop colour |
 | `--cp-backdrop-filter` | Backdrop filter (`none` to disable the blur) |
 | `--cp-item-hover-bg` / `-item-active-bg` | Row backgrounds |
-| `--cp-item-disabled-opacity` / `-item-danger-color` | A disabled command row (`isDisabled`, default `--base-disabled-opacity`) / a destructive one's title (`isDanger`, default `--base-danger-text-color`) |
+| `--cp-disabled-opacity` | Dimming of anything disabled (default `--base-disabled-opacity`, 0.65) |
+| `--cp-item-disabled-opacity` / `-item-danger-color` | A disabled command row (`isDisabled`, default `--cp-disabled-opacity`) / a destructive one's title (`isDanger`, default `--base-danger-text-color`) |
 | `--cp-highlight-bg` / `-highlight-text` | `<mark>` query highlight |
 | `--cp-key-bg` / `-key-text` / `-key-font-size` / `-key-font-weight` | Keycaps |
 | `--cp-scrollbar-thumb-bg` / `-thumb-bg-hover` / `-track-bg` | Results scrollbar colours (default: `--base-border-color` thumb on a transparent track) |

@@ -127,6 +127,18 @@ instead of `cp-select` / `cp-complete` / `cp-command`, install `searchCallback({
 signal })` / `getStepOptionsCallback(ctx)` (push `term`, not `query`), and send commands /
 contexts / options with the new field names.
 
+### Changed — motion and disabled dimming follow the contract
+
+- **Reduced motion sets the durations to `0s`:** under `prefers-reduced-motion: reduce` the
+  `--cp-transition-fast` / `-normal` / `-medium` variables are `0s` on `:host` (was
+  `animation: none` / `transition: none` on the dialog parts), so everything timed by them stops,
+  hover / focus transitions included (they ran before). The feedback countdown bar is still hidden;
+  the search spinner keeps turning (state, not decoration). Motion off without the media query is
+  CSS only: `--cp-transition-*: 0s`, or `--base-duration-*: 0s` page-wide. No duration was
+  changed: every one already used the contract's speeds (0.1s / 0.15s / 0.25s).
+- **`--cp-disabled-opacity`** (new, `var(--base-disabled-opacity, 0.65)`) is the one dimming for
+  disabled things; `--cp-item-disabled-opacity` now defaults to it.
+
 ### Changed — standalone colors follow the contract
 
 Without `@keenmate/base-css-variables` on the page the fallbacks had drifted from the contract.
