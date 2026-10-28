@@ -40,10 +40,10 @@ export type {
   Mode,
   Display,
   PaletteEventDetail,
-  SelectEventDetail,
+  ResultSelectEventDetail,
   ActionEventDetail,
   BeforeActionCallback,
-  BeforeSelectCallback,
+  BeforeResultSelectCallback,
 } from './types';
 
 export { enableLogging, disableLogging, setLogLevel, setCategoryLevel, LOGGING_CATEGORIES } from './logger';

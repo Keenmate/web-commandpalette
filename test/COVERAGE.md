@@ -109,7 +109,7 @@ Known bugs are in `test/NOTES.md`.
 | Feature | Status | Spec | Fixture |
 | --- | :-: | --- | --- |
 | Events + `on*` twins, bubbling, not composed | ✓ | `interaction-model.spec.ts` | `interaction-model.html` |
-| `beforeActionCallback` / `beforeSelectCallback` veto (sync + async) | ✓ | `interaction-model.spec.ts` | `interaction-model.html` |
+| `beforeActionCallback` / `beforeResultSelectCallback` veto (sync + async) | ✓ | `interaction-model.spec.ts` | `interaction-model.html` |
 | `isVisible` / `isDisabled` / `isDanger` / `tooltip` / `cssClass` | ✓ | `interaction-model.spec.ts` | `interaction-model.html` |
 
 ## 9. Attributes / config

@@ -49,7 +49,7 @@ top; the CSS is the component's own (plain CSS in the shadow root).
 > `shortcut` → `trigger`, `hotkey` → `shortcut`, plus `isVisible` / `isDisabled` / `isDanger` /
 > `onClick` / `get*Callback`); options use `text`; every callback takes one `ctx`
 > (`searchCallback({ scope, term, signal })`, `getStepOptionsCallback(ctx)`);
-> `beforeActionCallback` / `beforeSelectCallback` can cancel; `el.controller` is the public facade.
+> `beforeActionCallback` / `beforeResultSelectCallback` can cancel; `el.controller` is the public facade.
 > The full old → new table is in the [CHANGELOG `[Unreleased]` section](CHANGELOG.md#unreleased);
 > the docs below already describe the new API.
 

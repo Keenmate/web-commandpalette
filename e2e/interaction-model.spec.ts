@@ -6,7 +6,7 @@ import { expect, load, palette, test, type Page } from './fixtures';
  *     not composed; the camelCase `on*` twin gets the SAME detail first
  *   - a command is a core action item: one `action` event per run (instant or after the
  *     wizard), in the order beforeActionCallback → onClick → onAction → action event
- *   - beforeActionCallback / beforeSelectCallback → `false` cancels (async OK)
+ *   - beforeActionCallback / beforeResultSelectCallback → `false` cancels (async OK)
  *   - every ctx / detail carries `controller` (= el.controller) / `element` (non-enumerable)
  *     + the presentation flags; callbacks take ONE ctx
  *   - isVisible / isDisabled / isDanger / tooltip / cssClass / get*Callback on commands
@@ -128,7 +128,7 @@ test('an async veto (Promise<false>) also cancels', async ({ page }) => {
   expect(await log(page)).toEqual(['on:open', 'event:open', 'before:reload']);
 });
 
-test('select: beforeSelectCallback → false keeps the palette open; otherwise select fires with { result, scope }', async ({ page }) => {
+test('select: beforeResultSelectCallback → false keeps the palette open; otherwise select fires with { result, scope }', async ({ page }) => {
   const p = palette(page);
   await setVeto(page, 'select');
   await openPalette(page);
@@ -138,7 +138,7 @@ test('select: beforeSelectCallback → false keeps the palette open; otherwise s
   expect(search.json).toEqual({ scope: { contextId: 'people' }, term: 'ann', presentation: 'floating', isFullscreen: false, isModal: false });
   expect(search.hasSignal && search.hasController).toBe(true);
   await page.keyboard.press('Enter');
-  await expect.poll(() => log(page)).toContain('before-select:p1');
+  await expect.poll(() => log(page)).toContain('before-result-select:p1');
   await expect(p.root).toHaveClass(/--active/);
   expect(await log(page)).not.toContain('event:select');
 

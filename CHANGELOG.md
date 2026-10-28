@@ -32,7 +32,7 @@ The cross-component naming pass (one vocabulary for all KeenMate web components)
 - **Limits are `max*Count`**: `favoritesLimit` / `favorites-limit` → **`maxFavoriteCount`** /
   **`max-favorite-count`**; `recentLimit` / `recent-limit` → **`maxRecentCount`** / **`max-recent-count`**.
 - **A search result is `result`, not `item`** (`item` is reserved for action items — the `action`
-  detail's `item` is still the command): `select` detail / `onSelect` / `beforeSelectCallback` ctx
+  detail's `item` is still the command): `select` detail / `onSelect` / `beforeResultSelectCallback` ctx
   `{ item, scope }` → **`{ result, scope }`**; `FeedbackContext.item` → `result`;
   `UsageEntry.item` → `result` (persisted: a recent / favorite search result stored by an earlier
   rc has no `result` and is skipped — it comes back the next time it is chosen). **Migrate:** clear
@@ -40,7 +40,10 @@ The cross-component naming pass (one vocabulary for all KeenMate web components)
   (`entries.map((e) => e.item && !e.result ? { ...e, result: e.item } : e)`). The engine's
   `select` effect carries `result` too.
 - **Event `select` → `result-select`** (twin `onSelect` → **`onResultSelect`**; detail unchanged
-  `{ result, scope }`; still vetoed by `beforeSelectCallback`).
+  `{ result, scope }`; still vetoed by `beforeResultSelectCallback`).
+- **Type `SelectEventDetail` → `ResultSelectEventDetail`** (the `result-select` detail). The veto hook
+  added in this release cycle is named **`beforeResultSelectCallback`** (type `BeforeResultSelectCallback`;
+  earlier unreleased builds called it `beforeSelectCallback`).
 - **`labels.emptyText` → `labels.noResults`** (default "No results found" — a search / filter
   matched nothing; `noFavorites` / `noRecent` stay). All other UI strings were already `labels` keys.
 - **`labels`: `''` is deliberately empty** — the string is not rendered (an `''` hint label hides
@@ -106,7 +109,7 @@ goes through core `runAction`: `beforeActionCallback(detail)` → the command's 
 | `saveUsageCallback(entry)` | `saveUsageCallback({ entry })` |
 | `renderConfirmationCallback({ type: 'complete' \| 'command' \| 'select', commandName, … })` | `renderConfirmationCallback({ type: 'action' \| 'select', commandText, … })` + the context |
 | — | `beforeActionCallback(detail)` → `false` cancels a command run (async OK): no `onClick`, no event, nothing recorded; a wizard steps back to its last answer, the palette stays open |
-| — | `beforeSelectCallback({ item, scope })` → `false` cancels a result selection (async OK; a sync hook keeps the flow synchronous); the palette stays open |
+| — | `beforeResultSelectCallback({ item, scope })` → `false` cancels a result selection (async OK; a sync hook keeps the flow synchronous); the palette stays open |
 
 **Controller / engine**
 
@@ -115,7 +118,7 @@ goes through core `runAction`: `beforeActionCallback(detail)` → the command's 
 | element methods only | `el.controller` (`CommandPaletteController`): `isOpen`, `open`, `close`, `toggle`, `reset`, `openWith`, `openFavorites`, `openRecent`, `setCommands`, `setContexts` (the element methods stay) |
 | `PaletteMachine` / `MachineHost` (exported) | `PaletteEngine` / `PaletteEngineHost` (exported for standalone use; the element never exposes it). The host gains an optional `context(fields)`; `effect()` may answer `false` / a Promise to veto. `Effect` `{ type: 'command' \| 'complete', commandId }` → `{ type: 'action', command, selections }` |
 | `findByShortcut` (internal) | `findByTrigger` |
-| types `CompleteEventDetail`, `CommandEventDetail` | `ActionEventDetail`; new `PaletteContext`, `CommandContext`, `StepContext`, `SearchContext`, `PaletteEventDetail`, `BeforeActionCallback`, `BeforeSelectCallback`, `CommandPaletteController` |
+| types `CompleteEventDetail`, `CommandEventDetail` | `ActionEventDetail`; new `PaletteContext`, `CommandContext`, `StepContext`, `SearchContext`, `PaletteEventDetail`, `BeforeActionCallback`, `BeforeResultSelectCallback`, `CommandPaletteController` |
 
 **LiveView bridge (`@keenmate/keen-web-commandpalette`)** — `data-search-event` /
 `data-step-options-event` keep their mechanism (their values are the LiveView event names the

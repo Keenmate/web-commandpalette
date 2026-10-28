@@ -59,7 +59,7 @@ palette.searchCallback = async ({ scope, term, signal }) =&gt; fetchResults(scop
         a core action item: <code>detail.id</code> is the command id, <code>detail.selections</code> the wizard's
         answers, empty for an instant command). <code>open</code> and <code>close</code> bracket every session.
         Each event has a camelCase twin (<code>el.onAction = (detail) =&gt; …</code>), and
-        <code>beforeActionCallback</code> / <code>beforeSelectCallback</code> can return <code>false</code> to cancel.
+        <code>beforeActionCallback</code> / <code>beforeResultSelectCallback</code> can return <code>false</code> to cancel.
     </p>
     <div class="output">
         <div class="output-label">Event log</div>

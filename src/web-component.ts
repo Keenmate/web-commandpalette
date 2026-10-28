@@ -43,7 +43,7 @@ import {
   resolveLabels,
   type ActionEventDetail,
   type BeforeActionCallback,
-  type BeforeSelectCallback,
+  type BeforeResultSelectCallback,
   type Command,
   type CommandPaletteController,
   type FeedbackContext,
@@ -59,7 +59,7 @@ import {
   type Scope,
   type SearchCallback,
   type Selection,
-  type SelectEventDetail,
+  type ResultSelectEventDetail,
   type StepOptionsCallback,
 } from './types';
 import styles from './css/main.css?inline';
@@ -85,7 +85,7 @@ const INPUTS: readonly InputDef[] = [
     description: 'Options for a command step; `ctx = { commandId, stepId, term, selections, signal }` + `controller` / `element`. A static step is fetched ONCE on entry (term `""`) and filtered client-side; an `isLiveSearch: true` step is called per debounced keystroke. A step with its own `getOptionsCallback` uses that instead.' },
   { configKey: 'beforeActionCallback', converter: toFunction(), on: 'none', type: '(detail: ActionEventDetail) => unknown',
     description: 'Runs before a command fires `action`, with the same detail. Return `false` (async OK) to cancel: no `onClick`, no event, nothing recorded; a wizard steps back to its last answer and the palette stays open.' },
-  { configKey: 'beforeSelectCallback', converter: toFunction(), on: 'none', type: '(ctx: SelectEventDetail) => unknown',
+  { configKey: 'beforeResultSelectCallback', converter: toFunction(), on: 'none', type: '(ctx: ResultSelectEventDetail) => unknown',
     description: 'Runs before a search result fires `result-select` (`ctx = { result, scope }`). Return `false` (async OK) to cancel: no event, nothing recorded, the palette stays open. Other return values continue.' },
   { configKey: 'loadUsageCallback', converter: toFunction(), on: 'update', type: '(ctx: PaletteContext) => UsageEntry[] | Promise<UsageEntry[]>',
     description: 'Load favorites/recents from the host (e.g. per user, from the server) instead of `localStorage`. Called on connect and when this or `usage-key` changes.' },
@@ -140,7 +140,7 @@ const INPUTS: readonly InputDef[] = [
 type CommandPaletteEvents = {
   open: PaletteEventDetail;
   close: PaletteEventDetail;
-  'result-select': SelectEventDetail;
+  'result-select': ResultSelectEventDetail;
   action: ActionEventDetail;
   ready: PaletteEventDetail;
 };
@@ -151,7 +151,7 @@ type CommandPaletteEvents = {
 const EVENTS = [
   { name: 'open', description: 'The palette opened. Twin: `onOpen(detail)`.' },
   { name: 'close', description: 'The palette closed (also after a command ran / a result was chosen). Twin: `onClose(detail)`.' },
-  { name: 'result-select', description: "A search result was chosen. `detail = { result, scope }` (`scope` is `'global'` or `{ contextId }`). Perform the effect (navigate…); the palette closes itself. Veto with `beforeSelectCallback`. Twin: `onResultSelect(detail)`." },
+  { name: 'result-select', description: "A search result was chosen. `detail = { result, scope }` (`scope` is `'global'` or `{ contextId }`). Perform the effect (navigate…); the palette closes itself. Veto with `beforeResultSelectCallback`. Twin: `onResultSelect(detail)`." },
   { name: 'action', description: "A command ran — immediately (no `steps`) or after the wizard's last answer. `detail = { action: 'custom', id, item, source: 'palette', selections, sourceEvent, triggerElement, dataset }` — `id` is the command id, `item` the command, each selection `{ stepId, label, value, optionId?, isFreeText }`. The command's `onClick(detail)` runs first; veto with `beforeActionCallback`. The palette closes itself. Twin: `onAction(detail)`." },
   { name: 'ready', description: 'The palette was built for the first time (once per element lifetime; fired by core `BlissElement`) — at first connect, or when the `defer` gate is released (`el.release()` / removing `defer`). The host then also has the `ready` attribute and matches `:state(ready)`; `el.whenReady()` resolves. Twin: `onReady(detail)`.' },
 ] as const;
@@ -187,7 +187,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   declare searchCallback: SearchCallback | null;
   declare getStepOptionsCallback: StepOptionsCallback | null;
   declare beforeActionCallback: BeforeActionCallback | null;
-  declare beforeSelectCallback: BeforeSelectCallback | null;
+  declare beforeResultSelectCallback: BeforeResultSelectCallback | null;
   declare loadUsageCallback: LoadUsageCallback | null;
   declare saveUsageCallback: SaveUsageCallback | null;
   declare usageStorage: 'local' | 'none';
@@ -211,7 +211,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   // camelCase twins — called with the event DETAIL, before the DOM event.
   declare onOpen: ((detail: PaletteEventDetail) => void) | null;
   declare onClose: ((detail: PaletteEventDetail) => void) | null;
-  declare onResultSelect: ((detail: SelectEventDetail) => void) | null;
+  declare onResultSelect: ((detail: ResultSelectEventDetail) => void) | null;
   declare onAction: ((detail: ActionEventDetail) => void) | null;
   declare onReady: ((detail: PaletteEventDetail) => void) | null;
 
@@ -337,9 +337,9 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     }
   }
 
-  /** A search result: `beforeSelectCallback` → `result-select` → close. Sync hooks keep the flow synchronous. */
+  /** A search result: `beforeResultSelectCallback` → `result-select` → close. Sync hooks keep the flow synchronous. */
   #select(result: Result, scope: Scope): boolean | Promise<boolean> {
-    const detail: SelectEventDetail = this.#ctx({ result, scope });
+    const detail: ResultSelectEventDetail = this.#ctx({ result, scope });
     const proceed = (gate: BeforeCallbackResult): boolean => {
       if (gate.isRejected) {
         this.log.INTERACTION.debug('select vetoed', result);
@@ -350,7 +350,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
       this.#afterEffect({ type: 'select', result, scope });
       return true;
     };
-    const gate = runBeforeCallbackEager(this.config.beforeSelectCallback as BeforeSelectCallback | null, detail, 'beforeSelectCallback');
+    const gate = runBeforeCallbackEager(this.config.beforeResultSelectCallback as BeforeResultSelectCallback | null, detail, 'beforeResultSelectCallback');
     return gate instanceof Promise ? gate.then(proceed) : proceed(gate);
   }
 

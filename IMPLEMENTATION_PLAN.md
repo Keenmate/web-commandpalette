@@ -170,7 +170,7 @@ the `g <letter>` sequences).
 | `contexts` | `Context[]` | Static list. Shown on the home screen + under `:`. |
 | `searchCallback` | `({ scope, term, signal }) => Result[] \| Promise<Result[]>` | Scoped + global search. `scope` is `'global'` or `{ contextId }`. Called ONLY for non-empty queries (see §10). |
 | `getStepOptionsCallback` | `({ commandId, stepId, term, selections, signal }) => Option[] \| Promise<Option[]>` | Options for a command step. For a **static** step the full list is fetched once on entry and filtered client-side; a step marked `isLiveSearch: true` calls this per (debounced) keystroke. |
-| `beforeActionCallback` / `beforeSelectCallback` | `(detail) => unknown` | `false` cancels a command run / a result selection (async OK). |
+| `beforeActionCallback` / `beforeResultSelectCallback` | `(detail) => unknown` | `false` cancels a command run / a result selection (async OK). |
 | `labels` | `Partial<Labels>` | All UI strings (see §12). i18n is the host's job. |
 | `display` | `'inline' \| 'tokens'` | Step display style. Default `'inline'`. |
 | `size` | `'sm' \| 'lg' \| 'xl' \| null` | Width/height preset (CSS). `null` = default. |
@@ -207,7 +207,7 @@ Every detail carries `controller` / `element` (non-enumerable) and the presentat
 semantics):** on `select` / `action`, the component **closes itself**,
 and the host does the navigation/toast in its event handler. No "directive returned to the
 component" round-trip in v1. (A future `preventDefault()`-to-keep-open or a reply-directive
-channel can be added later. Cancelling is done: `beforeActionCallback` / `beforeSelectCallback` → `false`.)
+channel can be added later. Cancelling is done: `beforeActionCallback` / `beforeResultSelectCallback` → `false`.)
 
 ---
 

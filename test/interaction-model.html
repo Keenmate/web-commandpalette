@@ -49,8 +49,8 @@
       if (window.veto === 'action') return false;
       if (window.veto === 'action-async') return new Promise((r) => setTimeout(() => r(false), 30));
     };
-    palette.beforeSelectCallback = (ctx) => {
-      window.__log.push(`before-select:${ctx.result.id}`);
+    palette.beforeResultSelectCallback = (ctx) => {
+      window.__log.push(`before-result-select:${ctx.result.id}`);
       if (window.veto === 'select') return false;
     };
 

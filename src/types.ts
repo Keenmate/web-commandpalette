@@ -302,11 +302,11 @@ export type RenderFeedbackCallback = (ctx: FeedbackContext) => string | HTMLElem
 // ── before-hooks ────────────────────────────────────────────────────────────
 
 /**
- * `beforeSelectCallback(ctx)` — a search result is about to be chosen. Return
+ * `beforeResultSelectCallback(ctx)` — a search result is about to be chosen. Return
  * `false` (or a Promise of it) to cancel: no `result-select` event, nothing recorded, the
  * palette stays open. Any other return continues.
  */
-export type BeforeSelectCallback = (ctx: SelectEventDetail) => unknown;
+export type BeforeResultSelectCallback = (ctx: ResultSelectEventDetail) => unknown;
 
 /**
  * `beforeActionCallback(detail)` — a command is about to run (the `action` detail).
@@ -449,7 +449,7 @@ export type Display = 'inline' | 'tokens';
 export type PaletteEventDetail = PaletteContext;
 
 /** `result-select` — a search result was chosen. */
-export interface SelectEventDetail extends PaletteContext {
+export interface ResultSelectEventDetail extends PaletteContext {
   /** The chosen search result. */
   result: Result;
   scope: Scope;
