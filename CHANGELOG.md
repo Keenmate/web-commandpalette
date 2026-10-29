@@ -24,9 +24,7 @@ callback and item API below is breaking.
   `ctx = { component, context, containerElement, element, label }`, optional cleanup return
   (run when results land or the palette closes). Beats the page-wide
   `window.components.renderLoaderCallback`.
-- **Dev dependency:** `@keenmate/base-css-variables` points to `file:../base-css-variables`
-  (2.0.0-rc06 with `--base-loader-*` is unpublished) — **switch back to `^2.0.0-rc06` before
-  publishing.**
+- **Dev dependency:** requires `@keenmate/base-css-variables` `^2.0.0-rc06` (the `--base-loader-*` tokens).
 - **Tests:** `e2e/search-async.spec.ts` — default loader + role/label, `labels.searching`,
   page hook + cleanup on results / close, instance hook beats the page hook.
 
