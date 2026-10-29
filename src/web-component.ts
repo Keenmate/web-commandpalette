@@ -32,6 +32,7 @@ import {
   type InputDef,
   type MobilePresentation,
   type OverlayHandle,
+  type RenderLoaderCallback,
 } from '@keenmate/web-components-core';
 import { runAction } from '@keenmate/web-components-core/actions';
 import { PaletteEngine, type Effect, type EffectOutcome, type PaletteEngineHost, type TokenView } from './palette';
@@ -91,6 +92,8 @@ const INPUTS: readonly InputDef[] = [
     description: 'Load favorites/recents from the host (e.g. per user, from the server) instead of `localStorage`. Called on connect and when this or `usage-key` changes.' },
   { configKey: 'renderFeedbackCallback', converter: toFunction(), on: 'none', type: '(ctx: FeedbackContext) => string | HTMLElement | null | false',
     description: 'Render the text of the one-line feedback shown after a command ran (the ✓, "Done" and countdown stay). `ctx = { type, commandId?, commandText?, selections?, sentence, result?, scope?, duration }` + `controller` / `element`; `type` is `action` or `select`. Return markup / an element to replace the default, `null` for the default, or `false` to skip it this time. Search-result selections (`type: "select"`) get no feedback unless this returns content.' },
+  { configKey: 'renderLoadingCallback', converter: toFunction(), on: 'none', type: '(ctx: LoaderRenderContext) => void | (() => void)',
+    description: 'Draw the searching loader yourself (shared loader, core SPEC §12.14). `ctx = { component, context, containerElement, element, label }`; `context` is `search` (a search / step-options request in flight, `labels.searching`). Fill `containerElement` (already `role="status"` + `aria-label`); optionally return a cleanup. Beats the page-wide `window.components.renderLoaderCallback`; unset = the default `.cp-loader` (`--cp-loader-*` tokens).' },
   { configKey: 'saveUsageCallback', converter: toFunction(), on: 'none', type: '(ctx: { entry: UsageEntry }) => void | Promise<void>',
     description: 'Upsert one favorite/recent entry (`ctx.entry`, by `entry.key`) — called on every use and every star toggle when `loadUsageCallback` is set.' },
 
@@ -202,6 +205,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   declare isFeedbackShown: boolean;
   declare feedbackDuration: number;
   declare renderFeedbackCallback: RenderFeedbackCallback | null;
+  declare renderLoadingCallback: RenderLoaderCallback | null;
   declare display: Display;
   declare size: 'sm' | 'lg' | 'xl' | null;
   declare pageSize: number;
@@ -239,7 +243,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     adoptStyles(this.#shadow, styles);
     this.#shell = createShell();
     this.#shadow.appendChild(this.#shell.root);
-    this.#renderer = new Renderer(this.#shell);
+    this.#renderer = new Renderer(this.#shell, this);
     this.#engine = new PaletteEngine(this.#engineHost());
     this.#globalKeys = new GlobalKeys({
       isOpen: () => this.#isOpen,
@@ -743,6 +747,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     if (!this.#isOpen) return;
     this.#endFeedback();
     this.#isOpen = false;
+    this.#renderer.clearLoader();
     this.#engine.dispose();
     this.#engine.reset();
     this.#shell.root.classList.remove('pa-command-palette--active');

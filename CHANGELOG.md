@@ -11,6 +11,25 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Changed — shared loader (web-components-core SPEC §12.14, 2026-10-29)
+
+- **The searching loader draws through core `renderLoader()`** (context `search`): the slot
+  (`.pa-command-palette__loader-slot`) carries `role="status"` + `aria-label` = `labels.searching`
+  (moved from `.pa-command-palette__loader`; the visible text is `aria-hidden`). The hand-made
+  `.pa-spinner` border spinner and `@keyframes cp-spin` are removed.
+- **New tokens** `--cp-loader-icon` / `--cp-loader-rotate` / `--cp-loader-duration` /
+  `--cp-loader-size` (chained to `--base-loader-*`) + `--cp-loader-color` (accent); manifest
+  updated. Under reduced motion the loader slows (contract 1.5s), never stops.
+- **New input `renderLoadingCallback`** (property): draw the loader yourself —
+  `ctx = { component, context, containerElement, element, label }`, optional cleanup return
+  (run when results land or the palette closes). Beats the page-wide
+  `window.components.renderLoaderCallback`.
+- **Dev dependency:** `@keenmate/base-css-variables` points to `file:../base-css-variables`
+  (2.0.0-rc06 with `--base-loader-*` is unpublished) — **switch back to `^2.0.0-rc06` before
+  publishing.**
+- **Tests:** `e2e/search-async.spec.ts` — default loader + role/label, `labels.searching`,
+  page hook + cleanup on results / close, instance hook beats the page hook.
+
 ### Changed — BREAKING (naming unification, web-components-core naming pass)
 
 The cross-component naming pass (one vocabulary for all KeenMate web components). No aliases.

@@ -97,7 +97,7 @@ test('loading state: a loader while nothing is shown, a veil over local matches'
   const results = p.host.locator('.pa-command-palette__results');
   await p.input.fill('wait');
   await expect(p.host.locator('.pa-command-palette__loader')).toBeVisible();
-  await expect(p.host.locator('.pa-command-palette__loader')).toHaveAttribute('role', 'status');
+  await expect(p.host.locator('.pa-command-palette__loader-slot')).toHaveAttribute('role', 'status');
   await expect(p.titles).toHaveText(['wait hit 0', 'wait hit 1']);
   await expect(p.host.locator('.pa-command-palette__loader')).toHaveCount(0);
 
@@ -123,4 +123,88 @@ test('search-debounce="0" calls per keystroke; "500" once after typing stops', a
   expect(await terms(page)).toEqual([]);
   await expect.poll(() => terms(page), { timeout: 2000 }).toEqual(['xyz']);
   await expect(p.titles).toHaveText(['xyz hit 0', 'xyz hit 1']);
+});
+
+// ── Shared loader (core SPEC §12.14): instance renderLoadingCallback >
+//    window.components.renderLoaderCallback > the default .cp-loader ──
+
+test('loader: default .cp-loader with role=status + labels.searching, removed when results land', async ({ page }) => {
+  const p = palette(page);
+  await knobs(page, (w) => { w.delays.wait = 800; });
+  await open(page);
+  await p.input.fill('wait');
+  const slot = p.host.locator('.pa-command-palette__loader-slot');
+  await expect(slot).toHaveAttribute('role', 'status');
+  await expect(slot).toHaveAttribute('aria-label', 'Searching…');
+  const loader = slot.locator('.cp-loader');
+  await expect(loader).toHaveCount(1);
+  await expect(loader).toHaveAttribute('aria-hidden', 'true');
+  const style = await loader.evaluate((el) => {
+    const cs = getComputedStyle(el);
+    return { anim: cs.animationName, mask: cs.maskImage || (cs as unknown as { webkitMaskImage: string }).webkitMaskImage };
+  });
+  expect(style.anim).toBe('cp-loader-spin');
+  expect(style.mask).toContain('url(');
+  await expect(p.titles).toHaveText(['wait hit 0', 'wait hit 1']);
+  await expect(p.host.locator('.cp-loader')).toHaveCount(0);
+});
+
+test('loader: aria-label follows labels.searching', async ({ page }) => {
+  const p = palette(page);
+  await knobs(page, (w) => { w.delays.wait = 800; });
+  await p.host.evaluate((el) => { (el as unknown as { labels: object }).labels = { searching: 'Hledám…' }; });
+  await open(page);
+  await p.input.fill('wait');
+  await expect(p.host.locator('.pa-command-palette__loader-slot')).toHaveAttribute('aria-label', 'Hledám…');
+});
+
+test('loader: the page hook replaces the default; its cleanup runs on remove (results / close)', async ({ page }) => {
+  const p = palette(page);
+  await knobs(page, (w) => { w.delays.wait = 800; w.delays.slow = 5000; });
+  await page.evaluate(() => {
+    const w = window as unknown as Record<string, any>;
+    w.loaderCtx = null;
+    w.loaderCleaned = 0;
+    w.components.renderLoaderCallback = (ctx: any) => {
+      w.loaderCtx = { component: ctx.component, context: ctx.context, label: ctx.label, id: ctx.element.id };
+      ctx.containerElement.insertAdjacentHTML('beforeend', '<span class="page-dots"></span>');
+      return () => { w.loaderCleaned++; };
+    };
+  });
+  await open(page);
+  await p.input.fill('wait');
+  await expect(p.host.locator('.pa-command-palette__loader-slot .page-dots')).toHaveCount(1);
+  await expect(p.host.locator('.cp-loader')).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).loaderCtx)).toEqual({
+    component: 'web-command-palette', context: 'search', label: 'Searching…', id: 'palette',
+  });
+  await expect(p.titles).toHaveText(['wait hit 0', 'wait hit 1']);
+  await expect(p.host.locator('.page-dots')).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).loaderCleaned)).toBe(1);
+
+  // Closing while the loader shows runs the cleanup too.
+  await p.input.fill('slow');
+  await expect(p.host.locator('.page-dots')).toHaveCount(1);
+  await page.keyboard.press('Escape');
+  await expect.poll(() => page.evaluate(() => (window as any).loaderCleaned)).toBe(2);
+});
+
+test('loader: the instance renderLoadingCallback beats the page hook', async ({ page }) => {
+  const p = palette(page);
+  await knobs(page, (w) => { w.delays.wait = 800; });
+  await page.evaluate(() => {
+    (window as any).components.renderLoaderCallback = ({ containerElement }: any) => {
+      containerElement.insertAdjacentHTML('beforeend', '<span class="page-dots"></span>');
+    };
+  });
+  await p.host.evaluate((el) => {
+    (el as any).renderLoadingCallback = ({ containerElement }: any) => {
+      containerElement.insertAdjacentHTML('beforeend', '<span class="instance-bar"></span>');
+    };
+  });
+  await open(page);
+  await p.input.fill('wait');
+  await expect(p.host.locator('.pa-command-palette__loader-slot .instance-bar')).toHaveCount(1);
+  await expect(p.host.locator('.page-dots')).toHaveCount(0);
+  await expect(p.host.locator('.cp-loader')).toHaveCount(0);
 });

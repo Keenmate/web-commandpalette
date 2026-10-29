@@ -110,6 +110,13 @@
   font-size: var(--cp-font-size-sm);
 }
 
+/* Filled by core renderLoader() — role="status" + aria-label live here. */
+.pa-command-palette__loader-slot {
+  display: inline-flex;
+  align-items: center;
+  color: var(--cp-loader-color);
+}
+
 /* --------------------------------------------------------------------------
    Rows
    -------------------------------------------------------------------------- */

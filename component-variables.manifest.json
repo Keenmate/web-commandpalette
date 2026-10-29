@@ -463,6 +463,26 @@
       "name": "base-z-popover",
       "required": false,
       "usage": "Stacking: the palette sits one step above popovers"
+    },
+    {
+      "name": "base-loader-icon",
+      "required": false,
+      "usage": "Searching loader shape (single-colour mask)"
+    },
+    {
+      "name": "base-loader-rotate",
+      "required": false,
+      "usage": "Loader rotation per cycle (0 = self-animating SVG)"
+    },
+    {
+      "name": "base-loader-duration",
+      "required": false,
+      "usage": "Loader cycle duration (slows under reduced motion)"
+    },
+    {
+      "name": "base-loader-size",
+      "required": false,
+      "usage": "Loader size"
     }
   ],
   "componentVariables": [
@@ -857,6 +877,26 @@
     {
       "name": "cp-loading-veil-bg",
       "usage": "Veil over results while a refresh loads"
+    },
+    {
+      "name": "cp-loader-icon",
+      "usage": "Searching loader shape — mask tinted by currentColor (chains --base-loader-icon)"
+    },
+    {
+      "name": "cp-loader-rotate",
+      "usage": "Loader rotation per cycle; 0 for a self-animating SVG (chains --base-loader-rotate)"
+    },
+    {
+      "name": "cp-loader-duration",
+      "usage": "Loader cycle duration (chains --base-loader-duration)"
+    },
+    {
+      "name": "cp-loader-size",
+      "usage": "Loader size (chains --base-loader-size)"
+    },
+    {
+      "name": "cp-loader-color",
+      "usage": "Loader colour (default accent)"
     },
     {
       "name": "cp-offset-top",

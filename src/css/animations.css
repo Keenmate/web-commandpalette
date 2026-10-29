@@ -1,5 +1,5 @@
 /* ==============================================================================
-   ANIMATIONS — keyframes, the loading spinner, reduced motion
+   ANIMATIONS — keyframes, the shared loader, reduced motion
    ============================================================================== */
 
 @keyframes cp-fade-in {
@@ -18,8 +18,8 @@
   }
 }
 
-@keyframes cp-spin {
-  to { transform: rotate(360deg); }
+@keyframes cp-loader-spin {
+  to { transform: rotate(var(--cp-loader-rotate)); }
 }
 
 /* Logical size, so the bar drains toward the inline start in LTR and RTL alike. */
@@ -28,21 +28,22 @@
   to { inline-size: 0; }
 }
 
-/* The "Searching…" spinner. */
-.pa-spinner {
+/* The default "Searching…" loader drawn by core renderLoader() (SPEC §12.14). */
+.cp-loader {
   display: inline-block;
-  width: calc(1.6 * var(--cp-rem));
-  height: calc(1.6 * var(--cp-rem));
-  border: 2px solid transparent;
-  border-top-color: var(--cp-accent-color);
-  border-radius: 50%;
-  animation: cp-spin 1s linear infinite;
+  inline-size: var(--cp-loader-size);
+  block-size: var(--cp-loader-size);
+  -webkit-mask: var(--cp-loader-icon) center / contain no-repeat;
+          mask: var(--cp-loader-icon) center / contain no-repeat;
+  background: currentColor;
+  animation: cp-loader-spin var(--cp-loader-duration) linear infinite;
 }
 
 /* Reduced motion: every transition / animation timed by --cp-transition-* stops (the
    contract does the same for --base-duration-*; this holds without it). The feedback
    countdown bar is timed from `feedback-duration`, so it is hidden from the motion instead.
-   The spinner keeps turning: it is the only sign that a search is running. */
+   The loader keeps turning, slower (--base-loader-duration): it is the only sign that a
+   search is running. */
 @media (prefers-reduced-motion: reduce) {
   :host {
     --cp-transition-fast: 0s;

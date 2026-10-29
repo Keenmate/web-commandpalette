@@ -66,6 +66,7 @@ Known bugs are in `test/NOTES.md`.
 | Race: superseded request aborted, late result dropped; close aborts | ✓ | `search-async.spec.ts` | `search-async.html` |
 | Rejecting / throwing provider → usable palette (CP-2: no error UI) | ✓ | `search-async.spec.ts` | `search-async.html` |
 | Loader / `results--loading` while pending | ✓ | `search-async.spec.ts` | `search-async.html` |
+| Shared loader: default `.cp-loader` + role/aria-label, page hook + cleanup, instance `renderLoadingCallback` wins | ✓ | `search-async.spec.ts` | `search-async.html` |
 | `search-debounce` (0 vs 500, superseded during debounce) | ✓ | `search-async.spec.ts` | `search-async.html` |
 | Per-context `searchCallback` / per-step `getOptionsCallback` override | ✓ | `providers.spec.ts` | `providers.html` |
 | Aliases (`/d `, `:p `; no space → filter only) | ✓ | `search.spec.ts` | `search.html` |

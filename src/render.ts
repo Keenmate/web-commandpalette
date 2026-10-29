@@ -6,6 +6,7 @@
  * (`listVersion` changed); moving the active row just toggles a class and scrolls
  * it into view, so keyboard navigation is pure DOM work.
  */
+import { renderLoader } from '@keenmate/web-components-core';
 import { escapeHtml, renderIcon } from './icons';
 import type { HomeSection, PaletteEngine, TokenView, UsageView, ViewItem } from './palette';
 import { DEFAULT_PALETTE_KEYS, type PaletteKeys } from './keyboard';
@@ -288,11 +289,39 @@ export class Renderer {
   #footer = '';
   #tokens = '';
   #announce = '';
+  /** The component host — `renderLoader()` reads its `renderLoadingCallback` (SPEC §12.14). */
+  #host: HTMLElement | null;
+  /** remove() of the loader drawn into the results list, if any. */
+  #removeLoader: (() => void) | null = null;
   /** The Ctrl/⌘ shortcuts, for keycaps (set by the element; call `invalidate()` after changing). */
   keys: PaletteKeys = DEFAULT_PALETTE_KEYS;
 
-  constructor(shell: Shell) {
+  constructor(shell: Shell, host?: HTMLElement) {
     this.#shell = shell;
+    this.#host = host ?? null;
+  }
+
+  /** Remove the results loader (runs a render hook's cleanup). Idempotent. */
+  clearLoader(): void {
+    const remove = this.#removeLoader;
+    this.#removeLoader = null;
+    remove?.();
+  }
+
+  /**
+   * Draw the searching loader into the slot the results HTML left
+   * (`[data-cp-loader]`) through core `renderLoader()`: instance
+   * `renderLoadingCallback` > page-wide `window.components.renderLoaderCallback` >
+   * the default `.cp-loader`. The slot gets `role="status"` + `aria-label`.
+   */
+  #mountLoader(labels: Labels): void {
+    const slot = this.#shell.results.querySelector<HTMLElement>('[data-cp-loader]');
+    if (!slot) return;
+    const host = this.#host ?? ((this.#shell.root.getRootNode() as ShadowRoot).host as HTMLElement | undefined) ?? this.#shell.root;
+    this.#removeLoader = renderLoader(host, slot, slot.dataset.cpLoader || 'search', {
+      prefix: 'cp',
+      label: labels.searching,
+    });
   }
 
   /** Force the next render to rebuild everything (labels/data changed). */
@@ -329,7 +358,9 @@ export class Renderer {
     if (m.listVersion !== this.#listVersion || listKey !== this.#listKey) {
       this.#listVersion = m.listVersion;
       this.#listKey = listKey;
+      this.clearLoader();
       s.results.innerHTML = this.#resultsHtml(m, { labels, keys: this.keys });
+      this.#mountLoader(labels);
       s.results.classList.toggle('pa-command-palette__results--loading', m.isLoading && m.items.length > 0);
     } else {
       this.#paintActive(m.activeIndex);
@@ -360,8 +391,10 @@ export class Renderer {
     }
     if (m.isLoading) {
       return (
-        `<div class="pa-command-palette__loader" role="status">` +
-        `<div class="pa-spinner pa-spinner--sm pa-spinner--primary"></div><span>${escapeHtml(labels.searching)}</span></div>`
+        // The slot carries role="status" + aria-label (renderLoader), so the text is aria-hidden.
+        `<div class="pa-command-palette__loader">` +
+        `<span class="pa-command-palette__loader-slot" data-cp-loader="search"></span>` +
+        `<span aria-hidden="true">${escapeHtml(labels.searching)}</span></div>`
       );
     }
     return m.emptyText ? `<div class="pa-command-palette__empty">${escapeHtml(m.emptyText)}</div>` : '';
