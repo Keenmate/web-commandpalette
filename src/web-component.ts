@@ -30,9 +30,11 @@ import {
   type BeforeCallbackResult,
   type EnvironmentSnapshot,
   type InputDef,
-  type MobilePresentation,
+  type Presentation,
   type OverlayHandle,
   type RenderLoaderCallback,
+  type ResponsiveCallback,
+  type ResponsiveMap,
 } from '@keenmate/web-components-core';
 import { runAction } from '@keenmate/web-components-core/actions';
 import { PaletteEngine, type Effect, type EffectOutcome, type PaletteEngineHost, type TokenView } from './palette';
@@ -130,7 +132,7 @@ const INPUTS: readonly InputDef[] = [
     description: "`g <letter>` sequence that opens the palette on the favorites list from anywhere (while closed, not typing). Default `g f`; `''` disables. A command with the same `shortcut` wins." },
   { configKey: 'recentHotkey', attribute: 'recent-hotkey', converter: toText({ isNullable: true }), on: 'none',
     description: '`g <letter>` sequence that opens the palette on the recent list. Off by default (e.g. `g h`).' },
-  { configKey: 'mobilePresentation', attribute: 'mobile-presentation', converter: toEnum(['auto', 'floating', 'fullscreen'] as const, { default: 'auto' }), shouldReflect: true, on: 'update',
+  { configKey: 'presentation', attribute: 'presentation', converter: toEnum(['auto', 'floating', 'fullscreen'] as const, { default: 'auto' }), shouldReflect: true, on: 'update',
     description: '`auto` (default) opens a fullscreen sheet on touch phones and the floating dialog elsewhere (a narrow desktop window stays floating); `floating` / `fullscreen` force one.' },
 
   // ── Reserved bridge hooks (wired by @keenmate/keen-web-commandpalette) ─────
@@ -211,7 +213,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   declare pageSize: number;
   declare openKey: string;
   declare searchDebounce: number;
-  declare mobilePresentation: MobilePresentation;
+  declare presentation: 'auto' | 'floating' | 'fullscreen';
   // camelCase twins — called with the event DETAIL, before the DOM event.
   declare onOpen: ((detail: PaletteEventDetail) => void) | null;
   declare onClose: ((detail: PaletteEventDetail) => void) | null;
@@ -598,7 +600,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
       this.#renderer.invalidate();
     }
     if ('size' in partial) this.#applySize();
-    if ('mobilePresentation' in partial) this.#applyPresentation(getEnvironment());
+    if ('presentation' in partial) this.#applyPresentation(getEnvironment());
     if ('commands' in partial || 'contexts' in partial) this.#engine.refresh();
     if ('display' in partial) this.#engine.displayChanged();
     if ('pageSize' in partial) this.#engine.pageSizeChanged();
@@ -694,7 +696,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
 
   /** floating vs. the phone fullscreen sheet — capability-first, via core's device classification. */
   #applyPresentation(env: EnvironmentSnapshot): void {
-    const mode = (this.config.mobilePresentation as MobilePresentation | null) ?? 'auto';
+    const mode = (this.config.presentation as Presentation | null) ?? 'auto';
     const isFullscreen = resolvePresentation(mode, env) !== 'floating';
     if (isFullscreen === this.#isFullscreen) return;
     this.#isFullscreen = isFullscreen;
@@ -816,3 +818,29 @@ function setOrRemove(el: Element, name: string, value: string): void {
   if (value) el.setAttribute(name, value);
   else el.removeAttribute(name);
 }
+
+/**
+ * Every input a `<web-command-palette>` accepts (configKey → value type) — the config
+ * type the responsive rules target.
+ */
+export type CommandPaletteConfig = Pick<CommandPaletteElement,
+  | 'commands' | 'contexts' | 'labels' | 'searchCallback' | 'getStepOptionsCallback'
+  | 'beforeActionCallback' | 'beforeResultSelectCallback' | 'loadUsageCallback' | 'saveUsageCallback'
+  | 'renderFeedbackCallback' | 'renderLoadingCallback' | 'usageStorage' | 'usageKey'
+  | 'maxRecentCount' | 'maxFavoriteCount' | 'favoriteKey' | 'favoritesKey' | 'recentKey'
+  | 'favoritesHotkey' | 'recentHotkey' | 'isFeedbackShown' | 'feedbackDuration'
+  | 'display' | 'size' | 'pageSize' | 'openKey' | 'searchDebounce' | 'presentation'>;
+
+/**
+ * Responsive rules map (core SPEC §6.7): device class (`mobile` / `tablet` / `desktop`) →
+ * partial config. Page-wide (`window.components.responsive`), per tag
+ * (`window.components['web-command-palette'].responsive`) or per instance (`el.responsive`,
+ * JSON attribute `responsive`).
+ */
+export type CommandPaletteResponsiveMap = ResponsiveMap<CommandPaletteConfig>;
+
+/**
+ * Computed responsive rule (core SPEC §6.7): `(ctx) => partial config | undefined` (`null`
+ * from the instance callback = ignore every page rule). `ctx.config` is the BASE config.
+ */
+export type CommandPaletteResponsiveCallback = ResponsiveCallback<CommandPaletteConfig>;

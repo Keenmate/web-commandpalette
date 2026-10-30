@@ -65,7 +65,8 @@ Objects and functions are **properties only** — set them from JS (or a framewo
 | `pageSize` | `number` | Search results per page. Default `8`. |
 | `openKey` | `string` | Ctrl/⌘ + this key toggles. Default `'k'`; `''` disables. |
 | `searchDebounce` | `number` | ms before a provider call. Default `150`. |
-| `mobilePresentation` | `'auto' \| 'floating' \| 'fullscreen'` | `auto`: fullscreen sheet on touch phones only. |
+| `presentation` | `'auto' \| 'floating' \| 'fullscreen'` | `auto`: fullscreen sheet on touch phones only. |
+| `responsive` / `responsiveCallback` | `CommandPaletteResponsiveMap` / `CommandPaletteResponsiveCallback` | Instance responsive rules (core): device class → partial config, or `(ctx) => partial`. Beat page rules and the element's own attributes; never reflected. See [README → Responsive rules](../README.md#responsive-rules). |
 | `usageStorage` | `'local' \| 'none'` | Favorites + recents on (default) or off. |
 | `usageKey` | `string` | `localStorage` key. Default `'web-commandpalette:usage'` — put the user id in it. |
 | `maxFavoriteCount` / `maxRecentCount` | `number` | Rows each home section shows. Default `3`; `0` hides the section. |
@@ -84,12 +85,13 @@ LiveView bridge after `connectedCallback`.
 
 ## Attributes
 
-`display`, `size`, `page-size`, `open-key`, `search-debounce`, `mobile-presentation`,
+`display`, `size`, `page-size`, `open-key`, `search-debounce`, `presentation`,
 `usage-storage`, `usage-key`, `max-favorite-count`, `max-recent-count`, `favorite-key`, `favorites-key`,
 `recent-key`, `favorites-hotkey`, `recent-hotkey`, `show-feedback`, `feedback-duration`.
 `open` is **reflected** (present while open) — use the controller to open/close.
 Core (`BlissElement`): `defer` holds the first build until `el.release()`; `ready` is set once built
-(see [Lifecycle](#lifecycle)).
+(see [Lifecycle](#lifecycle)); `responsive` takes a JSON instance rules map (`responsive='{"mobile":{"display":"tokens"}}'`,
+keys are configKeys — see [README → Responsive rules](../README.md#responsive-rules)).
 
 Reserved for the Phoenix LiveView bridge (`@keenmate/keen-web-commandpalette`):
 `data-search-event`, `data-step-options-event`. Their values are the LiveView event names the

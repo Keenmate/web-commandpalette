@@ -11,6 +11,25 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Changed — BREAKING (presentation rename + responsive rules, core rc15, 2026-10-30)
+
+- **`mobile-presentation` / `mobilePresentation` → `presentation`** (values unchanged:
+  `auto` | `floating` | `fullscreen`). No alias — write `presentation="fullscreen"`. The core
+  type is `Presentation` (was `MobilePresentation`); core's `resolveMobilePresentation()` is gone.
+- **Breakpoint defaults follow the base tokens** (core rc15): the `mobile` width bucket ends at
+  768px (was 640), `tablet` at 1024px (`--base-breakpoint-mobile` / `--base-breakpoint-tablet`,
+  or `configureBreakpoints()`). Device class and the `auto` presentation are unchanged.
+
+### Added — responsive rules (core SPEC §6.7)
+
+- Per-device-class partial configs page-wide (`window.components.responsive` /
+  `.responsiveCallback`), per tag (`window.components['web-command-palette'].responsive` /
+  `.responsiveCallback`) or per instance (`el.responsive` / JSON attribute `responsive`,
+  `el.responsiveCallback`). Page rules < the element's own attributes / properties < the
+  instance's rules; overrides never reflect.
+- Types `CommandPaletteConfig`, `CommandPaletteResponsiveMap`, `CommandPaletteResponsiveCallback`;
+  core `Presentation` / `ResponsiveMap` / `ResponsiveCallback` / `ResponsiveContext` re-exported.
+
 ### Changed — shared loader (web-components-core SPEC §12.14, 2026-10-29)
 
 - **The searching loader draws through core `renderLoader()`** (context `search`): the slot

@@ -30,7 +30,7 @@
         <label><input type="radio" name="pg01-page" value="16"> 16</label>
     </div>
     <div class="controls">
-        <span><code>mobile-presentation</code>:</span>
+        <span><code>presentation</code>:</span>
         <label><input type="radio" name="pg01-presentation" value="auto" checked> auto</label>
         <label><input type="radio" name="pg01-presentation" value="floating"> floating</label>
         <label><input type="radio" name="pg01-presentation" value="fullscreen"> fullscreen</label>
@@ -131,7 +131,7 @@
         bindRadios('pg01-display', (v) => { palette.display = v; });
         bindRadios('pg01-size', (v) => (v ? palette.setAttribute('size', v) : palette.removeAttribute('size')));
         bindRadios('pg01-page', (v) => palette.setAttribute('page-size', v));
-        bindRadios('pg01-presentation', (v) => palette.setAttribute('mobile-presentation', v));
+        bindRadios('pg01-presentation', (v) => palette.setAttribute('presentation', v));
         bindRadios('pg01-debounce', (v) => palette.setAttribute('search-debounce', v));
         // Direction: `dir` on the element (or any ancestor / <html>) mirrors the palette.
         bindRadios('pg01-dir', (v) => palette.setAttribute('dir', v));

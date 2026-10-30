@@ -3,6 +3,8 @@ import { CommandPaletteElement } from './web-component';
 import { logging } from './logger';
 
 export { CommandPaletteElement };
+export type { CommandPaletteConfig, CommandPaletteResponsiveMap, CommandPaletteResponsiveCallback } from './web-component';
+export type { Presentation, ResponsiveMap, ResponsiveCallback, ResponsiveContext } from '@keenmate/web-components-core';
 
 // The DOM-free engine + helpers, for hosts that want to drive or test the logic directly
 // (the element never exposes it — use `el.controller`).

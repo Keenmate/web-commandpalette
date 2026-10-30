@@ -18,10 +18,32 @@ test('touch phone: opens as a fullscreen sheet with a close button', async ({ pa
   await expect(p.root).not.toHaveClass(/--active/);
 });
 
-test('mobile-presentation="floating" forces the dialog', async ({ page }) => {
+test('presentation="floating" forces the dialog', async ({ page }) => {
   await load(page, 'mobile');
   const p = palette(page);
-  await p.host.evaluate((el) => el.setAttribute('mobile-presentation', 'floating'));
+  await p.host.evaluate((el) => el.setAttribute('presentation', 'floating'));
   await page.locator('#opener').tap();
   await expect(p.root).not.toHaveClass(/--fullscreen/);
+});
+
+test('responsive rules: a per-tag page rule applies on a phone; an instance attribute beats it', async ({ page }) => {
+  // Set before the component script loads — registerComponent adopts it (core SPEC §6.7).
+  await page.addInitScript(() => {
+    (window as unknown as { components: unknown }).components = {
+      'web-command-palette': { responsive: { mobile: { presentation: 'floating' } } },
+    };
+  });
+  await load(page, 'mobile');
+  const p = palette(page);
+  expect(await p.host.evaluate((el: any) => el.presentation)).toBe('floating');
+  await expect(p.host).not.toHaveAttribute('presentation', 'floating'); // never reflected
+  await page.locator('#opener').tap();
+  await expect(p.root).toHaveClass(/pa-command-palette--active/);
+  await expect(p.root).not.toHaveClass(/--fullscreen/);
+  await p.host.evaluate((el: any) => el.controller.close());
+
+  // An attribute on the element is explicit: it beats the page rule.
+  await p.host.evaluate((el) => el.setAttribute('presentation', 'auto'));
+  await page.locator('#opener').tap();
+  await expect(p.root).toHaveClass(/pa-command-palette--fullscreen/);
 });

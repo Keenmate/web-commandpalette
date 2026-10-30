@@ -119,6 +119,31 @@ facade) and `element`. See [docs/usage.md](./docs/usage.md) for the full API and
 [docs/examples.md](./docs/examples.md) for recipes (step pickers, branching wizards, favorites on
 the server, custom feedback line).
 
+## Responsive rules
+
+Tune the palette per device class (`mobile` / `tablet` / `desktop`) without app-side viewport
+code — a map of partial configs, or a callback that computes one. Keys are **configKeys**; set
+them page-wide, per tag or per instance (the generic core mechanism,
+[core SPEC §6.7](https://github.com/KeenMate/web-components-core/blob/prod/docs/SPEC.md#67-responsive-rules--partial-configs-per-device-class-page--tag--instance)):
+
+```js
+// page-wide (every KeenMate component) and per tag — may be set before the script loads
+window.components.responsive = { mobile: { presentation: 'fullscreen' } };
+window.components['web-command-palette'].responsiveCallback = (ctx) =>
+  ctx.deviceClass === 'desktop' ? undefined : { display: 'tokens', pageSize: 5 };
+
+// per instance (property, or the JSON attribute responsive='{"tablet":{…}}')
+palette.responsive = { tablet: { size: 'lg' } };
+palette.responsiveCallback = (ctx) => (ctx.env.orientation === 'landscape' ? { pageSize: 4 } : undefined);
+```
+
+Precedence (later wins, key by key): global map → global callback → per-tag map → per-tag
+callback → **the instance's own attributes / properties** → instance map → instance callback.
+An attribute written on an element is never overridden by a page rule; `null` from the instance
+callback ignores every page rule. Rules re-run when the device class / breakpoint / orientation
+changes and never reflect to attributes. Typed as `CommandPaletteResponsiveMap` /
+`CommandPaletteResponsiveCallback`.
+
 ## Editor IntelliSense
 
 The package ships editor metadata — autocomplete and hover docs for the element's attributes,

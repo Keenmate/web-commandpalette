@@ -216,7 +216,7 @@
         <code>calc(N * var(--cp-rem))</code>, and <code>--cp-rem</code> is <code>var(--base-rem, 10px)</code> (on a pure-admin page set <code>--base-rem: 1rem</code> to follow the
         root font size). <code>size</code> presets set width and results height together; for anything else use
         <code>--cp-width</code>, <code>--cp-results-max-height</code> and <code>--cp-offset-top</code>.
-        <code>mobile-presentation="auto"</code> gives touch phones a fullscreen sheet above the on-screen keyboard;
+        <code>presentation="auto"</code> gives touch phones a fullscreen sheet above the on-screen keyboard;
         force <code>fullscreen</code> to preview it here.
     </p>
     <div class="controls">
@@ -233,7 +233,7 @@
         <label><input type="radio" name="th01-size" value="xl"> xl</label>
     </div>
     <div class="controls">
-        <span><code>mobile-presentation</code>:</span>
+        <span><code>presentation</code>:</span>
         <label><input type="radio" name="th01-presentation" value="auto" checked> auto</label>
         <label><input type="radio" name="th01-presentation" value="floating"> floating</label>
         <label><input type="radio" name="th01-presentation" value="fullscreen"> fullscreen</label>
@@ -358,7 +358,7 @@
             r.addEventListener('change', (e) => { if (e.target.checked) palettes.forEach((el) => apply(el, e.target.value)); }));
         bind('th01-rem', (el, v) => (v ? el.style.setProperty('--base-rem', v) : el.style.removeProperty('--base-rem')));
         bind('th01-size', (el, v) => (v ? el.setAttribute('size', v) : el.removeAttribute('size')));
-        bind('th01-presentation', (el, v) => el.setAttribute('mobile-presentation', v));
+        bind('th01-presentation', (el, v) => el.setAttribute('presentation', v));
 
         document.querySelectorAll('[data-open]').forEach((b) =>
             b.addEventListener('click', () => palette.controller.openWith(b.dataset.open)));
