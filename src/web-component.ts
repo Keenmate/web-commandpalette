@@ -832,8 +832,9 @@ export type CommandPaletteConfig = Pick<CommandPaletteElement,
   | 'display' | 'size' | 'pageSize' | 'openKey' | 'searchDebounce' | 'presentation'>;
 
 /**
- * Responsive rules map (core SPEC §6.7): device class (`mobile` / `tablet` / `desktop`) →
- * partial config. Page-wide (`window.components.responsive`), per tag
+ * Responsive rules map (core SPEC §6.7): `{ device?, breakpoint? }` — device class
+ * (`mobile` / `tablet` / `desktop`, by touch capability) and / or window-width bucket →
+ * partial config; `device` wins on the same key. Page-wide (`window.components.responsive`), per tag
  * (`window.components['web-command-palette'].responsive`) or per instance (`el.responsive`,
  * JSON attribute `responsive`).
  */

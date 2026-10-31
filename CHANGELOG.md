@@ -22,7 +22,9 @@ callback and item API below is breaking.
 
 ### Added — responsive rules (core SPEC §6.7)
 
-- Per-device-class partial configs page-wide (`window.components.responsive` /
+- Partial configs per device class (`responsive = { device: { mobile|tablet|desktop: … } }`,
+  touch capability first) and / or per window-width bucket (`{ breakpoint: { … } }`, 768 / 1024
+  lines; `device` wins on the same key) page-wide (`window.components.responsive` /
   `.responsiveCallback`), per tag (`window.components['web-command-palette'].responsive` /
   `.responsiveCallback`) or per instance (`el.responsive` / JSON attribute `responsive`,
   `el.responsiveCallback`). Page rules < the element's own attributes / properties < the

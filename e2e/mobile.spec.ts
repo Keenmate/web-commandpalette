@@ -26,11 +26,11 @@ test('presentation="floating" forces the dialog', async ({ page }) => {
   await expect(p.root).not.toHaveClass(/--fullscreen/);
 });
 
-test('responsive rules: a per-tag page rule applies on a phone; an instance attribute beats it', async ({ page }) => {
+test('responsive rules: a per-tag device-axis page rule applies on a phone; an instance attribute beats it', async ({ page }) => {
   // Set before the component script loads — registerComponent adopts it (core SPEC §6.7).
   await page.addInitScript(() => {
     (window as unknown as { components: unknown }).components = {
-      'web-command-palette': { responsive: { mobile: { presentation: 'floating' } } },
+      'web-command-palette': { responsive: { device: { mobile: { presentation: 'floating' } } } },
     };
   });
   await load(page, 'mobile');
@@ -46,4 +46,18 @@ test('responsive rules: a per-tag page rule applies on a phone; an instance attr
   await p.host.evaluate((el) => el.setAttribute('presentation', 'auto'));
   await page.locator('#opener').tap();
   await expect(p.root).toHaveClass(/pa-command-palette--fullscreen/);
+});
+
+test.describe('desktop window (fine pointer)', () => {
+  test.use({ isMobile: false, hasTouch: false, viewport: { width: 700, height: 900 } });
+
+  test('responsive rules: the breakpoint axis follows the window width; the device axis does not', async ({ page }) => {
+    await load(page, 'mobile');
+    const p = palette(page);
+    await p.host.evaluate((el) => el.setAttribute('responsive',
+      JSON.stringify({ device: { mobile: { size: 'sm' } }, breakpoint: { mobile: { size: 'lg' } } })));
+    await expect.poll(() => p.host.evaluate((el: any) => el.size)).toBe('lg'); // desktop at 700px → breakpoint.mobile
+    await page.setViewportSize({ width: 1200, height: 900 });
+    await expect.poll(() => p.host.evaluate((el: any) => el.size)).not.toBe('lg'); // back to the base value
+  });
 });

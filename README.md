@@ -121,21 +121,27 @@ the server, custom feedback line).
 
 ## Responsive rules
 
-Tune the palette per device class (`mobile` / `tablet` / `desktop`) without app-side viewport
-code — a map of partial configs, or a callback that computes one. Keys are **configKeys**; set
-them page-wide, per tag or per instance (the generic core mechanism,
+Tune the palette per device class or window width without app-side viewport code — a map of
+partial configs, or a callback that computes one. Keys are **configKeys**; set them page-wide,
+per tag or per instance (the generic core mechanism,
 [core SPEC §6.7](https://github.com/KeenMate/web-components-core/blob/prod/docs/SPEC.md#67-responsive-rules--partial-configs-per-device-class-page--tag--instance)):
 
 ```js
 // page-wide (every KeenMate component) and per tag — may be set before the script loads
-window.components.responsive = { mobile: { presentation: 'fullscreen' } };
+window.components.responsive = { device: { mobile: { presentation: 'fullscreen' } } };
 window.components['web-command-palette'].responsiveCallback = (ctx) =>
   ctx.deviceClass === 'desktop' ? undefined : { display: 'tokens', pageSize: 5 };
 
-// per instance (property, or the JSON attribute responsive='{"tablet":{…}}')
-palette.responsive = { tablet: { size: 'lg' } };
+// per instance (property, or the JSON attribute responsive='{"breakpoint":{"mobile":{…}}}')
+palette.responsive = { device: { tablet: { size: 'lg' } }, breakpoint: { mobile: { pageSize: 5 } } };
 palette.responsiveCallback = (ctx) => (ctx.env.orientation === 'landscape' ? { pageSize: 4 } : undefined);
 ```
+
+A map has two axes: **`device`** — the device class by capability (`mobile` / `tablet` = a
+touch phone / tablet, a mouse device is `desktop` at any width); **`breakpoint`** — the window
+width bucket (`mobile` < 768px ≤ `tablet` < 1024px ≤ `desktop`, so a narrowed desktop window is
+`mobile`). Both may be set; `device` wins on the same key. Own widths or combinations (device
+class AND width, orientation, …) go in a `responsiveCallback`.
 
 Precedence (later wins, key by key): global map → global callback → per-tag map → per-tag
 callback → **the instance's own attributes / properties** → instance map → instance callback.

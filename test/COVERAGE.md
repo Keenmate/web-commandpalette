@@ -133,7 +133,7 @@ Known bugs are in `test/NOTES.md`.
 | Phone: fullscreen sheet + close button | ✓ | `mobile.spec.ts` | `mobile.html` |
 | `presentation="floating"` on a phone | ✓ | `mobile.spec.ts` | `mobile.html` |
 | `presentation="fullscreen"` on desktop (+ live switch, ctx flags) | ✓ | `presentation.spec.ts` | `presentation.html` |
-| responsive rules: per-tag page rule on a phone, instance attribute beats it, no reflection | ✓ | `mobile.spec.ts` | `mobile.html` |
+| responsive rules: per-tag device-axis page rule on a phone, instance attribute beats it, no reflection; breakpoint axis follows a desktop window width | ✓ | `mobile.spec.ts` | `mobile.html` |
 | `--cp-*` fallbacks, host theme pierces the shadow DOM | ✓ | `theming.spec.ts` | `theming.html` |
 | Per-instance themes (`--base-*`, `::part()`), `--base-rem` | ✓ | `theming.spec.ts` | `theming.html` |
 | base-css-variables 2.0 tokens, named icons | ✓ | `theming.spec.ts` | `theming.html` |
