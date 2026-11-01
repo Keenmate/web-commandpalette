@@ -11,6 +11,10 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Changed (dependencies, 2026-11-01)
+
+- Depends on the published `@keenmate/web-components-core@^1.0.0-rc15` (was ^1.0.0-rc12; the dev install was the local `file:` link).
+
 ### Changed — BREAKING (presentation rename + responsive rules, core rc15, 2026-10-30)
 
 - **`mobile-presentation` / `mobilePresentation` → `presentation`** (values unchanged:
