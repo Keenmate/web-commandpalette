@@ -11,6 +11,62 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Changed — BREAKING (core 1.0.0-rc20 alignment, 2026-11-08)
+
+- **Default loader class `.cp-loader` → `.cp__loader`** (core rc18 draws the BEM `<prefix>__loader`).
+  A page that styles `.cp-loader` renames the selector; the `--cp-loader-*` tokens and the
+  `cp-loader-spin` keyframes keep their names. Without the rename the spinner was an empty span on
+  core rc18+.
+- **The page-wide loader hook is `window.components.renderLoadingCallback`** (core rc18 rename; the
+  old `renderLoaderCallback` is no longer read).
+- **An invalid `size` keeps the previous value** (core rc18 `toEnum({ isNullable })`, was
+  `shouldNullOnInvalid`): `size="huge"` warns, fires `input-rejected` and keeps the size it had
+  (before: it fell back to the default size). Removing the attribute still resets it.
+- **Warnings reach the console by default** (core rc18: the closest log level wins, default `warn`).
+  The second connected palette's "only the first owns the global hotkeys" warning now prints; silence
+  it with `window.components['web-command-palette'].logging.setLogLevel('error')`.
+
+### Added (core 1.0.0-rc20 alignment, 2026-11-08)
+
+- **Custom CSS in the shadow root** (core `createCustomStyles()`, rulebook C-CA-15): the instance
+  input `customStyles` (attribute `custom-styles`) and `getCustomStylesCallback(ctx)` (wins), after the
+  page-wide layer `window.components['web-command-palette'].customStyles` /
+  `.getCustomStylesCallback`, which styles every palette on the page (the page layer was advertised by
+  core but ignored before). An `@import` is also linked once in the document head, so imported fonts
+  work. Docs: theming "Custom CSS (shadow root)"; example card TH02.
+- **Typed input properties** (core "Typing the properties", rulebook C-CA-16): `CommandPaletteConfig`
+  is an interface listing exactly the input rows and is merged into `CommandPaletteElement`, so
+  `el.presentation = 'sideways'` or `el.notAnInput` is a type error. It now also lists
+  `searchEvent`, `stepOptionsEvent`, `customStyles` and `getCustomStylesCallback`.
+- `resetLogging` exported next to `enableLogging` / `disableLogging` (the core bundle's own method).
+
+### Changed (core 1.0.0-rc20 alignment, 2026-11-08)
+
+- Depends on `@keenmate/web-components-core@^1.0.0-rc20` (peer and dev; was ^1.0.0-rc15).
+- The active row scrolls through core `scrollIntoContainer()`: the results list only, never the page
+  (was `scrollIntoView()`).
+- The ⌘ / Ctrl keycaps follow core's environment detection (`getEnvironment().isApple`, was a
+  `navigator.platform` sniff); HTML escaping uses core's `escapeHtml` (`/search`).
+- From core rc19 / rc20, no code here: an outside click is decided when the click ends; the scroll
+  lock while open also clamps `<html>` `overflow-x`, so a page wider than a phone no longer leaves the
+  fullscreen sheet zoomed out; a property set before the script loads is kept.
+- e2e runs in Chromium, Firefox and WebKit (plus the Pixel 7 phone project).
+
+### Fixed (2026-11-08)
+
+- **Firefox: one edit was routed twice.** Firefox fires `compositionend` and `input` for the same
+  edit, so the term was routed again: the search restarted and the loader was redrawn (a custom
+  `renderLoadingCallback` ran twice). A value that already went through is not routed again.
+- **Phone sheet and results list** (rulebook C-RO-4 / -8 / -9): the fullscreen sheet keeps its rows
+  and search clear of the landscape side nav bar / camera cutout (`env(safe-area-inset-left|right)`),
+  a scroll at the end of the results list no longer chains to the page behind
+  (`overscroll-behavior: contain`), and the sheet / narrow-window caps use `dvw` / `dvh`.
+
+### Internal (2026-11-08)
+
+- The tag is defined only by `registerComponent()` in the package entry (core rule; the module's own
+  guarded `customElements.define` is gone).
+
 ### Changed (dependencies, 2026-11-01)
 
 - Depends on the published `@keenmate/web-components-core@^1.0.0-rc15` (was ^1.0.0-rc12; the dev install was the local `file:` link).
@@ -48,7 +104,7 @@ callback and item API below is breaking.
 - **New input `renderLoadingCallback`** (property): draw the loader yourself —
   `ctx = { component, context, containerElement, element, label }`, optional cleanup return
   (run when results land or the palette closes). Beats the page-wide
-  `window.components.renderLoaderCallback`.
+  `window.components.renderLoadingCallback`.
 - **Dev dependency:** requires `@keenmate/base-css-variables` `^2.0.0-rc06` (the `--base-loader-*` tokens).
 - **Tests:** `e2e/search-async.spec.ts` — default loader + role/label, `labels.searching`,
   page hook + cleanup on results / close, instance hook beats the page hook.

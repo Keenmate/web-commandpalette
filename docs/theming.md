@@ -162,6 +162,33 @@ or border, the input's shape — style the shadow parts directly (list below). T
 on the theming examples page (TH01) combines all three to build seven very different palettes —
 dark, neon, corporate, soft, brutalist, terminal, material — without touching the component's CSS.
 
+## Custom CSS (shadow root)
+
+When variables and parts aren't enough, put CSS straight into the palette's shadow root (core
+`createCustomStyles()`). Two layers, each its own `<style>` after the component CSS, page first:
+
+```js
+// every palette on the page (assigning it updates the live ones)
+window.components['web-command-palette'].customStyles = `
+  @import url('/fonts/brand.css');
+  .pa-command-palette__container { border-radius: 0; }
+`;
+// or per instance, computed: ctx = controller / element + the presentation flags
+window.components['web-command-palette'].getCustomStylesCallback = (ctx) =>
+  ctx.isFullscreen ? '.pa-command-palette__footer { display: none; }' : null;
+```
+
+```html
+<!-- this palette only; beats the page layer -->
+<web-command-palette custom-styles=".pa-command-palette__input { font-size: 1.25rem; }"></web-command-palette>
+```
+
+`el.customStyles` / `el.getCustomStylesCallback` are the instance layer (the callback wins over the
+string). An `@import` is also linked once in the document `<head>`, so `@font-face` from an imported
+icon font works (Chromium ignores it inside a shadow root); set
+`window.components.shouldHoistImports = false` when the page loads those fonts itself. The class
+names are the component's internal markup: prefer variables and `::part()`, which are the stable API.
+
 ## Shadow parts
 
 `palette`, `backdrop`, `container`, `input`, `results`, `footer` — for one-off overrides:

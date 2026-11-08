@@ -9,7 +9,7 @@ http://localhost:12400. The hub (`index.html`) links every page.
 | [`examples-commands-steps.html`](../examples-commands-steps.html) | Static steps (inline or fetched once), `isLiveSearch` live steps, `isFreeTextAllowed`, `getIsVisibleCallback`, inline vs tokens display, the `action` event. |
 | [`examples-async-search.html`](../examples-async-search.html) | Scoped context search (no call on an empty query), global search, debounce + abort with a provider-call log, pagination. |
 | [`examples-favorites.html`](../examples-favorites.html) | Reusable pickers (`step.getOptionsCallback`), a branching admin command, favorites + recents (localStorage or `load`/`saveUsageCallback`), replaying a run with Tab/Enter, grouped results, a context with its own `searchCallback`. |
-| [`examples-theming.html`](../examples-theming.html) | Themes & sizes in one card: a seven-theme gallery (plus the unthemed default) built only from `--base-*` / `--cp-*` variables, icons and `::part()`, with `--base-rem`, size presets and the phone sheet applied to every theme. |
+| [`examples-theming.html`](../examples-theming.html) | Themes & sizes in one card: a seven-theme gallery (plus the unthemed default) built only from `--base-*` / `--cp-*` variables, icons and `::part()`, with `--base-rem`, size presets and the phone sheet applied to every theme. TH02: custom CSS in the shadow root — the page-wide `window.components['web-command-palette'].customStyles` layer and one instance's `custom-styles` on top of it. |
 | [`examples-playground.html`](../examples-playground.html) | The full pure-admin demo data with every switch and a live event log. |
 
 Shared demo data lives in [`examples-data.js`](../examples-data.js). The site's shared layout,

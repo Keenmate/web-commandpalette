@@ -314,6 +314,44 @@
     </div>
 </div>
 
+<!-- ============================================================= -->
+<!-- TH02 · Custom CSS                                               -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>TH02 · Custom CSS (shadow root)</h2>
+    <p>
+        When variables and <code>::part()</code> aren't enough, CSS can go straight into the palette's shadow root.
+        There are two layers, each its own <code>&lt;style&gt;</code> after the component CSS. The <b>page layer</b>
+        <code>window.components['web-command-palette'].customStyles</code> (or <code>.getCustomStylesCallback(ctx)</code>)
+        styles every palette on the page. The <b>instance layer</b> (<code>custom-styles</code> attribute,
+        <code>el.customStyles</code> or <code>el.getCustomStylesCallback</code>) comes after it, so one instance can
+        override the page. An <code>@import</code> in either layer is also linked once in the page
+        <code>&lt;head&gt;</code>, so imported fonts work.
+    </p>
+    <div class="controls">
+        <label><input type="checkbox" id="th02-page"> Page layer: every palette on this page (TH01's included)</label>
+    </div>
+    <div class="card-grid" style="--grid-min: 340px">
+        <div class="demo-card">
+            <h3>Page layer</h3>
+            <p>Tick the box, then open any palette on the page: all of them get the dashed frame.</p>
+            <div class="demo-area">
+                <button type="button" data-open="">Open the main palette</button>
+            </div>
+            <div class="output"><div class="output-label">window.components['web-command-palette'].customStyles</div><pre id="th02-page-css"></pre></div>
+        </div>
+        <div class="demo-card">
+            <h3>Instance layer</h3>
+            <p>This palette has its own <code>custom-styles</code>; it beats the page layer's frame colour.</p>
+            <div class="demo-area">
+                <button type="button" id="th02-open">Open</button>
+                <button type="button" class="secondary" id="th02-open-deploy">/deploy</button>
+            </div>
+            <div class="output"><div class="output-label">custom-styles</div><pre id="th02-instance-css"></pre></div>
+        </div>
+    </div>
+</div>
+
 <!-- One palette per page owns the global Ctrl/⌘+K listener: this one. -->
 <web-command-palette id="palette"></web-command-palette>
 
@@ -325,6 +363,10 @@
 <web-command-palette id="theme-brutal" open-key="" favorites-hotkey=""></web-command-palette>
 <web-command-palette id="theme-terminal" open-key="" favorites-hotkey=""></web-command-palette>
 <web-command-palette id="theme-material" open-key="" favorites-hotkey=""></web-command-palette>
+
+<!-- TH02: an instance with its own custom CSS (the instance layer). -->
+<web-command-palette id="custom-css" open-key="" favorites-hotkey=""
+    custom-styles=".pa-command-palette__container { outline-color: #e8590c; } .pa-command-palette__input { font-style: italic; }"></web-command-palette>
 
 <!-- Page wiring -->
 <script type="module">
@@ -373,7 +415,22 @@
             card.querySelector('pre').textContent = rulesFor(id);
         }
 
+        // TH02 — the page layer (every palette) and one instance's own layer on top.
+        const PAGE_CSS = '.pa-command-palette__container { outline: 3px dashed #7048e8; outline-offset: 4px; }';
+        const custom = document.getElementById('custom-css');
+        Object.assign(custom, { commands, contexts, searchCallback, getStepOptionsCallback });
+        document.getElementById('th02-instance-css').textContent = custom.getAttribute('custom-styles');
+        const pageBox = document.getElementById('th02-page');
+        const applyPage = () => {
+            window.components['web-command-palette'].customStyles = pageBox.checked ? PAGE_CSS : null;
+            document.getElementById('th02-page-css').textContent = pageBox.checked ? PAGE_CSS : 'null';
+        };
+        pageBox.addEventListener('change', applyPage);
+        document.getElementById('th02-open').addEventListener('click', () => custom.controller.open());
+        document.getElementById('th02-open-deploy').addEventListener('click', () => custom.controller.openWith('/deploy '));
+
         attachControlsPersistence('theming');
+        applyPage();
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
     else wire();
