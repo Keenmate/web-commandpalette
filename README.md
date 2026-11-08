@@ -205,15 +205,22 @@ Details — single tests, the CSS pipeline, publishing, the example-site image �
 | Logic | `src/palette.ts` | `PaletteEngine` — DOM-free modes, wizard, filtering, async search, pagination |
 | Logic | `src/usage.ts` | `UsageStore` — favorites + recents, frecency, pluggable persistence |
 | Render | `src/render.ts` | builds the shadow DOM once and patches it |
-| Service | `src/keyboard.ts`, `src/filter.ts`, `src/icons.ts` | global hotkeys + input key map, filtering, icon rendering |
-| Side | `src/types.ts`, `src/logger.ts`, `src/css/` | public types, logging, shadow-root CSS |
+| Service | `src/keyboard.ts` | global hotkeys + input key map |
+| Side | `src/types.ts`, `src/logger.ts`, `src/helpers/`, `src/css/` | public types, logging, pure helpers (`filter.ts` filtering, `icons.ts` icon rendering), shadow-root CSS |
 
 The palette CSS is plain CSS in `src/css/` (`main.css` imports the layers: variables → component →
 overrides), inlined into the shadow root. It reads only `--cp-*` and `--base-*`.
 
-## License
+## About
 
-MIT © Keenmate s.r.o. — see [LICENSE](./LICENSE).
+Authored and maintained by [Keenmate s.r.o.](https://keenmate.com/).
+The component ships standalone with sensible light/dark defaults;
+when mounted inside [Pure Admin](https://pureadmin.io/) — or any
+host that publishes the `--base-*` taxonomy via
+[`@keenmate/theme-designer`](https://www.npmjs.com/package/@keenmate/theme-designer) — it adopts the host's colors,
+typography, and sizing automatically. There is no runtime
+dependency on Pure Admin; the integration is opt-in via CSS
+variables.
 
 ## Built with BlissFramework
 
@@ -221,6 +228,6 @@ Built on `@keenmate/web-components-core` (`BlissElement`) following the
 [BlissFramework component guidelines](https://blissframework.dev/) for structure, theming and
 accessibility.
 
-## Credits
+## License
 
-Created by [Keenmate](https://github.com/keenmate) as part of the Pure Admin design system.
+MIT © Keenmate s.r.o. — see [LICENSE](./LICENSE).

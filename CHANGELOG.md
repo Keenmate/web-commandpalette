@@ -11,6 +11,42 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Changed — BREAKING (rulebook alignment, 2026-11-08)
+
+- **Every class in the shadow root is BEM on the block `cp`** (rulebook C-NC-8 / C-CSS-7). Page CSS
+  that reaches inside (`custom-styles`, `getCustomStylesCallback`, the page-wide `customStyles`)
+  renames its selectors; no aliases. `::part()` names and every `--cp-*` variable are unchanged.
+
+  | Before | After |
+  |---|---|
+  | `.pa-command-palette`, `.pa-command-palette--active` / `--fullscreen` / `--sm` / `--lg` / `--xl` | `.cp`, `.cp--active` / `--fullscreen` / `--sm` / `--lg` / `--xl` |
+  | `.pa-command-palette__<element>[--<modifier>]` (container, input, results, item, item-title, …) | `.cp__<element>[--<modifier>]` |
+  | `.pa-command-palette__loader` (the "Searching…" row) / `__loader-slot` | `.cp__loading` / `.cp__loader-slot` (core's spinner inside stays `.cp__loader`) |
+  | `.cp-confirming` (the feedback collapse), `.cp-confirm`, `.cp-confirm__<x>` | `.cp--confirming`, `.cp__confirm`, `.cp__confirm-<x>` |
+  | `.cp-heading`, `.cp-more`, `.cp-star` / `.cp-star--on`, `.cp-sr-only`, `.cp-item--default` | `.cp__heading`, `.cp__more`, `.cp__star` / `.cp__star--on`, `.cp__sr-only`, `.cp__item--default` |
+  | `.pa-icon`, `.pa-icon--<name>`, `.cp-icon--check` / `--star` / `--star-filled` | `.cp__icon`, `.cp__icon--<name>` |
+  | `.pa-badge`, `.pa-badge--<variant>`, `.pa-badge__remove` | `.cp__badge`, `.cp__badge--<variant>`, `.cp__badge-remove` |
+- **The host is `display: block`** (was `display: contents`, forbidden by rulebook C-TC-7). It holds
+  no in-flow content (the dialog is `position: fixed`), so it takes no space; in a flex / grid
+  parent it is now an empty item (a `gap` counts it).
+- **`--cp-icon-<name>` is declared on the host** (rulebook C-BV-9: `--base-*` is read only in
+  `variables.css`). Set it on the element (`web-command-palette { --cp-icon-search: url(…) }`); a value
+  inherited from an ancestor no longer reaches it, like every other `--cp-*` knob.
+
+### Changed (rulebook alignment, 2026-11-08)
+
+- **An item icon given by name draws without a theme too**: `--cp-icon-<name>` falls back to the
+  contract's own glyph (`@keenmate/base-css-variables`) when no `--base-icon-<name>` is set (it drew
+  nothing before); `clear` follows `--cp-icon-close`. `--cp-icon-size` is declared (`1em`).
+- README: the canonical `## About` paragraph (rulebook C-RS-15) replaces "Credits".
+
+### Internal (rulebook alignment, 2026-11-08)
+
+- `src/filter.ts` and `src/icons.ts` moved to `src/helpers/` (Side layer, rulebook C-CST-4);
+  `PaletteKeys` / `DEFAULT_PALETTE_KEYS` moved to `src/types.ts`. `GlobalKeys.handle()` →
+  `handleKeydown()` (C-NC-9). New stub files `controls.css`, `floating.css`, `states.css`
+  (C-CSS-1).
+
 ### Changed — BREAKING (core 1.0.0-rc20 alignment, 2026-11-08)
 
 - **Default loader class `.cp-loader` → `.cp__loader`** (core rc18 draws the BEM `<prefix>__loader`).
@@ -95,8 +131,8 @@ callback and item API below is breaking.
 ### Changed — shared loader (web-components-core SPEC §12.14, 2026-10-29)
 
 - **The searching loader draws through core `renderLoader()`** (context `search`): the slot
-  (`.pa-command-palette__loader-slot`) carries `role="status"` + `aria-label` = `labels.searching`
-  (moved from `.pa-command-palette__loader`; the visible text is `aria-hidden`). The hand-made
+  (`.cp__loader-slot`) carries `role="status"` + `aria-label` = `labels.searching`
+  (moved from `.cp__loading`; the visible text is `aria-hidden`). The hand-made
   `.pa-spinner` border spinner and `@keyframes cp-spin` are removed.
 - **New tokens** `--cp-loader-icon` / `--cp-loader-rotate` / `--cp-loader-duration` /
   `--cp-loader-size` (chained to `--base-loader-*`) + `--cp-loader-color` (accent); manifest

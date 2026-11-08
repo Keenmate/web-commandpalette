@@ -376,7 +376,7 @@ the effective direction, also when it changes at runtime.
 `icon` is data, rendered by shape:
 
 - starts with `<` → raw SVG/HTML (**the host vouches for this markup**)
-- starts with an ASCII letter → icon name → `<span class="pa-icon pa-icon--NAME">`
+- starts with an ASCII letter → icon name → `<span class="cp__icon cp__icon--NAME">`
 - anything else → text (emoji)
 
 ## Labels

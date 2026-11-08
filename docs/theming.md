@@ -141,11 +141,11 @@ chains to the shared `--base-icon-*` glyph where one exists, then to an inline L
 | `--cp-icon-remove` | ✕ take a command token out | → `--base-icon-remove` → `--cp-icon-close` |
 | `--cp-icon-check` | ✓ confirmation | → `--base-icon-check` → Lucide `check` |
 | `--cp-icon-star` / `--cp-icon-star-filled` | ☆ / ★ favorite toggle | → Lucide `star` (outline / filled) |
-| `--cp-icon-<name>` | an item `icon: '<name>'` | → `--base-icon-<name>` (search, settings, user, bell, edit, delete, add, copy, save, …) |
+| `--cp-icon-<name>` | an item `icon: '<name>'` | → `--base-icon-<name>` → the contract's own glyph (search, settings, user, bell, edit, delete, add, copy, save, …; `clear` → `--cp-icon-close`) |
 | `--cp-icon-size` | size of a masked glyph | default `1em` (row icons are 1.8 × `--cp-rem`) |
 
-An item icon given by **name** draws the shared `--base-icon-<name>` glyph; a name outside the
-contract draws nothing (icon-font classes can't reach inside the shadow root — pass an inline
+An item icon given by **name** draws the shared `--base-icon-<name>` glyph, also without a theme
+(the fallback is the contract's default glyph); a name outside the contract draws nothing (icon-font classes can't reach inside the shadow root — pass an inline
 `<svg>` or an emoji instead).
 
 ```css
@@ -171,16 +171,16 @@ When variables and parts aren't enough, put CSS straight into the palette's shad
 // every palette on the page (assigning it updates the live ones)
 window.components['web-command-palette'].customStyles = `
   @import url('/fonts/brand.css');
-  .pa-command-palette__container { border-radius: 0; }
+  .cp__container { border-radius: 0; }
 `;
 // or per instance, computed: ctx = controller / element + the presentation flags
 window.components['web-command-palette'].getCustomStylesCallback = (ctx) =>
-  ctx.isFullscreen ? '.pa-command-palette__footer { display: none; }' : null;
+  ctx.isFullscreen ? '.cp__footer { display: none; }' : null;
 ```
 
 ```html
 <!-- this palette only; beats the page layer -->
-<web-command-palette custom-styles=".pa-command-palette__input { font-size: 1.25rem; }"></web-command-palette>
+<web-command-palette custom-styles=".cp__input { font-size: 1.25rem; }"></web-command-palette>
 ```
 
 `el.customStyles` / `el.getCustomStylesCallback` are the instance layer (the callback wins over the
