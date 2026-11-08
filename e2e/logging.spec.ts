@@ -1,9 +1,9 @@
 import { expect, load, open, palette, test, type ConsoleMessage, type Page } from './fixtures';
 
 /**
- * Logging defaults: a normal session prints nothing — even the second-instance
- * hotkey-ownership warning stays quiet. Errors (a failing provider) DO reach the
- * console by default. `enableLogging()` (the published controls on
+ * Logging defaults (core SPEC §12.1: every bundle defaults to `warn`): a normal
+ * session prints only warnings — here the second instance's hotkey-ownership warning,
+ * nothing at debug / info. Errors (a failing provider) reach the console too. `enableLogging()` (the published controls on
  * `window.components['web-command-palette'].logging`) turns the debug output on.
  * Fixture: test/logging.html.
  */
@@ -26,18 +26,22 @@ async function session(page: Page, term: string): Promise<void> {
   await expect(p.root).not.toHaveClass(/--active/);
 }
 
-test('a normal session is silent by default (warnings included)', async ({ page }) => {
+const ownershipWarning = /^warning: .*COMMANDPALETTE:INIT.*#second.*more than one <web-command-palette> is connected/s;
+
+test('a normal session prints warnings only by default (core level `warn`)', async ({ page }) => {
   const out = collect(page);
   await load(page, 'logging');
   await session(page, 'go');
-  expect(mine(out)).toEqual([]);
+  const lines = mine(out);
+  expect(lines).toHaveLength(1);
+  expect(lines[0]).toMatch(ownershipWarning);
 });
 
 test('a provider failure is logged at error level even by default', async ({ page }) => {
   const out = collect(page);
   await load(page, 'logging');
   await session(page, 'fail');
-  const lines = mine(out);
+  const lines = mine(out).filter((l) => !ownershipWarning.test(l));
   expect(lines).toHaveLength(1);
   expect(lines[0]).toMatch(/^error: .*COMMANDPALETTE:DATA.*provider failed/s);
 });
@@ -50,4 +54,16 @@ test('enableLogging() turns the debug output on', async ({ page }) => {
   });
   await session(page, 'go');
   expect(mine(out).some((l) => /COMMANDPALETTE:UI.*open/s.test(l))).toBe(true);
+});
+
+test('resetLogging() (re-exported core bundle method) goes back to the default level', async ({ page }) => {
+  const out = collect(page);
+  await load(page, 'logging');
+  await page.evaluate(async () => {
+    const mod = await import('/src/index.ts');
+    mod.enableLogging();
+    mod.resetLogging();
+  });
+  await session(page, 'go');
+  expect(mine(out).some((l) => /COMMANDPALETTE:UI.*open/s.test(l))).toBe(false);
 });

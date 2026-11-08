@@ -50,6 +50,7 @@ Known bugs are in `test/NOTES.md`.
 | Esc / Backspace step back | ✓ | `keyboard.spec.ts` | `keyboard.html` |
 | Mode-aware footer hints | ✓ | `keyboard.spec.ts` | `keyboard.html` |
 | Tab selects like Enter | ✓ | `keyboard.spec.ts` | `keyboard.html` |
+| Active row scrolls the results list only (core `scrollIntoContainer`, no `scrollIntoView`) | ✓ | `keyboard.spec.ts` | `keyboard.html` |
 | `open-key` remap / `''` disables | ✓ | `hotkeys.spec.ts` | `hotkeys.html` |
 | `favorite-key` / `favorites-key` / `recent-key` remap | ✓ | `hotkeys.spec.ts`, `usage.spec.ts` | `hotkeys.html`, `usage.html` |
 | `favorites-hotkey` / `recent-hotkey` sequences (+ `''`, command shortcut wins) | ✓ | `hotkeys.spec.ts`, `usage.spec.ts` | `hotkeys.html`, `usage.html` |
@@ -66,7 +67,7 @@ Known bugs are in `test/NOTES.md`.
 | Race: superseded request aborted, late result dropped; close aborts | ✓ | `search-async.spec.ts` | `search-async.html` |
 | Rejecting / throwing provider → usable palette (CP-2: no error UI) | ✓ | `search-async.spec.ts` | `search-async.html` |
 | Loader / `results--loading` while pending | ✓ | `search-async.spec.ts` | `search-async.html` |
-| Shared loader: default `.cp-loader` + role/aria-label, page hook + cleanup, instance `renderLoadingCallback` wins | ✓ | `search-async.spec.ts` | `search-async.html` |
+| Shared loader: default `.cp__loader` + role/aria-label, page hook + cleanup, instance `renderLoadingCallback` wins | ✓ | `search-async.spec.ts` | `search-async.html` |
 | `search-debounce` (0 vs 500, superseded during debounce) | ✓ | `search-async.spec.ts` | `search-async.html` |
 | Per-context `searchCallback` / per-step `getOptionsCallback` override | ✓ | `providers.spec.ts` | `providers.html` |
 | Aliases (`/d `, `:p `; no space → filter only) | ✓ | `search.spec.ts` | `search.html` |
@@ -120,11 +121,12 @@ Known bugs are in `test/NOTES.md`.
 | `size` presets | ✓ | `theming.spec.ts` | `theming.html` |
 | `page-size` (+ live change while open re-pages, NOTES #5 fixed) | ✓ | `attributes.spec.ts` | `attributes.html` |
 | Attribute removal resets to default (`page-size`, `display`, `size`, `usage-storage`) | ✓ | `attributes.spec.ts` | `attributes.html` |
+| Invalid `size` keeps the previous preset + `input-rejected` | ✓ | `attributes.spec.ts` | `attributes.html` |
 | `labels` (custom, English fallback, live reassignment) | ✓ | `labels.spec.ts` | `labels.html` |
 | Result `group` headings (first-appearance order) | ✓ | `groups.spec.ts` | `groups.html` |
 | Multiple instances: hotkey ownership + hand-over | ✓ | `multi-instance.spec.ts` | `multi-instance.html` |
 | DOM move while open closes cleanly (D1 / CP-1); no rebuild | ✓ | `lifecycle.spec.ts` | `lifecycle.html` |
-| Logging: silent by default (warnings too), errors still print, `enableLogging()` | ✓ | `logging.spec.ts` | `logging.html` |
+| Logging: default level `warn` (core; warnings + errors print, debug / info don't), `enableLogging()`, `resetLogging()` | ✓ | `logging.spec.ts` | `logging.html` |
 
 ## 10. Presentation / theming / RTL
 
@@ -135,6 +137,7 @@ Known bugs are in `test/NOTES.md`.
 | `presentation="fullscreen"` on desktop (+ live switch, ctx flags) | ✓ | `presentation.spec.ts` | `presentation.html` |
 | responsive rules: per-tag device-axis page rule on a phone, instance attribute beats it, no reflection; breakpoint axis follows a desktop window width | ✓ | `mobile.spec.ts` | `mobile.html` |
 | `--cp-*` fallbacks, host theme pierces the shadow DOM | ✓ | `theming.spec.ts` | `theming.html` |
+| Custom CSS: `custom-styles` / `customStyles` / `getCustomStylesCallback`, the page layer `window.components[tag].customStyles` / callback (every instance, instance wins, page `<style>` first), `@import` head link shared + released on `destroy()` | ✓ | `custom-styles.spec.ts` | `custom-styles.html` |
 | Per-instance themes (`--base-*`, `::part()`), `--base-rem` | ✓ | `theming.spec.ts` | `theming.html` |
 | base-css-variables 2.0 tokens, named icons | ✓ | `theming.spec.ts` | `theming.html` |
 | Theme context (page signals, per-instance override) | ✓ | `theme-context.spec.ts` | `theme-context.html` |

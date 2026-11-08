@@ -1,4 +1,4 @@
-import { expect, test, activeTitle, calls, hints, load, open, palette } from './fixtures';
+import { expect, test, activeTitle, calls, chordCap, hints, load, open, palette } from './fixtures';
 
 test.beforeEach(async ({ page }) => load(page, 'keyboard'));
 
@@ -84,7 +84,7 @@ test('footer hints are mode-aware', async ({ page }) => {
   const p = palette(page);
   await open(page);
   // The home row (a command) is starrable → the favorite hint shows.
-  expect(await hints(p.footer)).toEqual(['↑↓ Navigate', '↵ Select', 'Esc Close', 'Ctrl D Add to favorites']);
+  expect(await hints(p.footer)).toEqual(['↑↓ Navigate', '↵ Select', 'Esc Close', `${await chordCap(page, 'd')} Add to favorites`]);
   await p.input.fill('/go ');
   // Options can't be starred; in a wizard Tab moves to the next step.
   expect(await hints(p.footer)).toEqual(['↑↓ Navigate', 'Tab Next', '↵ Select', '⌫ Back', 'Esc Back']);
@@ -96,4 +96,29 @@ test('Tab selects like Enter and keeps focus in the palette', async ({ page }) =
   await page.keyboard.press('Tab');
   await expect(p.input).toHaveValue('/deploy to ');
   await expect(p.input).toBeFocused();
+});
+
+test('the active row scrolls the results list only (core scrollIntoContainer, no scrollIntoView)', async ({ page }) => {
+  const p = palette(page);
+  await page.evaluate(() => {
+    (window as any).intoView = 0;
+    const orig = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function (...args: any[]) { (window as any).intoView++; return orig.apply(this, args as any); };
+  });
+  await p.host.evaluate((el) => el.setAttribute('page-size', '20'));
+  await open(page);
+  await p.input.fill('many');
+  await expect(p.items).toHaveCount(20);
+  const results = p.host.locator('.pa-command-palette__results');
+  for (let i = 0; i < 19; i++) await page.keyboard.press('ArrowDown');
+  await expect(p.active.locator('.pa-command-palette__item-title')).toHaveText('Global many 19');
+  const box = await results.evaluate((r) => {
+    const a = r.querySelector('.pa-command-palette__item--active')!.getBoundingClientRect();
+    const c = r.getBoundingClientRect();
+    return { scrolled: r.scrollTop, inside: a.bottom <= c.bottom + 1 && a.top >= c.top - 1, overflow: r.scrollHeight > r.clientHeight };
+  });
+  expect(box.overflow).toBe(true);
+  expect(box.scrolled).toBeGreaterThan(0);
+  expect(box.inside).toBe(true);
+  expect(await page.evaluate(() => (window as any).intoView)).toBe(0);
 });

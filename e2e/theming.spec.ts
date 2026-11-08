@@ -2,6 +2,9 @@ import { expect, test, load, open, palette } from './fixtures';
 
 const style = (loc: ReturnType<typeof palette>['container'], prop: string) =>
   loc.evaluate((el, p) => getComputedStyle(el).getPropertyValue(p), prop);
+/** The computed outline as [color, style, width] (the shorthand's order differs per engine). */
+const outline = (loc: ReturnType<typeof palette>['container']) =>
+  Promise.all(['outline-color', 'outline-style', 'outline-width'].map((prop) => style(loc, prop)));
 
 test('unthemed: the --cp-* fallbacks apply at a 10px rem', async ({ page }) => {
   await load(page, 'theming');
@@ -32,7 +35,8 @@ test('a host theme on :root pierces the shadow DOM (--base-* + --base-rem)', asy
   await page.evaluate(() => { (document.getElementById('host-theme') as HTMLStyleElement).media = 'all'; });
   const p = palette(page);
   await open(page);
-  expect(await style(p.container, 'max-width')).toBe(`${60.8 * 16}px`);
+  // WebKit serialises the computed length with float noise (972.799988px).
+  expect(parseFloat(await style(p.container, 'max-width'))).toBeCloseTo(60.8 * 16, 2);
   // The active row's accent-tinted context pill follows --base-primary-color.
   await p.input.fill('/');
   expect(await style(p.context, 'color')).toBe('rgb(255, 0, 128)');
@@ -110,7 +114,7 @@ test('base-css-variables 2.0: control outline, focus halo, focused cursor row an
   // The keyboard cursor row is the FOCUSED item state: no fill, an inset outline.
   const active = p.active.first();
   await expect.poll(() => style(active, 'background-color')).toBe('rgba(0, 0, 0, 0)');
-  expect(await style(active, 'outline')).toBe('rgb(7, 8, 9) solid 2px');
+  expect(await outline(active)).toEqual(['rgb(7, 8, 9)', 'solid', '2px']);
   expect(await style(active, 'outline-offset')).toBe('-2px');
   // Hover is the neutral overlay — on another row, and under the outline on the cursor row.
   const other = p.items.nth(1);
@@ -118,7 +122,7 @@ test('base-css-variables 2.0: control outline, focus halo, focused cursor row an
   await expect.poll(() => style(other, 'background-color')).toBe('rgb(10, 11, 12)');
   await active.hover();
   await expect.poll(() => style(active, 'background-color')).toBe('rgb(10, 11, 12)');
-  expect(await style(active, 'outline')).toBe('rgb(7, 8, 9) solid 2px');
+  expect(await outline(active)).toEqual(['rgb(7, 8, 9)', 'solid', '2px']);
 });
 
 test('item icons by name draw the shared --base-icon-* glyph; unknown names draw nothing', async ({ page }) => {

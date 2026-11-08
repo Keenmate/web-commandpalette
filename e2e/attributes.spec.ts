@@ -77,3 +77,20 @@ test('removing usage-storage="none" brings the stars back', async ({ page }) => 
   await attr(page, 'usage-storage', null);
   await expect(p.host.locator('.cp-star').first()).toBeAttached();
 });
+
+test('an invalid size keeps the previous preset and fires input-rejected; removing it resets', async ({ page }) => {
+  const p = palette(page);
+  await page.evaluate(() => {
+    (window as any).rejections = [];
+    document.querySelector('web-command-palette')!.addEventListener('input-rejected', (e) => (window as any).rejections.push((e as CustomEvent).detail.configKey));
+  });
+  await attr(page, 'size', 'lg');
+  await expect(p.root).toHaveClass(/pa-command-palette--lg/);
+  await attr(page, 'size', 'huge');
+  await expect.poll(() => page.evaluate(() => (window as any).rejections)).toEqual(['size']);
+  expect(await p.host.evaluate((el) => (el as any).size)).toBe('lg');
+  await expect(p.root).toHaveClass(/pa-command-palette--lg/);
+  await attr(page, 'size', null);
+  expect(await p.host.evaluate((el) => (el as any).size)).toBeNull();
+  await expect(p.root).not.toHaveClass(/pa-command-palette--lg/);
+});

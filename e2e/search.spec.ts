@@ -1,4 +1,11 @@
-import { expect, test, calls, events, load, open, palette } from './fixtures';
+import { expect, test, calls, events, load, open, palette, type Page } from './fixtures';
+
+/**
+ * "One call" tests type key by key: under a loaded parallel run (WebKit / Firefox) the gap
+ * between two keystrokes can exceed the default 150 ms debounce and split the term. A longer
+ * debounce keeps the assertion about the debounce, not about the machine's speed.
+ */
+const slowKeystrokesSafe = (page: Page) => palette(page).host.evaluate((el) => el.setAttribute('search-debounce', '1000'));
 
 test('context search: empty query shows "Type to search X" and never calls the provider', async ({ page }) => {
   await load(page, 'search');
@@ -20,6 +27,7 @@ test('context search: entered from the home screen too, then searches non-empty 
   await p.items.filter({ hasText: 'Products' }).click();
   await expect(p.input).toHaveValue(':products ');
   await expect(p.empty).toHaveText('Type to search Products');
+  await slowKeystrokesSafe(page);
   await page.keyboard.type('ipad');
   await expect(p.titles.first()).toHaveText('products ipad 0');
   await expect(p.titles.first().locator('mark')).toHaveText('ipad');
@@ -45,6 +53,7 @@ test('global search prepends matching commands even with NO searchCallback', asy
 test('global search: local matches first, then provider hits (debounced, one call)', async ({ page }) => {
   await load(page, 'search');
   const p = palette(page);
+  await slowKeystrokesSafe(page);
   await open(page);
   await page.keyboard.type('deploy');
   await expect(p.titles).toHaveText(['Deploy to Environment', 'Global deploy 0', 'Global deploy 1', 'Global deploy 2']);

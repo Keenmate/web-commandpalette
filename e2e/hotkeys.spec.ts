@@ -1,4 +1,4 @@
-import { events, expect, load, palette, test, type Page } from './fixtures';
+import { chordCap, events, expect, load, palette, test, type Page } from './fixtures';
 
 /**
  * Global and in-palette key bindings: `open-key`, `favorite-key` / `favorites-key` /
@@ -45,7 +45,7 @@ test('favorite-key / favorites-key / recent-key remap the in-palette chords', as
   // The old chord does nothing; the footer hint shows the new keycap.
   await page.keyboard.press('Control+d');
   expect(await headings(page)).toEqual(['Commands', 'Search']);
-  await expect(p.footer).toContainText('Ctrl E');
+  await expect(p.footer).toContainText(await chordCap(page, 'e'));
   await page.keyboard.press('Control+e');
   await expect.poll(() => headings(page)).toEqual(['Favorites', 'Commands', 'Search']);
   // Favorites list on the new chord (the old Ctrl+F is inert).

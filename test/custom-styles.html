@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>e2e fixture — custom styles</title>
+  <style>body { font-family: system-ui, sans-serif; }</style>
+</head>
+<body>
+  <web-command-palette id="palette"></web-command-palette>
+  <web-command-palette id="second" open-key="" favorites-hotkey=""></web-command-palette>
+
+  <script type="module">
+    import { setupStandard, commands, ready } from './fixture-common.js';
+    setupStandard('custom-styles');
+    document.getElementById('second').commands = commands();
+    ready();
+  </script>
+</body>
+</html>
