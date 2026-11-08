@@ -10,7 +10,7 @@ import type { Page } from '@playwright/test';
 /** A custom property read on the container inside the shadow root of `#id`. */
 const probe = (page: Page, id: string, name = '--cs-probe') =>
   page.locator(`#${id}`).evaluate((el, n) => {
-    const c = el.shadowRoot!.querySelector('.pa-command-palette__container')!;
+    const c = el.shadowRoot!.querySelector('.cp__container')!;
     return getComputedStyle(c).getPropertyValue(n).trim();
   }, name);
 
@@ -27,7 +27,7 @@ test.beforeEach(async ({ page }) => {
 
 test('instance: the custom-styles attribute styles the shadow root; removing it clears', async ({ page }) => {
   const el = page.locator('#palette');
-  await el.evaluate((e) => e.setAttribute('custom-styles', '.pa-command-palette__container { --cs-probe: attr; }'));
+  await el.evaluate((e) => e.setAttribute('custom-styles', '.cp__container { --cs-probe: attr; }'));
   await expect.poll(() => probe(page, 'palette')).toBe('attr');
   expect(await probe(page, 'second')).toBe('');
   expect((await slots(page, 'palette')).map((s) => s.cls)).toContain('cp-custom-styles');
@@ -37,11 +37,11 @@ test('instance: the custom-styles attribute styles the shadow root; removing it 
 });
 
 test('page layer styles every instance; an instance layer overrides it (page <style> first)', async ({ page }) => {
-  await setPage(page, '.pa-command-palette__container { --cs-probe: page; }');
+  await setPage(page, '.cp__container { --cs-probe: page; }');
   await expect.poll(() => probe(page, 'palette')).toBe('page');
   await expect.poll(() => probe(page, 'second')).toBe('page');
 
-  await page.locator('#palette').evaluate((e) => { (e as any).customStyles = '.pa-command-palette__container { --cs-probe: instance; }'; });
+  await page.locator('#palette').evaluate((e) => { (e as any).customStyles = '.cp__container { --cs-probe: instance; }'; });
   await expect.poll(() => probe(page, 'palette')).toBe('instance');
   expect(await probe(page, 'second')).toBe('page');
   expect((await slots(page, 'palette')).map((s) => s.cls)).toEqual(['cp-custom-styles--page', 'cp-custom-styles']);
@@ -54,14 +54,14 @@ test('page layer styles every instance; an instance layer overrides it (page <st
 test('callbacks: the page callback runs per instance with the palette context; the instance callback wins over customStyles', async ({ page }) => {
   await page.evaluate(() => {
     (window as any).components['web-command-palette'].getCustomStylesCallback = (ctx: any) =>
-      `.pa-command-palette__container { --cs-probe: page-${ctx.element.id}-${typeof ctx.isFullscreen}; }`;
+      `.cp__container { --cs-probe: page-${ctx.element.id}-${typeof ctx.isFullscreen}; }`;
   });
   await expect.poll(() => probe(page, 'palette')).toBe('page-palette-boolean');
   await expect.poll(() => probe(page, 'second')).toBe('page-second-boolean');
 
   await page.locator('#second').evaluate((e) => {
-    (e as any).customStyles = '.pa-command-palette__container { --cs-probe: string; }';
-    (e as any).getCustomStylesCallback = () => '.pa-command-palette__container { --cs-probe: callback; }';
+    (e as any).customStyles = '.cp__container { --cs-probe: string; }';
+    (e as any).getCustomStylesCallback = () => '.cp__container { --cs-probe: callback; }';
   });
   await expect.poll(() => probe(page, 'second')).toBe('callback');
   await page.locator('#second').evaluate((e) => { (e as any).getCustomStylesCallback = null; });

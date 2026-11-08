@@ -21,8 +21,8 @@ test('home screen lists commands and contexts with keycaps', async ({ page }) =>
   const p = palette(page);
   await open(page);
   await expect(p.titles).toHaveText(['Deploy to Environment', 'Go to Page', 'Reload Data', 'Products', 'Users']);
-  await expect(p.host.locator('.pa-command-palette__home-heading')).toHaveText(['Commands', 'Search']);
-  await expect(p.items.first().locator('.pa-command-palette__key')).toHaveText(['g', 'd']);
+  await expect(p.host.locator('.cp__home-heading')).toHaveText(['Commands', 'Search']);
+  await expect(p.items.first().locator('.cp__key')).toHaveText(['g', 'd']);
 });
 
 test('Esc on the home screen and a backdrop click both close; focus returns to the opener', async ({ page }) => {
@@ -101,4 +101,30 @@ test('a11y wiring: dialog, combobox → listbox, aria-activedescendant follows t
   await page.keyboard.press('ArrowDown');
   await expect(p.input).toHaveAttribute('aria-activedescendant', 'cp-item-1');
   await expect(p.items.nth(1)).toHaveAttribute('aria-selected', 'true');
+});
+
+test('the host is a real block box that takes no space (rulebook C-TC-7; was display: contents)', async ({ page }) => {
+  const p = palette(page);
+  await open(page);
+  const host = await p.host.evaluate((el) => ({ display: getComputedStyle(el).display, height: el.getBoundingClientRect().height }));
+  expect(host).toEqual({ display: 'block', height: 0 });
+  await expect(p.container).toBeVisible();
+});
+
+test('an item icon given by name draws the contract glyph without a theme; an unknown name draws nothing', async ({ page }) => {
+  const p = palette(page);
+  await p.host.evaluate((el) => {
+    (el as HTMLElement & { commands: unknown[] }).commands = [
+      { id: 'a', trigger: '/a', text: 'Alpha', icon: 'search' },
+      { id: 'b', trigger: '/b', text: 'Beta', icon: 'no-such-glyph' },
+    ];
+  });
+  await open(page);
+  const mask = (title: string) =>
+    p.items.filter({ hasText: title }).locator('.cp__item-icon .cp__icon').evaluate((el) => {
+      const cs = getComputedStyle(el) as CSSStyleDeclaration & { webkitMaskImage?: string };
+      return cs.maskImage && cs.maskImage !== 'none' ? cs.maskImage : (cs.webkitMaskImage ?? '');
+    });
+  expect(await mask('Alpha')).toContain('url(');
+  expect(await mask('Beta')).not.toContain('url(');
 });

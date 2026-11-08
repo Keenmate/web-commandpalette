@@ -3,7 +3,7 @@
    `badge-variant` on an item). The plain badge is the neutral secondary role.
    ============================================================================== */
 
-.pa-badge {
+.cp__badge {
   display: inline-flex;
   align-items: center;
   gap: var(--cp-space-xs);
@@ -20,32 +20,32 @@
   transition: background-color var(--cp-transition-fast) var(--cp-easing-out), color var(--cp-transition-fast) var(--cp-easing-out);
 }
 
-.pa-badge--secondary {
+.cp__badge--secondary {
   background-color: var(--cp-badge-bg);
   color: var(--cp-badge-color);
 }
 
-.pa-badge--primary {
+.cp__badge--primary {
   background-color: var(--cp-badge-primary-bg);
   color: var(--cp-badge-primary-color);
 }
 
-.pa-badge--success {
+.cp__badge--success {
   background-color: var(--cp-badge-success-bg);
   color: var(--cp-badge-success-color);
 }
 
-.pa-badge--warning {
+.cp__badge--warning {
   background-color: var(--cp-badge-warning-bg);
   color: var(--cp-badge-warning-color);
 }
 
-.pa-badge--danger {
+.cp__badge--danger {
   background-color: var(--cp-badge-danger-bg);
   color: var(--cp-badge-danger-color);
 }
 
-.pa-badge--info {
+.cp__badge--info {
   background-color: var(--cp-badge-info-bg);
   color: var(--cp-badge-info-color);
 }

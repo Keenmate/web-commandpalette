@@ -12,7 +12,7 @@
  *    active row. Navigation never awaits a provider.
  */
 import type { PaletteEngine } from './palette';
-import type { Command } from './types';
+import { DEFAULT_PALETTE_KEYS, type Command, type PaletteKeys } from './types';
 
 export const SEQUENCE_LEADER = 'g';
 export const SEQUENCE_WINDOW_MS = 1200;
@@ -56,22 +56,22 @@ export class GlobalKeys {
   #host: GlobalKeysHost;
   #armed = false;
   #timer: ReturnType<typeof setTimeout> | null = null;
-  #onKeydown = (e: KeyboardEvent): void => this.handle(e);
+  #keydownHandler = (e: KeyboardEvent): void => this.handleKeydown(e);
 
   constructor(host: GlobalKeysHost) {
     this.#host = host;
   }
 
   install(): void {
-    document.addEventListener('keydown', this.#onKeydown);
+    document.addEventListener('keydown', this.#keydownHandler);
   }
 
   uninstall(): void {
-    document.removeEventListener('keydown', this.#onKeydown);
+    document.removeEventListener('keydown', this.#keydownHandler);
     this.#disarm();
   }
 
-  handle(e: KeyboardEvent): void {
+  handleKeydown(e: KeyboardEvent): void {
     if (e.defaultPrevented) return;
     const openKey = this.#host.openKey();
     if (openKey && (e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === openKey.toLowerCase()) {
@@ -116,18 +116,6 @@ export class GlobalKeys {
     this.#timer = null;
   }
 }
-
-/** Ctrl/⌘ + letter shortcuts inside the palette ('' = off). */
-export interface PaletteKeys {
-  /** Star the active row. Default `d`. */
-  favorite: string;
-  /** Show all favorites. Default `f`. */
-  favorites: string;
-  /** Show all recently used. Default `r`. */
-  recent: string;
-}
-
-export const DEFAULT_PALETTE_KEYS: PaletteKeys = { favorite: 'd', favorites: 'f', recent: 'r' };
 
 /** Keydown inside the palette input. Returns true when handled. */
 export function handleInputKeydown(

@@ -52,14 +52,14 @@ test('component knobs: --cp-width on the host, and size presets', async ({ page 
     (el as HTMLElement).style.removeProperty('--cp-width');
     el.setAttribute('size', 'sm');
   });
-  await expect(p.root).toHaveClass(/pa-command-palette--sm/);
+  await expect(p.root).toHaveClass(/cp--sm/);
   expect(await style(p.container, 'max-width')).toBe('480px');
 });
 
 test('per-instance themes: --base-* / ::part() on one instance leave the others alone', async ({ page }) => {
   await load(page, 'theming');
   const bg = (id: string) =>
-    page.locator(`#${id}`).evaluate((el) => getComputedStyle(el.shadowRoot!.querySelector('.pa-command-palette__container')!).backgroundColor);
+    page.locator(`#${id}`).evaluate((el) => getComputedStyle(el.shadowRoot!.querySelector('.cp__container')!).backgroundColor);
   // Gallery instances have no global hotkey (open-key=""); open them through the API.
   for (const [id, expected] of [['theme-dark', 'rgb(30, 30, 46)'], ['theme-terminal', 'rgb(12, 12, 12)'], ['palette', 'rgb(255, 255, 255)']] as const) {
     const p = palette(page, `#${id}`);
@@ -84,7 +84,7 @@ test('size presets and --base-rem apply per instance, themed ones included', asy
   const sizes: string[] = [];
   for (const id of ['palette', 'theme-dark', 'theme-terminal']) {
     const p = palette(page, `#${id}`);
-    await expect(p.root).toHaveClass(/pa-command-palette--lg/);
+    await expect(p.root).toHaveClass(/cp--lg/);
     sizes.push(await style(p.container, 'max-width'));
   }
   // Same preset + same rem → the same width everywhere, and larger than the 10px-rem default.
@@ -131,11 +131,11 @@ test('item icons by name draw the shared --base-icon-* glyph; unknown names draw
   await p.host.evaluate((el) => {
     (el as HTMLElement).style.setProperty('--base-icon-search', 'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22/%3E")');
     const span = document.createElement('span');
-    span.innerHTML = '<span class="pa-icon pa-icon--search"></span><span class="pa-icon pa-icon--no-such-icon"></span>';
+    span.innerHTML = '<span class="cp__icon cp__icon--search"></span><span class="cp__icon cp__icon--no-such-icon"></span>';
     el.shadowRoot!.appendChild(span);
   });
   const mask = (cls: string) =>
-    p.host.evaluate((el, c) => getComputedStyle(el.shadowRoot!.querySelector(`.pa-icon--${c}`)!).maskImage, cls);
+    p.host.evaluate((el, c) => getComputedStyle(el.shadowRoot!.querySelector(`.cp__icon--${c}`)!).maskImage, cls);
   expect(await mask('search')).toContain('data:image/svg+xml');
   expect(await mask('no-such-icon')).toContain('linear-gradient');
 });

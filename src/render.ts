@@ -7,10 +7,9 @@
  * it into view, so keyboard navigation is pure DOM work.
  */
 import { getEnvironment, renderLoader, scrollIntoContainer } from '@keenmate/web-components-core';
-import { escapeHtml, renderIcon } from './icons';
+import { escapeHtml, renderIcon } from './helpers/icons';
 import type { HomeSection, PaletteEngine, TokenView, UsageView, ViewItem } from './palette';
-import { DEFAULT_PALETTE_KEYS, type PaletteKeys } from './keyboard';
-import type { Labels } from './types';
+import { DEFAULT_PALETTE_KEYS, type Labels, type PaletteKeys } from './types';
 
 export interface Shell {
   root: HTMLDivElement;
@@ -33,44 +32,44 @@ const itemId = (index: number): string => `cp-item-${index}`;
 
 export function createShell(): Shell {
   const root = document.createElement('div');
-  root.className = 'pa-command-palette';
+  root.className = 'cp';
   root.setAttribute('part', 'palette');
   root.innerHTML = `
-    <div class="pa-command-palette__backdrop" part="backdrop"></div>
-    <div class="pa-command-palette__container" part="container" role="dialog" aria-modal="true">
-      <div class="pa-command-palette__fullscreen-bar">
-        <span class="pa-command-palette__fullscreen-title"></span>
-        <button type="button" class="pa-command-palette__close">
-          <span class="pa-icon pa-icon--x" aria-hidden="true"></span>
+    <div class="cp__backdrop" part="backdrop"></div>
+    <div class="cp__container" part="container" role="dialog" aria-modal="true">
+      <div class="cp__fullscreen-bar">
+        <span class="cp__fullscreen-title"></span>
+        <button type="button" class="cp__close">
+          <span class="cp__icon cp__icon--x" aria-hidden="true"></span>
         </button>
       </div>
-      <div class="pa-command-palette__search">
-        <div class="pa-command-palette__tokens"></div>
-        <div class="pa-command-palette__input-wrapper">
-          <input type="text" class="pa-command-palette__input" part="input" autocomplete="off" spellcheck="false"
+      <div class="cp__search">
+        <div class="cp__tokens"></div>
+        <div class="cp__input-wrapper">
+          <input type="text" class="cp__input" part="input" autocomplete="off" spellcheck="false"
             role="combobox" aria-autocomplete="list" aria-expanded="true" aria-controls="${RESULTS_ID}">
-          <div class="pa-command-palette__context" aria-live="polite" dir="auto"></div>
+          <div class="cp__context" aria-live="polite" dir="auto"></div>
         </div>
       </div>
-      <div class="pa-command-palette__results" part="results" id="${RESULTS_ID}" role="listbox"></div>
-      <div class="pa-command-palette__footer" part="footer"></div>
-      <div class="cp-confirm" role="status" tabindex="-1" hidden></div>
-      <div class="cp-sr-only" aria-live="polite" aria-atomic="true"></div>
+      <div class="cp__results" part="results" id="${RESULTS_ID}" role="listbox"></div>
+      <div class="cp__footer" part="footer"></div>
+      <div class="cp__confirm" role="status" tabindex="-1" hidden></div>
+      <div class="cp__sr-only" aria-live="polite" aria-atomic="true"></div>
     </div>`;
   const q = <T extends Element>(sel: string): T => root.querySelector(sel) as T;
   return {
     root,
-    backdrop: q('.pa-command-palette__backdrop'),
-    container: q('.pa-command-palette__container'),
-    closeButton: q('.pa-command-palette__close'),
-    fullscreenTitle: q('.pa-command-palette__fullscreen-title'),
-    tokens: q('.pa-command-palette__tokens'),
-    input: q('.pa-command-palette__input'),
-    context: q('.pa-command-palette__context'),
-    results: q('.pa-command-palette__results'),
-    footer: q('.pa-command-palette__footer'),
-    live: q('.cp-sr-only'),
-    confirm: q('.cp-confirm'),
+    backdrop: q('.cp__backdrop'),
+    container: q('.cp__container'),
+    closeButton: q('.cp__close'),
+    fullscreenTitle: q('.cp__fullscreen-title'),
+    tokens: q('.cp__tokens'),
+    input: q('.cp__input'),
+    context: q('.cp__context'),
+    results: q('.cp__results'),
+    footer: q('.cp__footer'),
+    live: q('.cp__sr-only'),
+    confirm: q('.cp__confirm'),
   };
 }
 
@@ -91,8 +90,8 @@ export function highlight(text: string, needle: string): string {
 
 function keycaps(keys: string[] | undefined): string {
   if (!keys?.length) return '';
-  return `<div class="pa-command-palette__shortcut">${keys
-    .map((k) => `<span class="pa-command-palette__key"><bdi>${escapeHtml(k)}</bdi></span>`)
+  return `<div class="cp__shortcut">${keys
+    .map((k) => `<span class="cp__key"><bdi>${escapeHtml(k)}</bdi></span>`)
     .join(' ')}</div>`;
 }
 
@@ -118,27 +117,27 @@ function starHtml(item: ViewItem, index: number, ctx: RenderContext): string {
   const text = on ? ctx.labels.removeFavorite : ctx.labels.addFavorite;
   const cap = chordKeycap(ctx.keys.favorite);
   return (
-    `<button type="button" class="cp-star${on ? ' cp-star--on' : ''}" tabindex="-1" data-star="${index}"` +
+    `<button type="button" class="cp__star${on ? ' cp__star--on' : ''}" tabindex="-1" data-star="${index}"` +
     ` aria-pressed="${on}" aria-label="${escapeHtml(text)}"` +
-    ` title="${escapeHtml(cap ? `${text} (${cap})` : text)}"><span class="pa-icon cp-icon--star${on ? '-filled' : ''}" aria-hidden="true"></span></button>`
+    ` title="${escapeHtml(cap ? `${text} (${cap})` : text)}"><span class="cp__icon cp__icon--star${on ? '-filled' : ''}" aria-hidden="true"></span></button>`
   );
 }
 
 function itemHtml(item: ViewItem, index: number, active: boolean, needle: string, ctx: RenderContext): string {
   const icon = renderIcon(item.icon);
   const badge = item.badge
-    ? `<span class="pa-badge${item.badgeVariant ? ` pa-badge--${escapeHtml(item.badgeVariant)}` : ''}"><bdi>${escapeHtml(item.badge)}</bdi></span>`
+    ? `<span class="cp__badge${item.badgeVariant ? ` cp__badge--${escapeHtml(item.badgeVariant)}` : ''}"><bdi>${escapeHtml(item.badge)}</bdi></span>`
     : '';
   return (
-    `<div class="pa-command-palette__item${active ? ' pa-command-palette__item--active' : ''}${item.isDefault ? ' cp-item--default' : ''}` +
+    `<div class="cp__item${active ? ' cp__item--active' : ''}${item.isDefault ? ' cp__item--default' : ''}` +
     `${item.isDisabled ? ' cp__item--disabled' : ''}${item.isDanger ? ' cp__item--danger' : ''}` +
     `${item.cssClass ? ` ${escapeHtml(item.cssClass)}` : ''}"` +
     ` id="${itemId(index)}" data-index="${index}" role="option" aria-selected="${active}"` +
     `${item.isDisabled ? ' aria-disabled="true"' : ''}${item.tooltip ? ` title="${escapeHtml(item.tooltip)}"` : ''}>` +
-    (icon ? `<div class="pa-command-palette__item-icon" aria-hidden="true">${icon}</div>` : '') +
-    `<div class="pa-command-palette__item-content">` +
-    `<div class="pa-command-palette__item-title"><bdi>${highlight(item.title ?? '', needle)}</bdi></div>` +
-    (item.meta ? `<div class="pa-command-palette__item-meta"><bdi>${escapeHtml(item.meta)}</bdi></div>` : '') +
+    (icon ? `<div class="cp__item-icon" aria-hidden="true">${icon}</div>` : '') +
+    `<div class="cp__item-content">` +
+    `<div class="cp__item-title"><bdi>${highlight(item.title ?? '', needle)}</bdi></div>` +
+    (item.meta ? `<div class="cp__item-meta"><bdi>${escapeHtml(item.meta)}</bdi></div>` : '') +
     `</div>` +
     badge +
     keycaps(item.keys) +
@@ -150,9 +149,9 @@ function itemHtml(item: ViewItem, index: number, active: boolean, needle: string
 /** A heading + rows. `more` = an optional control at the heading's end (e.g. "+2 · Ctrl F"). */
 function sectionHtml(heading: string, rows: string, more = ''): string {
   return (
-    `<div class="pa-command-palette__home-section" role="group"${heading ? ` aria-label="${escapeHtml(heading)}"` : ''}>` +
+    `<div class="cp__home-section" role="group"${heading ? ` aria-label="${escapeHtml(heading)}"` : ''}>` +
     (heading || more
-      ? `<div class="pa-command-palette__home-heading cp-heading">${heading ? `<span aria-hidden="true">${escapeHtml(heading)}</span>` : ''}${more}</div>`
+      ? `<div class="cp__home-heading cp__heading">${heading ? `<span aria-hidden="true">${escapeHtml(heading)}</span>` : ''}${more}</div>`
       : '') +
     `${rows}</div>`
   );
@@ -164,9 +163,9 @@ function moreHtml(view: UsageView, hidden: number, heading: string, ctx: RenderC
   const count = hidden > 0 ? fill(ctx.labels.showAll, { count: hidden }) : '';
   if (!count && !cap) return '';
   return (
-    `<button type="button" class="cp-more" tabindex="-1" data-view="${view}" aria-label="${escapeHtml(heading)}${cap ? ` (${escapeHtml(cap)})` : ''}">` +
+    `<button type="button" class="cp__more" tabindex="-1" data-view="${view}" aria-label="${escapeHtml(heading)}${cap ? ` (${escapeHtml(cap)})` : ''}">` +
     (count ? `<span>${escapeHtml(count)}</span>` : '') +
-    (cap ? `<span class="pa-command-palette__key">${escapeHtml(cap)}</span>` : '') +
+    (cap ? `<span class="cp__key">${escapeHtml(cap)}</span>` : '') +
     `</button>`
   );
 }
@@ -187,7 +186,7 @@ function homeHtml(m: PaletteEngine, ctx: RenderContext): string {
     const more = key === 'favorites' || key === 'recent' ? moreHtml(key, m.homeMore[key], headings[key], ctx) : '';
     return sectionHtml(headings[key], rows, more);
   };
-  return `<div class="pa-command-palette__home">${(['favorites', 'recent', 'commands', 'contexts'] as const).map(section).join('')}</div>`;
+  return `<div class="cp__home">${(['favorites', 'recent', 'commands', 'contexts'] as const).map(section).join('')}</div>`;
 }
 
 /** Search rows, with a heading section per run of `group` (the engine clusters them). */
@@ -216,14 +215,14 @@ function tokensHtml(tokens: TokenView[] | null, labels: Labels): string {
     .map((t) => {
       switch (t.type) {
         case 'command':
-          return `<span class="pa-badge pa-badge--primary"><bdi>${escapeHtml(t.label)}</bdi></span>`;
+          return `<span class="cp__badge cp__badge--primary"><bdi>${escapeHtml(t.label)}</bdi></span>`;
         case 'prompt':
-          return `<span class="pa-command-palette__token-prompt">${escapeHtml(t.label)}</span>`;
+          return `<span class="cp__token-prompt">${escapeHtml(t.label)}</span>`;
         case 'selection':
           return (
-            `<span class="pa-badge"><bdi>${escapeHtml(t.label)}</bdi>` +
-            `<button type="button" class="pa-badge__remove" data-token="${t.index}" aria-label="${escapeHtml(fill(labels.removeToken, { name: t.label }))}">` +
-            `<span class="pa-icon pa-icon--remove" aria-hidden="true"></span></button></span>`
+            `<span class="cp__badge"><bdi>${escapeHtml(t.label)}</bdi>` +
+            `<button type="button" class="cp__badge-remove" data-token="${t.index}" aria-label="${escapeHtml(fill(labels.removeToken, { name: t.label }))}">` +
+            `<span class="cp__icon cp__icon--remove" aria-hidden="true"></span></button></span>`
           );
       }
     })
@@ -234,7 +233,7 @@ function footerHtml(m: PaletteEngine, ctx: RenderContext): string {
   const { labels } = ctx;
   // A label set to '' hides that hint (L4: '' = deliberately empty).
   const hint = (key: string, text: string): string =>
-    !text ? '' : `<div class="pa-command-palette__hint"><span class="pa-command-palette__key">${escapeHtml(key)}</span><span>${escapeHtml(text)}</span></div>`;
+    !text ? '' : `<div class="cp__hint"><span class="cp__key">${escapeHtml(key)}</span><span>${escapeHtml(text)}</span></div>`;
   // Mode-aware (IMPLEMENTATION_PLAN §10): ←→ only when paginated, ⌫ only where it
   // steps back, Esc reads Back/Close accordingly. In a wizard Tab = next step, and
   // Enter runs the rest of a replayed run. The star hint follows the active row.
@@ -258,13 +257,13 @@ function footerHtml(m: PaletteEngine, ctx: RenderContext): string {
  * an instant command shows its text.
  */
 export function confirmationBodyHtml(o: { trigger?: string; text: string; parts: TokenView[] }): string {
-  if (!o.parts.length) return `<strong class="cp-confirm__answer">${escapeHtml(o.text)}</strong>`;
+  if (!o.parts.length) return `<strong class="cp__confirm-answer">${escapeHtml(o.text)}</strong>`;
   return [
-    o.trigger ? `<span class="cp-confirm__command">${escapeHtml(o.trigger)}</span>` : '',
+    o.trigger ? `<span class="cp__confirm-command">${escapeHtml(o.trigger)}</span>` : '',
     ...o.parts.map((t) =>
       t.type === 'selection'
-        ? `<strong class="cp-confirm__answer">${escapeHtml(t.label)}</strong>`
-        : `<span class="cp-confirm__prompt">${escapeHtml(t.label)}</span>`,
+        ? `<strong class="cp__confirm-answer">${escapeHtml(t.label)}</strong>`
+        : `<span class="cp__confirm-prompt">${escapeHtml(t.label)}</span>`,
     ),
   ].filter(Boolean).join(' ');
 }
@@ -275,11 +274,11 @@ export function confirmationBodyHtml(o: { trigger?: string; text: string; parts:
  */
 export function fillConfirmation(el: HTMLElement, heading: string, duration: number): HTMLElement {
   el.innerHTML =
-    `<span class="cp-confirm__check pa-icon cp-icon--check" aria-hidden="true"></span>` +
-    `<span class="cp-confirm__body" dir="auto"></span>` +
-    `<span class="cp-confirm__title">${escapeHtml(heading)}</span>` +
-    `<span class="cp-confirm__progress" style="animation-duration: ${Math.max(0, duration)}ms"></span>`;
-  return el.querySelector('.cp-confirm__body') as HTMLElement;
+    `<span class="cp__confirm-check cp__icon cp__icon--check" aria-hidden="true"></span>` +
+    `<span class="cp__confirm-body" dir="auto"></span>` +
+    `<span class="cp__confirm-title">${escapeHtml(heading)}</span>` +
+    `<span class="cp__confirm-progress" style="animation-duration: ${Math.max(0, duration)}ms"></span>`;
+  return el.querySelector('.cp__confirm-body') as HTMLElement;
 }
 
 /** Render state. Remembers what it last painted so unchanged parts aren't touched. */
@@ -346,7 +345,7 @@ export class Renderer {
     s.input.setAttribute('aria-label', labels.dialogLabel);
     const ctx = m.contextText;
     s.context.textContent = ctx ?? '';
-    s.context.classList.toggle('pa-command-palette__context--visible', !!ctx);
+    s.context.classList.toggle('cp__context--visible', !!ctx);
 
     const tokens = tokensHtml(m.tokens, labels);
     if (tokens !== this.#tokens) {
@@ -362,7 +361,7 @@ export class Renderer {
       this.clearLoader();
       s.results.innerHTML = this.#resultsHtml(m, { labels, keys: this.keys });
       this.#mountLoader(labels);
-      s.results.classList.toggle('pa-command-palette__results--loading', m.isLoading && m.items.length > 0);
+      s.results.classList.toggle('cp__results--loading', m.isLoading && m.items.length > 0);
     } else {
       this.#paintActive(m.activeIndex);
     }
@@ -387,30 +386,30 @@ export class Renderer {
     if (m.mode === 'idle') return homeHtml(m, ctx);
     if (m.items.length) {
       const rows = rowsHtml(m, ctx);
-      const page = m.pageText ? `<div class="pa-command-palette__pagination">${escapeHtml(m.pageText)}</div>` : '';
+      const page = m.pageText ? `<div class="cp__pagination">${escapeHtml(m.pageText)}</div>` : '';
       return rows + page;
     }
     if (m.isLoading) {
       return (
         // The slot carries role="status" + aria-label (renderLoader), so the text is aria-hidden.
-        `<div class="pa-command-palette__loader">` +
-        `<span class="pa-command-palette__loader-slot" data-cp-loader="search"></span>` +
+        `<div class="cp__loading">` +
+        `<span class="cp__loader-slot" data-cp-loader="search"></span>` +
         `<span aria-hidden="true">${escapeHtml(labels.searching)}</span></div>`
       );
     }
-    return m.emptyText ? `<div class="pa-command-palette__empty">${escapeHtml(m.emptyText)}</div>` : '';
+    return m.emptyText ? `<div class="cp__empty">${escapeHtml(m.emptyText)}</div>` : '';
   }
 
   #paintActive(index: number): void {
-    const prev = this.#shell.results.querySelector('.pa-command-palette__item--active');
+    const prev = this.#shell.results.querySelector('.cp__item--active');
     const next = index >= 0 ? this.#shell.results.querySelector(`#${itemId(index)}`) : null;
     if (prev === next) return;
     if (prev) {
-      prev.classList.remove('pa-command-palette__item--active');
+      prev.classList.remove('cp__item--active');
       prev.setAttribute('aria-selected', 'false');
     }
     if (next) {
-      next.classList.add('pa-command-palette__item--active');
+      next.classList.add('cp__item--active');
       next.setAttribute('aria-selected', 'true');
     }
   }
@@ -422,7 +421,7 @@ export class Renderer {
   }
 
   #scrollActive(): void {
-    const el = this.#shell.results.querySelector('.pa-command-palette__item--active') as HTMLElement | null;
+    const el = this.#shell.results.querySelector('.cp__item--active') as HTMLElement | null;
     // Scroll the results list only, never the page (core SPEC §12.15).
     if (el) scrollIntoContainer(el, { container: this.#shell.results });
   }

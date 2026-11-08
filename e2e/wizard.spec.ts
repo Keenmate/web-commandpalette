@@ -62,7 +62,7 @@ test('tokens display: a "$" pattern in an answer is kept verbatim in the remove 
   await open(page);
   await page.keyboard.type('/price ');
   await page.keyboard.press('Enter');
-  await expect(p.tokens.locator('.pa-badge__remove')).toHaveAttribute('aria-label', "Remove R$&D $' $$");
+  await expect(p.tokens.locator('.cp__badge-remove')).toHaveAttribute('aria-label', "Remove R$&D $' $$");
 });
 
 test('tokens display: answers become removable badges above an empty input', async ({ page }) => {
@@ -72,10 +72,10 @@ test('tokens display: answers become removable badges above an empty input', asy
   await page.keyboard.type('/deploy ');
   await expect(p.input).toHaveValue('');
   await page.keyboard.press('Enter'); // Production
-  await expect(p.tokens.locator('.pa-badge')).toHaveText(['/deploy', 'Production']);
-  await expect(p.tokens.locator('.pa-command-palette__token-prompt')).toHaveText(['to', 'branch']);
-  await p.tokens.locator('.pa-badge__remove').click();
-  await expect(p.tokens.locator('.pa-badge')).toHaveText(['/deploy']);
+  await expect(p.tokens.locator('.cp__badge')).toHaveText(['/deploy', 'Production']);
+  await expect(p.tokens.locator('.cp__token-prompt')).toHaveText(['to', 'branch']);
+  await p.tokens.locator('.cp__badge-remove').click();
+  await expect(p.tokens.locator('.cp__badge')).toHaveText(['/deploy']);
   await expect(p.titles).toHaveText(['Production', 'Staging']);
   await expect(p.input).toBeFocused();
   // Backspace at 0 steps back to the command list.

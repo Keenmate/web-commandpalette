@@ -5,7 +5,7 @@
  *
  *  - `<svg …>` (starts with `<`)   → injected raw. The host vouches for this markup.
  *  - `fa-gear`, `x`, `search` (ASCII-letter start) → an icon NAME, rendered as
- *    `<span class="pa-icon pa-icon--NAME">` (a masked glyph in currentColor).
+ *    `<span class="cp__icon cp__icon--NAME">` (a masked glyph in currentColor).
  *  - `🚀` / any other glyph        → rendered as text.
  */
 import { escapeHtml as escapeText } from '@keenmate/web-components-core/search';
@@ -23,7 +23,7 @@ export function renderIcon(icon: string | null | undefined): string {
   if (value.startsWith('<')) return value;
   if (/^[A-Za-z]/.test(value)) {
     const name = value.replace(/[^A-Za-z0-9_-]/g, '');
-    return `<span class="pa-icon pa-icon--${name}" aria-hidden="true"></span>`;
+    return `<span class="cp__icon cp__icon--${name}" aria-hidden="true"></span>`;
   }
   return escapeHtml(value);
 }

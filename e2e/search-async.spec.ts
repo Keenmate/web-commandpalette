@@ -65,9 +65,9 @@ test('a rejecting provider (CP-2): local matches stay, the palette stays usable,
   // Global search: the local command match renders; the failed provider adds nothing.
   await p.input.fill('go');
   await expect.poll(() => terms(page)).toEqual(['go']);
-  await expect(p.host.locator('.pa-command-palette__loader')).toHaveCount(0);
+  await expect(p.host.locator('.cp__loading')).toHaveCount(0);
   await expect(p.titles).toHaveText(['Go to Page']);
-  await expect(p.host.locator('.pa-command-palette__results')).not.toHaveClass(/--loading/);
+  await expect(p.host.locator('.cp__results')).not.toHaveClass(/--loading/);
   // No local match: today a failure reads as the ordinary empty text (CP-2, NOTES.md #2).
   await p.input.fill('nothing');
   await expect(p.empty).toHaveText('No results found');
@@ -94,16 +94,16 @@ test('loading state: a loader while nothing is shown, a veil over local matches'
   const p = palette(page);
   await knobs(page, (w) => { w.delays.wait = 800; w.delays.go = 800; });
   await open(page);
-  const results = p.host.locator('.pa-command-palette__results');
+  const results = p.host.locator('.cp__results');
   await p.input.fill('wait');
-  await expect(p.host.locator('.pa-command-palette__loader')).toBeVisible();
-  await expect(p.host.locator('.pa-command-palette__loader-slot')).toHaveAttribute('role', 'status');
+  await expect(p.host.locator('.cp__loading')).toBeVisible();
+  await expect(p.host.locator('.cp__loader-slot')).toHaveAttribute('role', 'status');
   await expect(p.titles).toHaveText(['wait hit 0', 'wait hit 1']);
-  await expect(p.host.locator('.pa-command-palette__loader')).toHaveCount(0);
+  await expect(p.host.locator('.cp__loading')).toHaveCount(0);
 
   await p.input.fill('go');
   await expect(p.titles).toHaveText(['Go to Page']);
-  await expect(results).toHaveClass(/pa-command-palette__results--loading/);
+  await expect(results).toHaveClass(/cp__results--loading/);
   await expect(p.titles).toHaveText(['Go to Page', 'go hit 0', 'go hit 1']);
   await expect(results).not.toHaveClass(/--loading/);
 });
@@ -133,7 +133,7 @@ test('loader: default .cp__loader with role=status + labels.searching, removed w
   await knobs(page, (w) => { w.delays.wait = 800; });
   await open(page);
   await p.input.fill('wait');
-  const slot = p.host.locator('.pa-command-palette__loader-slot');
+  const slot = p.host.locator('.cp__loader-slot');
   await expect(slot).toHaveAttribute('role', 'status');
   await expect(slot).toHaveAttribute('aria-label', 'Searching…');
   const loader = slot.locator('.cp__loader');
@@ -155,7 +155,7 @@ test('loader: aria-label follows labels.searching', async ({ page }) => {
   await p.host.evaluate((el) => { (el as unknown as { labels: object }).labels = { searching: 'Hledám…' }; });
   await open(page);
   await p.input.fill('wait');
-  await expect(p.host.locator('.pa-command-palette__loader-slot')).toHaveAttribute('aria-label', 'Hledám…');
+  await expect(p.host.locator('.cp__loader-slot')).toHaveAttribute('aria-label', 'Hledám…');
 });
 
 test('loader: the page hook replaces the default; its cleanup runs on remove (results / close)', async ({ page }) => {
@@ -173,7 +173,7 @@ test('loader: the page hook replaces the default; its cleanup runs on remove (re
   });
   await open(page);
   await p.input.fill('wait');
-  await expect(p.host.locator('.pa-command-palette__loader-slot .page-dots')).toHaveCount(1);
+  await expect(p.host.locator('.cp__loader-slot .page-dots')).toHaveCount(1);
   await expect(p.host.locator('.cp__loader')).toHaveCount(0);
   expect(await page.evaluate(() => (window as any).loaderCtx)).toEqual({
     component: 'web-command-palette', context: 'search', label: 'Searching…', id: 'palette',
@@ -204,7 +204,7 @@ test('loader: the instance renderLoadingCallback beats the page hook', async ({ 
   });
   await open(page);
   await p.input.fill('wait');
-  await expect(p.host.locator('.pa-command-palette__loader-slot .instance-bar')).toHaveCount(1);
+  await expect(p.host.locator('.cp__loader-slot .instance-bar')).toHaveCount(1);
   await expect(p.host.locator('.page-dots')).toHaveCount(0);
   await expect(p.host.locator('.cp__loader')).toHaveCount(0);
 });

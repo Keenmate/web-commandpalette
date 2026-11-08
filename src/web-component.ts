@@ -42,7 +42,7 @@ import {
 import { runAction } from '@keenmate/web-components-core/actions';
 import { PaletteEngine, type Effect, type EffectOutcome, type PaletteEngineHost, type TokenView } from './palette';
 import { Renderer, chordKeycap, confirmationBodyHtml, createShell, fillConfirmation, type Shell } from './render';
-import { GlobalKeys, handleInputKeydown, sequenceLetter, type PaletteKeys } from './keyboard';
+import { GlobalKeys, handleInputKeydown, sequenceLetter } from './keyboard';
 import { UsageStore, localStoragePersistence, type UsagePersistence } from './usage';
 import {
   DEFAULT_LABELS,
@@ -56,6 +56,7 @@ import {
   type Context,
   type Display,
   type Labels,
+  type PaletteKeys,
   type LoadUsageCallback,
   type PaletteContext,
   type PaletteEventDetail,
@@ -429,7 +430,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     if (custom == null && done.type === 'select') return false;
 
     // The dialog collapses to this one line (CSS hides the search row, results and
-    // footer under `.cp-confirming`); the line takes focus so any key dismisses it.
+    // footer under `.cp--confirming`); the line takes focus so any key dismisses it.
     const { confirm, live, root } = this.#shell;
     const body = fillConfirmation(confirm, this.#labels.done, duration);
     if (custom instanceof HTMLElement) body.appendChild(custom);
@@ -447,7 +448,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     const { container } = this.#shell;
     const from = container.getBoundingClientRect().height;
     confirm.hidden = false;
-    root.classList.add('cp-confirming');
+    root.classList.add('cp--confirming');
     if (!this.#isFullscreen && from > 0) {
       const to = container.getBoundingClientRect().height;
       container.style.height = `${from}px`;
@@ -468,7 +469,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.#shell.confirm.hidden = true;
     this.#shell.confirm.replaceChildren();
     this.#shell.container.style.height = '';
-    this.#shell.root.classList.remove('cp-confirming');
+    this.#shell.root.classList.remove('cp--confirming');
     this.#renderer.invalidate();
   }
 
@@ -703,7 +704,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
 
   #applySize(): void {
     const root = this.#shell.root;
-    for (const s of ['sm', 'lg', 'xl']) root.classList.toggle(`pa-command-palette--${s}`, this.config.size === s);
+    for (const s of ['sm', 'lg', 'xl']) root.classList.toggle(`cp--${s}`, this.config.size === s);
   }
 
   /** floating vs. the phone fullscreen sheet — capability-first, via core's device classification. */
@@ -712,7 +713,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     const isFullscreen = resolvePresentation(mode, env) !== 'floating';
     if (isFullscreen === this.#isFullscreen) return;
     this.#isFullscreen = isFullscreen;
-    this.#shell.root.classList.toggle('pa-command-palette--fullscreen', isFullscreen);
+    this.#shell.root.classList.toggle('cp--fullscreen', isFullscreen);
     this.log.UI.debug('presentation', isFullscreen ? 'fullscreen' : 'floating');
     if (this.#isOpen) this.#syncKeyboardInset();
   }
@@ -745,7 +746,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.#isOpen = true;
     this.#returnFocus = deepActiveElement();
     this.#engine.reset();
-    this.#shell.root.classList.add('pa-command-palette--active');
+    this.#shell.root.classList.add('cp--active');
     this.toggleAttribute('open', true);
     this.#releaseScroll = lockBodyScroll();
     this.#syncKeyboardInset();
@@ -764,7 +765,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.#renderer.clearLoader();
     this.#engine.dispose();
     this.#engine.reset();
-    this.#shell.root.classList.remove('pa-command-palette--active');
+    this.#shell.root.classList.remove('cp--active');
     this.toggleAttribute('open', false);
     this.#overlay?.deactivate();
     this.#releaseScroll?.();

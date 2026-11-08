@@ -6,7 +6,7 @@ import { expect, load, open, palette, test } from './fixtures';
  */
 
 const headings = (page: import('@playwright/test').Page) =>
-  palette(page).host.locator('.pa-command-palette__home-heading > span:first-child').allTextContents();
+  palette(page).host.locator('.cp__home-heading > span:first-child').allTextContents();
 
 test.beforeEach(async ({ page }) => load(page, 'labels'));
 
@@ -49,5 +49,5 @@ test("'' renders nothing; undefined keeps the English default", async ({ page })
   await p.input.fill('/zzz');
   await expect(p.items).toHaveCount(0);
   await expect(p.empty).toHaveCount(0);
-  await expect(p.footer.locator('.pa-command-palette__hint', { hasText: '↑↓' })).toHaveCount(0);
+  await expect(p.footer.locator('.cp__hint', { hasText: '↑↓' })).toHaveCount(0);
 });

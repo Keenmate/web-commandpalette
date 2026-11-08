@@ -1,0 +1,3 @@
+/* states.css — no cross-feature state modifiers: each state lives with its feature (the
+   active / disabled / danger rows in results.css, the open / fullscreen / size modifiers of
+   the block in dialog.css, the feedback collapse in confirm.css). */

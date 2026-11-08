@@ -2,7 +2,7 @@
    FOOTER — keyboard hints and keycaps
    ============================================================================== */
 
-.pa-command-palette__footer {
+.cp__footer {
   border-top: var(--cp-border);
   padding: var(--cp-space-sm);
   display: flex;
@@ -11,13 +11,13 @@
   color: var(--cp-text-color-2);
 }
 
-.pa-command-palette__hint {
+.cp__hint {
   display: flex;
   align-items: center;
   gap: var(--cp-space-xs);
 }
 
-.pa-command-palette__key {
+.cp__key {
   padding: 2px var(--cp-space-xs);
   background-color: var(--cp-key-bg);
   color: var(--cp-key-text);

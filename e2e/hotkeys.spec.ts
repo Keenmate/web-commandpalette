@@ -9,7 +9,7 @@ import { chordCap, events, expect, load, palette, test, type Page } from './fixt
 const attr = (page: Page, name: string, value: string) =>
   palette(page).host.evaluate((el, [n, v]) => el.setAttribute(n, v), [name, value] as const);
 const headings = (page: Page) =>
-  palette(page).host.locator('.pa-command-palette__home-heading > span:first-child').allTextContents();
+  palette(page).host.locator('.cp__home-heading > span:first-child').allTextContents();
 
 test.beforeEach(async ({ page }) => load(page, 'hotkeys'));
 

@@ -366,7 +366,7 @@
 
 <!-- TH02: an instance with its own custom CSS (the instance layer). -->
 <web-command-palette id="custom-css" open-key="" favorites-hotkey=""
-    custom-styles=".pa-command-palette__container { outline-color: #e8590c; } .pa-command-palette__input { font-style: italic; }"></web-command-palette>
+    custom-styles=".cp__container { outline-color: #e8590c; } .cp__input { font-style: italic; }"></web-command-palette>
 
 <!-- Page wiring -->
 <script type="module">
@@ -416,7 +416,7 @@
         }
 
         // TH02 — the page layer (every palette) and one instance's own layer on top.
-        const PAGE_CSS = '.pa-command-palette__container { outline: 3px dashed #7048e8; outline-offset: 4px; }';
+        const PAGE_CSS = '.cp__container { outline: 3px dashed #7048e8; outline-offset: 4px; }';
         const custom = document.getElementById('custom-css');
         Object.assign(custom, { commands, contexts, searchCallback, getStepOptionsCallback });
         document.getElementById('th02-instance-css').textContent = custom.getAttribute('custom-styles');

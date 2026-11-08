@@ -2,13 +2,13 @@
    SEARCH — the input row: command tokens, the input, the scope pill
    ============================================================================== */
 
-.pa-command-palette__search {
+.cp__search {
   position: relative;
   border-bottom: var(--cp-border);
   padding: var(--cp-space-sm);
 }
 
-.pa-command-palette__tokens {
+.cp__tokens {
   display: flex;
   flex-wrap: wrap;
   gap: var(--cp-space-xs);
@@ -16,18 +16,18 @@
   margin-bottom: var(--cp-space-sm);
 }
 
-.pa-command-palette__tokens:empty {
+.cp__tokens:empty {
   display: none;
   margin-bottom: 0;
 }
 
-.pa-command-palette__tokens .pa-badge {
+.cp__tokens .cp__badge {
   display: inline-flex;
   align-items: center;
   margin: 0;
 }
 
-.pa-command-palette__tokens .pa-badge__remove {
+.cp__tokens .cp__badge-remove {
   margin-inline-start: var(--cp-space-xs);
   padding: 0 var(--cp-space-xs);
   border: none;
@@ -40,21 +40,21 @@
   transition: opacity var(--cp-transition-fast) var(--cp-easing);
 }
 
-.pa-command-palette__tokens .pa-badge__remove:hover {
+.cp__tokens .cp__badge-remove:hover {
   opacity: 1;
 }
 
-.pa-command-palette__token-prompt {
+.cp__token-prompt {
   font-size: var(--cp-font-size-xs);
   color: var(--cp-text-color-2);
   font-style: italic;
 }
 
-.pa-command-palette__input-wrapper {
+.cp__input-wrapper {
   position: relative;
 }
 
-.pa-command-palette__input {
+.cp__input {
   width: 100%;
   height: var(--cp-input-height);
   padding: 0 var(--cp-input-padding-h);
@@ -67,19 +67,19 @@
   transition: border-color var(--cp-transition-fast) var(--cp-easing-out), box-shadow var(--cp-transition-fast) var(--cp-easing-out);
 }
 
-.pa-command-palette__input:focus {
+.cp__input:focus {
   border: var(--cp-input-border-focus);
   box-shadow: var(--cp-input-box-shadow-focus);
 }
 
 /* The placeholder color is already the faint text level — no extra opacity. */
-.pa-command-palette__input::placeholder {
+.cp__input::placeholder {
   color: var(--cp-input-placeholder-color);
   opacity: 1;
 }
 
 /* The scope pill (": Users") at the input's inline end. */
-.pa-command-palette__context {
+.cp__context {
   position: absolute;
   inset-inline-end: var(--cp-space-sm);
   top: 50%;
@@ -94,6 +94,6 @@
   transition: opacity var(--cp-transition-fast) var(--cp-easing);
 }
 
-.pa-command-palette__context--visible {
+.cp__context--visible {
   opacity: 1;
 }

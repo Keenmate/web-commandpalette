@@ -18,24 +18,24 @@ export function palette(page: Page, selector = 'web-command-palette#palette') {
   const host = page.locator(selector);
   return {
     host,
-    root: host.locator('.pa-command-palette'),
-    input: host.locator('.pa-command-palette__input'),
-    context: host.locator('.pa-command-palette__context'),
-    tokens: host.locator('.pa-command-palette__tokens'),
-    items: host.locator('.pa-command-palette__item'),
-    active: host.locator('.pa-command-palette__item--active'),
-    titles: host.locator('.pa-command-palette__item-title'),
-    empty: host.locator('.pa-command-palette__empty'),
-    pagination: host.locator('.pa-command-palette__pagination'),
-    footer: host.locator('.pa-command-palette__footer'),
-    backdrop: host.locator('.pa-command-palette__backdrop'),
-    container: host.locator('.pa-command-palette__container'),
+    root: host.locator('.cp'),
+    input: host.locator('.cp__input'),
+    context: host.locator('.cp__context'),
+    tokens: host.locator('.cp__tokens'),
+    items: host.locator('.cp__item'),
+    active: host.locator('.cp__item--active'),
+    titles: host.locator('.cp__item-title'),
+    empty: host.locator('.cp__empty'),
+    pagination: host.locator('.cp__pagination'),
+    footer: host.locator('.cp__footer'),
+    backdrop: host.locator('.cp__backdrop'),
+    container: host.locator('.cp__container'),
   };
 }
 
 export async function open(page: Page): Promise<void> {
   await page.keyboard.press('Control+k');
-  await expect(palette(page).root).toHaveClass(/pa-command-palette--active/);
+  await expect(palette(page).root).toHaveClass(/cp--active/);
 }
 
 export const events = (page: Page) =>
@@ -45,12 +45,12 @@ export const calls = (page: Page) =>
   page.evaluate(() => (window as unknown as { calls: { search: unknown[]; stepOptions: unknown[] } }).calls);
 
 export async function activeTitle(page: Page): Promise<string> {
-  return (await palette(page).active.locator('.pa-command-palette__item-title').textContent()) ?? '';
+  return (await palette(page).active.locator('.cp__item-title').textContent()) ?? '';
 }
 
 export async function hints(footer: Locator): Promise<string[]> {
   return footer
-    .locator('.pa-command-palette__hint')
+    .locator('.cp__hint')
     .evaluateAll((els) => els.map((e) => Array.from(e.children, (c) => c.textContent?.trim()).join(' ')));
 }
 

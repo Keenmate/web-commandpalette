@@ -14,12 +14,12 @@
 }
 
 /* Form controls don't inherit fonts on their own. */
-.pa-command-palette {
+.cp {
   font-family: var(--cp-font-family);
 }
 
-.pa-command-palette input,
-.pa-command-palette button {
+.cp input,
+.cp button {
   font-family: inherit;
 }
 
@@ -27,10 +27,10 @@
    Each glyph is a --cp-icon-* variable (variables.css), so any of them can be
    replaced with a url(...). A name with no glyph renders nothing (an empty mask),
    never a solid square. */
-.pa-icon {
+.cp__icon {
   display: inline-block;
-  inline-size: var(--cp-icon-size, 1em);
-  block-size: var(--cp-icon-size, 1em);
+  inline-size: var(--cp-icon-size);
+  block-size: var(--cp-icon-size);
   flex-shrink: 0;
   background-color: currentColor;
   -webkit-mask: var(--_cp-icon-src, linear-gradient(transparent, transparent)) no-repeat center / contain;
@@ -38,71 +38,67 @@
 }
 
 /* ✕ — the fullscreen close button (and the `x` / `close` icon names). */
-.pa-icon--x,
-.pa-icon--close {
+.cp__icon--x,
+.cp__icon--close {
   --_cp-icon-src: var(--cp-icon-close);
 }
 
 /* ✕ on a command token — take it out of the input. */
-.pa-icon--remove {
+.cp__icon--remove {
   --_cp-icon-src: var(--cp-icon-remove);
 }
 
-.pa-icon--check {
+.cp__icon--check {
   --_cp-icon-src: var(--cp-icon-check);
 }
 
-/* Item icons given by NAME (`icon: 'search'`) draw the shared --base-icon-* glyph of
-   that name; set --cp-icon-<name> to override one. Names outside the contract render
-   nothing — pass an inline <svg> or an emoji for those (an icon font's classes can't
+/* Item icons given by NAME (`icon: 'search'`) draw --cp-icon-<name>, which reads the
+   shared --base-icon-* glyph of that name (variables.css); set --cp-icon-<name> on the
+   element to override one. Names outside the contract render nothing — pass an inline <svg> or an emoji for those (an icon font's classes can't
    reach inside the shadow root). */
-.pa-icon--chevron { --_cp-icon-src: var(--cp-icon-chevron, var(--base-icon-chevron)); }
-.pa-icon--caret-down { --_cp-icon-src: var(--cp-icon-caret-down, var(--base-icon-caret-down)); }
-.pa-icon--caret-up { --_cp-icon-src: var(--cp-icon-caret-up, var(--base-icon-caret-up)); }
-.pa-icon--expand { --_cp-icon-src: var(--cp-icon-expand, var(--base-icon-expand)); }
-.pa-icon--collapse { --_cp-icon-src: var(--cp-icon-collapse, var(--base-icon-collapse)); }
-.pa-icon--add { --_cp-icon-src: var(--cp-icon-add, var(--base-icon-add)); }
-.pa-icon--edit { --_cp-icon-src: var(--cp-icon-edit, var(--base-icon-edit)); }
-.pa-icon--delete { --_cp-icon-src: var(--cp-icon-delete, var(--base-icon-delete)); }
-.pa-icon--search { --_cp-icon-src: var(--cp-icon-search, var(--base-icon-search)); }
-.pa-icon--filter { --_cp-icon-src: var(--cp-icon-filter, var(--base-icon-filter)); }
-.pa-icon--refresh { --_cp-icon-src: var(--cp-icon-refresh, var(--base-icon-refresh)); }
-.pa-icon--indeterminate { --_cp-icon-src: var(--cp-icon-indeterminate, var(--base-icon-indeterminate)); }
-.pa-icon--copy { --_cp-icon-src: var(--cp-icon-copy, var(--base-icon-copy)); }
-.pa-icon--ellipsis { --_cp-icon-src: var(--cp-icon-ellipsis, var(--base-icon-ellipsis)); }
-.pa-icon--save { --_cp-icon-src: var(--cp-icon-save, var(--base-icon-save)); }
-.pa-icon--settings { --_cp-icon-src: var(--cp-icon-settings, var(--base-icon-settings)); }
-.pa-icon--bell { --_cp-icon-src: var(--cp-icon-bell, var(--base-icon-bell)); }
-.pa-icon--user { --_cp-icon-src: var(--cp-icon-user, var(--base-icon-user)); }
-.pa-icon--download { --_cp-icon-src: var(--cp-icon-download, var(--base-icon-download)); }
-.pa-icon--link { --_cp-icon-src: var(--cp-icon-link, var(--base-icon-link)); }
-.pa-icon--external-link { --_cp-icon-src: var(--cp-icon-external-link, var(--base-icon-external-link)); }
-.pa-icon--info { --_cp-icon-src: var(--cp-icon-info, var(--base-icon-info)); }
-.pa-icon--success { --_cp-icon-src: var(--cp-icon-success, var(--base-icon-success)); }
-.pa-icon--warning { --_cp-icon-src: var(--cp-icon-warning, var(--base-icon-warning)); }
-.pa-icon--danger { --_cp-icon-src: var(--cp-icon-danger, var(--base-icon-danger)); }
-.pa-icon--clear { --_cp-icon-src: var(--cp-icon-clear, var(--base-icon-clear)); }
+.cp__icon--chevron { --_cp-icon-src: var(--cp-icon-chevron); }
+.cp__icon--caret-down { --_cp-icon-src: var(--cp-icon-caret-down); }
+.cp__icon--caret-up { --_cp-icon-src: var(--cp-icon-caret-up); }
+.cp__icon--expand { --_cp-icon-src: var(--cp-icon-expand); }
+.cp__icon--collapse { --_cp-icon-src: var(--cp-icon-collapse); }
+.cp__icon--add { --_cp-icon-src: var(--cp-icon-add); }
+.cp__icon--edit { --_cp-icon-src: var(--cp-icon-edit); }
+.cp__icon--delete { --_cp-icon-src: var(--cp-icon-delete); }
+.cp__icon--search { --_cp-icon-src: var(--cp-icon-search); }
+.cp__icon--filter { --_cp-icon-src: var(--cp-icon-filter); }
+.cp__icon--refresh { --_cp-icon-src: var(--cp-icon-refresh); }
+.cp__icon--indeterminate { --_cp-icon-src: var(--cp-icon-indeterminate); }
+.cp__icon--copy { --_cp-icon-src: var(--cp-icon-copy); }
+.cp__icon--ellipsis { --_cp-icon-src: var(--cp-icon-ellipsis); }
+.cp__icon--save { --_cp-icon-src: var(--cp-icon-save); }
+.cp__icon--settings { --_cp-icon-src: var(--cp-icon-settings); }
+.cp__icon--bell { --_cp-icon-src: var(--cp-icon-bell); }
+.cp__icon--user { --_cp-icon-src: var(--cp-icon-user); }
+.cp__icon--download { --_cp-icon-src: var(--cp-icon-download); }
+.cp__icon--link { --_cp-icon-src: var(--cp-icon-link); }
+.cp__icon--external-link { --_cp-icon-src: var(--cp-icon-external-link); }
+.cp__icon--info { --_cp-icon-src: var(--cp-icon-info); }
+.cp__icon--success { --_cp-icon-src: var(--cp-icon-success); }
+.cp__icon--warning { --_cp-icon-src: var(--cp-icon-warning); }
+.cp__icon--danger { --_cp-icon-src: var(--cp-icon-danger); }
+.cp__icon--clear { --_cp-icon-src: var(--cp-icon-clear); }
 
-.cp-icon--check {
-  --_cp-icon-src: var(--cp-icon-check);
-}
-
-.cp-icon--star {
+.cp__icon--star {
   --_cp-icon-src: var(--cp-icon-star);
 }
 
-.cp-icon--star-filled {
+.cp__icon--star-filled {
   --_cp-icon-src: var(--cp-icon-star-filled);
 }
 
 /* Inline SVG icons handed in as data. */
-.pa-command-palette__item-icon svg {
+.cp__item-icon svg {
   inline-size: 1em;
   block-size: 1em;
 }
 
 /* Visually-hidden live region for screen-reader announcements. */
-.cp-sr-only {
+.cp__sr-only {
   position: absolute;
   inline-size: 1px;
   block-size: 1px;
@@ -117,7 +113,7 @@
 /* Bidi: in an RTL palette, Latin command text ("/deploy to Staging") keeps its own
    order. Rendered runs are wrapped in <bdi>; the input orders its text by content
    while staying aligned to the inline start of the (RTL) palette. */
-.pa-command-palette__input,
-.pa-command-palette__input::placeholder {
+.cp__input,
+.cp__input::placeholder {
   unicode-bidi: plaintext;
 }

@@ -51,7 +51,7 @@
     --cp-transition-medium: 0s;
   }
 
-  .cp-confirm__progress {
+  .cp__confirm-progress {
     animation: none;
   }
 }

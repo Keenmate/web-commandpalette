@@ -4,7 +4,7 @@ test.beforeEach(async ({ page }) => load(page, 'usage'));
 
 /** Home section headings (the label only, not the "+N · Ctrl F" button). */
 const headings = (page: import('@playwright/test').Page) =>
-  palette(page).host.locator('.pa-command-palette__home-heading > span:first-child').allTextContents();
+  palette(page).host.locator('.cp__home-heading > span:first-child').allTextContents();
 
 test('a completed run shows under Recent (persisted) and Enter, Enter replays it', async ({ page }) => {
   const p = palette(page);
@@ -17,7 +17,7 @@ test('a completed run shows under Recent (persisted) and Enter, Enter replays it
   await page.waitForFunction(() => (window as unknown as { ready?: boolean }).ready === true);
   await open(page);
   expect(await headings(page)).toEqual(['Recent', 'Commands', 'Search']);
-  await expect(p.active.locator('.pa-command-palette__item-title')).toHaveText('/go Users');
+  await expect(p.active.locator('.cp__item-title')).toHaveText('/go Users');
 
   await page.keyboard.press('Enter'); // open the run: remembered answer first
   await expect(p.titles.first()).toHaveText('Users');
@@ -30,12 +30,12 @@ test('a completed run shows under Recent (persisted) and Enter, Enter replays it
 test('Ctrl+D and the star button toggle favorites', async ({ page }) => {
   const p = palette(page);
   await open(page);
-  await expect(p.active.locator('.pa-command-palette__item-title')).toHaveText('Deploy to Environment');
+  await expect(p.active.locator('.cp__item-title')).toHaveText('Deploy to Environment');
   await page.keyboard.press('Control+d');
   expect(await headings(page)).toEqual(['Favorites', 'Commands', 'Search']);
-  await expect(p.host.locator('.cp-star--on')).toHaveCount(2); // the favorite row + the command row
+  await expect(p.host.locator('.cp__star--on')).toHaveCount(2); // the favorite row + the command row
 
-  await p.host.locator('.cp-star--on').first().click();
+  await p.host.locator('.cp__star--on').first().click();
   expect(await headings(page)).toEqual(['Commands', 'Search']);
   await expect(p.input).toBeFocused();
   await expect(p.root).toHaveClass(/--active/);
@@ -49,7 +49,7 @@ test('usage-storage="none" hides stars and the remembered sections', async ({ pa
   await page.keyboard.press('Enter');
   await open(page);
   expect(await headings(page)).toEqual(['Commands', 'Search']);
-  await expect(p.host.locator('.cp-star')).toHaveCount(0);
+  await expect(p.host.locator('.cp__star')).toHaveCount(0);
 });
 
 test('Ctrl+F / Ctrl+R show the full lists; the same chord or Esc goes home', async ({ page }) => {
@@ -83,7 +83,7 @@ test('`g f` opens the palette on favorites; the heading button opens the full li
   await expect(p.context).toHaveText('Favorites');
 
   await page.keyboard.press('Escape'); // back home
-  await p.host.locator('.cp-more[data-view="favorites"]').click();
+  await p.host.locator('.cp__more[data-view="favorites"]').click();
   await expect(p.context).toHaveText('Favorites');
 });
 
@@ -92,7 +92,7 @@ test('favorites-key="" disables Ctrl+F (no list, no keycap in the heading)', asy
   await p.host.evaluate((el) => el.setAttribute('favorites-key', ''));
   await open(page);
   await page.keyboard.press('Control+d');
-  await expect(p.host.locator('.cp-more[data-view="favorites"]')).toHaveCount(0);
+  await expect(p.host.locator('.cp__more[data-view="favorites"]')).toHaveCount(0);
 });
 
 test('font sizes follow --base-font-size-* (A)', async ({ page }) => {
@@ -115,7 +115,7 @@ test('a run through a live step-level picker replays from Recent with Enter, Ent
   await expect(p.root).not.toHaveClass(/--active/, { timeout: 3000 });
 
   await open(page);
-  await expect(p.active.locator('.pa-command-palette__item-title')).toHaveText('/add-permission write to Peter Parker');
+  await expect(p.active.locator('.cp__item-title')).toHaveText('/add-permission write to Peter Parker');
   await page.keyboard.press('Enter');
   await page.keyboard.press('Enter');
   await expect.poll(async () => (await events(page)).filter((e) => e.name === 'action').length).toBe(2);

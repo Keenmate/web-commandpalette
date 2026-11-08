@@ -14,14 +14,14 @@ import type { ActionEventDetail as CoreActionEventDetail, ActionItem, ComponentC
 import type { PresentationContext } from '@keenmate/web-components-core';
 
 /**
- * An item icon. Rendered by shape (see `icons.ts`):
+ * An item icon. Rendered by shape (see `helpers/icons.ts`):
  *  - starts with `<`              → raw SVG/HTML markup, injected as-is (host-trusted)
- *  - starts with an ASCII letter  → an icon NAME → `<span class="pa-icon pa-icon--NAME">`
+ *  - starts with an ASCII letter  → an icon NAME → `<span class="cp__icon cp__icon--NAME">`
  *  - anything else                → text (emoji / glyph)
  */
 export type IconInput = string;
 
-/** Badge colour variants (pure-admin `pa-badge--*`). */
+/** Badge colour variants (pure-admin `cp__badge--*`). */
 export type BadgeVariant = 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'secondary';
 
 export type MaybePromise<T> = T | Promise<T>;
@@ -454,3 +454,17 @@ export interface ResultSelectEventDetail extends PaletteContext {
   result: Result;
   scope: Scope;
 }
+
+// ── keys ──────────────────────────────────────────────────────────────────────
+
+/** Ctrl/⌘ + letter shortcuts inside the palette ('' = off). */
+export interface PaletteKeys {
+  /** Star the active row. Default `d`. */
+  favorite: string;
+  /** Show all favorites. Default `f`. */
+  favorites: string;
+  /** Show all recently used. Default `r`. */
+  recent: string;
+}
+
+export const DEFAULT_PALETTE_KEYS: PaletteKeys = { favorite: 'd', favorites: 'f', recent: 'r' };

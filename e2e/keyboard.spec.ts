@@ -109,11 +109,11 @@ test('the active row scrolls the results list only (core scrollIntoContainer, no
   await open(page);
   await p.input.fill('many');
   await expect(p.items).toHaveCount(20);
-  const results = p.host.locator('.pa-command-palette__results');
+  const results = p.host.locator('.cp__results');
   for (let i = 0; i < 19; i++) await page.keyboard.press('ArrowDown');
-  await expect(p.active.locator('.pa-command-palette__item-title')).toHaveText('Global many 19');
+  await expect(p.active.locator('.cp__item-title')).toHaveText('Global many 19');
   const box = await results.evaluate((r) => {
-    const a = r.querySelector('.pa-command-palette__item--active')!.getBoundingClientRect();
+    const a = r.querySelector('.cp__item--active')!.getBoundingClientRect();
     const c = r.getBoundingClientRect();
     return { scrolled: r.scrollTop, inside: a.bottom <= c.bottom + 1 && a.top >= c.top - 1, overflow: r.scrollHeight > r.clientHeight };
   });

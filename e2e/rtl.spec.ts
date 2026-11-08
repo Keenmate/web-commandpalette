@@ -10,9 +10,9 @@ test('dir="rtl" on the element mirrors the layout (title on the right, keycaps +
   await open(page);
   const row = p.items.first();
   expect(await row.evaluate((el) => getComputedStyle(el).direction)).toBe('rtl');
-  const title = await box(row.locator('.pa-command-palette__item-title'));
-  const key = await box(row.locator('.pa-command-palette__key').first());
-  const star = await box(row.locator('.cp-star'));
+  const title = await box(row.locator('.cp__item-title'));
+  const key = await box(row.locator('.cp__key').first());
+  const star = await box(row.locator('.cp__star'));
   expect(key.x).toBeLessThan(title.x);
   expect(star.x).toBeLessThan(key.x);
 });
@@ -43,9 +43,9 @@ test('the confirmation line starts at the inline start in RTL', async ({ page })
   await open(page);
   await page.keyboard.type('/reload');
   await page.keyboard.press('Enter');
-  const line = p.host.locator('.cp-confirm');
+  const line = p.host.locator('.cp__confirm');
   await expect(line).toBeVisible();
   const lineBox = await box(line);
-  const check = await box(line.locator('.cp-confirm__check'));
+  const check = await box(line.locator('.cp__confirm-check'));
   expect(check.x).toBeGreaterThan(lineBox.x + lineBox.width / 2); // ✓ sits on the right
 });

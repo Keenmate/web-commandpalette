@@ -55,27 +55,27 @@ test('removing display resets it to inline', async ({ page }) => {
   await open(page);
   await page.keyboard.type('/deploy ');
   await expect(p.input).toHaveValue('');
-  await expect(p.tokens.locator('.pa-badge')).toHaveText(['/deploy']);
+  await expect(p.tokens.locator('.cp__badge')).toHaveText(['/deploy']);
   await attr(page, 'display', null);
   await expect(p.input).toHaveValue('/deploy to ');
-  await expect(p.tokens.locator('.pa-badge')).toHaveCount(0);
+  await expect(p.tokens.locator('.cp__badge')).toHaveCount(0);
 });
 
 test('removing size drops the preset class', async ({ page }) => {
   const p = palette(page);
   await attr(page, 'size', 'xl');
-  await expect(p.root).toHaveClass(/pa-command-palette--xl/);
+  await expect(p.root).toHaveClass(/cp--xl/);
   await attr(page, 'size', null);
-  await expect(p.root).not.toHaveClass(/pa-command-palette--(sm|lg|xl)/);
+  await expect(p.root).not.toHaveClass(/cp--(sm|lg|xl)/);
 });
 
 test('removing usage-storage="none" brings the stars back', async ({ page }) => {
   const p = palette(page);
   await attr(page, 'usage-storage', 'none');
   await open(page);
-  await expect(p.host.locator('.cp-star')).toHaveCount(0);
+  await expect(p.host.locator('.cp__star')).toHaveCount(0);
   await attr(page, 'usage-storage', null);
-  await expect(p.host.locator('.cp-star').first()).toBeAttached();
+  await expect(p.host.locator('.cp__star').first()).toBeAttached();
 });
 
 test('an invalid size keeps the previous preset and fires input-rejected; removing it resets', async ({ page }) => {
@@ -85,12 +85,12 @@ test('an invalid size keeps the previous preset and fires input-rejected; removi
     document.querySelector('web-command-palette')!.addEventListener('input-rejected', (e) => (window as any).rejections.push((e as CustomEvent).detail.configKey));
   });
   await attr(page, 'size', 'lg');
-  await expect(p.root).toHaveClass(/pa-command-palette--lg/);
+  await expect(p.root).toHaveClass(/cp--lg/);
   await attr(page, 'size', 'huge');
   await expect.poll(() => page.evaluate(() => (window as any).rejections)).toEqual(['size']);
   expect(await p.host.evaluate((el) => (el as any).size)).toBe('lg');
-  await expect(p.root).toHaveClass(/pa-command-palette--lg/);
+  await expect(p.root).toHaveClass(/cp--lg/);
   await attr(page, 'size', null);
   expect(await p.host.evaluate((el) => (el as any).size)).toBeNull();
-  await expect(p.root).not.toHaveClass(/pa-command-palette--lg/);
+  await expect(p.root).not.toHaveClass(/cp--lg/);
 });

@@ -3,23 +3,23 @@
    collapses to one line (✓, what ran, "Done", a countdown bar) instead of vanishing
    ============================================================================== */
 
-.cp-confirming .pa-command-palette__fullscreen-bar,
-.cp-confirming .pa-command-palette__search,
-.cp-confirming .pa-command-palette__results,
-.cp-confirming .pa-command-palette__footer {
+.cp--confirming .cp__fullscreen-bar,
+.cp--confirming .cp__search,
+.cp--confirming .cp__results,
+.cp--confirming .cp__footer {
   display: none;
 }
 
 /* The dialog keeps a minimum height and the element animates the shrink to it
    (inline `height`, see #showConfirmation), so the collapse never snaps. */
-.cp-confirming .pa-command-palette__container {
+.cp--confirming .cp__container {
   display: flex;
   flex-direction: column;
   overflow: hidden;
   transition: height var(--cp-transition-medium) var(--cp-easing);
 }
 
-.cp-confirm {
+.cp__confirm {
   position: relative;
   display: flex;
   flex: 1;
@@ -35,18 +35,18 @@
   outline: none;
 }
 
-.cp-confirm[hidden] {
+.cp__confirm[hidden] {
   display: none;
 }
 
 /* A plain ✓ in the accent color, sized to the text (a mask: `color` paints it). */
-.cp-confirm__check {
+.cp__confirm-check {
   inline-size: 1.1em;
   block-size: 1.1em;
   color: var(--cp-accent-color);
 }
 
-.cp-confirm__body {
+.cp__confirm-body {
   flex: 0 1 auto;
   min-inline-size: 0;
   overflow: hidden;
@@ -54,22 +54,22 @@
   white-space: nowrap;
 }
 
-.cp-confirm__command,
-.cp-confirm__prompt {
+.cp__confirm-command,
+.cp__confirm-prompt {
   color: var(--cp-text-color-2);
 }
 
-.cp-confirm__answer {
+.cp__confirm-answer {
   font-weight: var(--cp-font-weight-semibold);
 }
 
 /* Same font, size and baseline as the sentence, just muted. */
-.cp-confirm__title {
+.cp__confirm-title {
   flex-shrink: 0;
   color: var(--cp-text-color-2);
 }
 
-.cp-confirm__progress {
+.cp__confirm-progress {
   position: absolute;
   inset-inline-start: 0;
   inset-block-end: 0;

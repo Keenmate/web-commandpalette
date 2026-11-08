@@ -19,7 +19,7 @@ async function session(page: Page, term: string): Promise<void> {
   const p = palette(page);
   await open(page);
   await p.input.fill(term);
-  await expect(p.host.locator('.pa-command-palette__item-title, .pa-command-palette__empty').first()).toBeVisible();
+  await expect(p.host.locator('.cp__item-title, .cp__empty').first()).toBeVisible();
   await page.waitForTimeout(300);
   await page.keyboard.press('Escape');
   await page.keyboard.press('Escape');

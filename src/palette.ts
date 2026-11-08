@@ -8,7 +8,7 @@
  * keyboard) and keen `live.ex` (step-back, pagination, global prepend).
  */
 import { resolveActionItem, type ResolvedActionItem } from '@keenmate/web-components-core/actions';
-import { filterCommands, filterContexts, filterOptions, findByTrigger, globalMatches, matchesAny } from './filter';
+import { filterCommands, filterContexts, filterOptions, findByTrigger, globalMatches, matchesAny } from './helpers/filter';
 import { cloneResult, cloneSelections, usageKey, type UsageStore, type UsageTarget } from './usage';
 import type {
   Command,

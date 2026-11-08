@@ -41,8 +41,8 @@ for (const name of PAGES) {
     const host = page.locator('web-command-palette#palette');
     await page.waitForFunction(() => !!customElements.get('web-command-palette'));
     await host.evaluate((el) => (el as unknown as { open(): void }).open());
-    await expect(host.locator('.pa-command-palette')).toHaveClass(/--active/);
-    await expect(host.locator('.pa-command-palette__item').first()).toBeVisible();
+    await expect(host.locator('.cp')).toHaveClass(/--active/);
+    await expect(host.locator('.cp__item').first()).toBeVisible();
     expect(errors).toEqual([]);
   });
 }

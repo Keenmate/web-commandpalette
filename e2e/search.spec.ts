@@ -45,7 +45,7 @@ test('global search prepends matching commands even with NO searchCallback', asy
   await open(page);
   await page.keyboard.type('go');
   await expect(p.titles).toHaveText(['Go to Page']);
-  await expect(p.items.first().locator('.pa-badge')).toHaveText('/go');
+  await expect(p.items.first().locator('.cp__badge')).toHaveText('/go');
   await page.keyboard.press('Enter');
   await expect(p.input).toHaveValue('/go ');
 });

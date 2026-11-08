@@ -3,7 +3,7 @@
  * command list, the `:` context list, and static command steps are filtered here
  * — in memory, no provider call. Lower-cased substring match over every text field.
  */
-import type { Command, Context, Option } from './types';
+import type { Command, Context, Option } from '../types';
 
 const norm = (v: unknown): string => (v == null ? '' : String(v)).toLowerCase();
 

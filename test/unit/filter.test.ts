@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { filterOptions, findByTrigger, globalMatches, matchesAny } from '../../src/filter';
+import { filterOptions, findByTrigger, globalMatches, matchesAny } from '../../src/helpers/filter';
 import { findSequenceCommand } from '../../src/keyboard';
 import { highlight } from '../../src/render';
-import { renderIcon } from '../../src/icons';
+import { renderIcon } from '../../src/helpers/icons';
 import { COMMANDS, CONTEXTS } from './helpers';
 
 describe('filter', () => {
@@ -44,9 +44,9 @@ describe('render helpers', () => {
     expect(highlight('a&b', '')).toBe('a&amp;b');
   });
 
-  it('renderIcon: svg raw, name → pa-icon span, glyph → escaped text', () => {
+  it('renderIcon: svg raw, name → cp__icon span, glyph → escaped text', () => {
     expect(renderIcon('<svg></svg>')).toBe('<svg></svg>');
-    expect(renderIcon('fa-gear')).toBe('<span class="pa-icon pa-icon--fa-gear" aria-hidden="true"></span>');
+    expect(renderIcon('fa-gear')).toBe('<span class="cp__icon cp__icon--fa-gear" aria-hidden="true"></span>');
     expect(renderIcon('🚀')).toBe('🚀');
     expect(renderIcon(undefined)).toBe('');
   });

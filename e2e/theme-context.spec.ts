@@ -77,7 +77,7 @@ test('data-theme="dark" on the host → dark on a light page', async ({ page }) 
   await expect.poll(() => scheme(page, HOSTS[0])).toBe('dark');
   // The palette surface follows: the container background turns dark.
   await host.evaluate((el) => (el as unknown as { open(): void }).open());
-  const bg = await host.evaluate((el) => getComputedStyle(el.shadowRoot!.querySelector('.pa-command-palette__container')!).backgroundColor);
+  const bg = await host.evaluate((el) => getComputedStyle(el.shadowRoot!.querySelector('.cp__container')!).backgroundColor);
   const [r, g, b] = bg.match(/\d+/g)!.map(Number);
   expect((r + g + b) / 3).toBeLessThan(100);
 });

@@ -2,7 +2,7 @@ import { expect, test, events, load, open, palette } from './fixtures';
 
 test.beforeEach(async ({ page }) => load(page, 'confirmation'));
 
-const panel = (page: import('@playwright/test').Page) => palette(page).host.locator('.cp-confirm');
+const panel = (page: import('@playwright/test').Page) => palette(page).host.locator('.cp__confirm');
 
 test('a finished wizard shows ✓ Done with the answers; action fires at once, close after the panel', async ({ page }) => {
   const p = palette(page);
@@ -12,9 +12,9 @@ test('a finished wizard shows ✓ Done with the answers; action fires at once, c
 
   // The dialog collapses to the one line: ✓ /go Users … Done.
   await expect(panel(page)).toBeVisible();
-  await expect(panel(page).locator('.cp-confirm__title')).toHaveText('Done');
-  await expect(panel(page).locator('.cp-confirm__body')).toHaveText('/go Users');
-  await expect(panel(page).locator('.cp-confirm__answer')).toHaveText(['Users']);
+  await expect(panel(page).locator('.cp__confirm-title')).toHaveText('Done');
+  await expect(panel(page).locator('.cp__confirm-body')).toHaveText('/go Users');
+  await expect(panel(page).locator('.cp__confirm-answer')).toHaveText(['Users']);
   await expect(p.input).toBeHidden();
   await expect(p.footer).toBeHidden();
   await expect(panel(page)).toBeFocused();

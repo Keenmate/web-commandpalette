@@ -10,7 +10,7 @@ type Entry = { key: string; kind: string; label: string; count: number; isFavori
 type Win = { saved: Entry[]; loads: number; useHost(seed?: unknown[]): void };
 
 const headings = (page: Page) =>
-  palette(page).host.locator('.pa-command-palette__home-heading > span:first-child').allTextContents();
+  palette(page).host.locator('.cp__home-heading > span:first-child').allTextContents();
 const saved = (page: Page) => page.evaluate(() => (window as unknown as Win).saved);
 const useHost = (page: Page, seed: unknown[] = []) => page.evaluate((s) => (window as unknown as Win).useHost(s), seed);
 
@@ -23,7 +23,7 @@ test('an async loadUsageCallback feeds the home screen', async ({ page }) => {
   ]);
   await open(page);
   await expect.poll(() => headings(page)).toEqual(['Favorites', 'Commands', 'Search']);
-  await expect(p.host.locator('.pa-command-palette__home-section[aria-label="Favorites"] .pa-command-palette__item-title')).toHaveText(['Reload Data']);
+  await expect(p.host.locator('.cp__home-section[aria-label="Favorites"] .cp__item-title')).toHaveText(['Reload Data']);
   expect(await page.evaluate(() => (window as unknown as Win).loads)).toBeGreaterThanOrEqual(1);
 });
 

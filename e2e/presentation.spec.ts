@@ -11,11 +11,11 @@ test.beforeEach(async ({ page }) => load(page, 'presentation'));
 test('presentation="fullscreen" on desktop: the sheet with its close bar, full width', async ({ page }) => {
   const p = palette(page);
   await open(page);
-  await expect(p.root).toHaveClass(/pa-command-palette--fullscreen/);
-  await expect(p.host.locator('.pa-command-palette__fullscreen-bar')).toBeVisible();
+  await expect(p.root).toHaveClass(/cp--fullscreen/);
+  await expect(p.host.locator('.cp__fullscreen-bar')).toBeVisible();
   const box = await p.container.boundingBox();
   expect(Math.round(box!.width)).toBe(page.viewportSize()!.width);
-  await p.host.locator('.pa-command-palette__close').click();
+  await p.host.locator('.cp__close').click();
   await expect(p.root).not.toHaveClass(/--active/);
 });
 

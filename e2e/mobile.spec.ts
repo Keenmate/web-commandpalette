@@ -6,15 +6,15 @@ test('touch phone: opens as a fullscreen sheet with a close button', async ({ pa
   await load(page, 'mobile');
   const p = palette(page);
   await page.locator('#opener').tap();
-  await expect(p.root).toHaveClass(/pa-command-palette--active/);
-  await expect(p.root).toHaveClass(/pa-command-palette--fullscreen/);
-  const bar = p.host.locator('.pa-command-palette__fullscreen-bar');
+  await expect(p.root).toHaveClass(/cp--active/);
+  await expect(p.root).toHaveClass(/cp--fullscreen/);
+  const bar = p.host.locator('.cp__fullscreen-bar');
   await expect(bar).toBeVisible();
-  await expect(bar.locator('.pa-command-palette__fullscreen-title')).toHaveText('Search');
+  await expect(bar.locator('.cp__fullscreen-title')).toHaveText('Search');
   const box = await p.container.boundingBox();
   const vp = page.viewportSize()!;
   expect(Math.round(box!.width)).toBe(vp.width);
-  await p.host.locator('.pa-command-palette__close').tap();
+  await p.host.locator('.cp__close').tap();
   await expect(p.root).not.toHaveClass(/--active/);
 });
 
@@ -38,14 +38,14 @@ test('responsive rules: a per-tag device-axis page rule applies on a phone; an i
   expect(await p.host.evaluate((el: any) => el.presentation)).toBe('floating');
   await expect(p.host).not.toHaveAttribute('presentation', 'floating'); // never reflected
   await page.locator('#opener').tap();
-  await expect(p.root).toHaveClass(/pa-command-palette--active/);
+  await expect(p.root).toHaveClass(/cp--active/);
   await expect(p.root).not.toHaveClass(/--fullscreen/);
   await p.host.evaluate((el: any) => el.controller.close());
 
   // An attribute on the element is explicit: it beats the page rule.
   await p.host.evaluate((el) => el.setAttribute('presentation', 'auto'));
   await page.locator('#opener').tap();
-  await expect(p.root).toHaveClass(/pa-command-palette--fullscreen/);
+  await expect(p.root).toHaveClass(/cp--fullscreen/);
 });
 
 test.describe('desktop window (fine pointer)', () => {

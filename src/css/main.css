@@ -10,12 +10,18 @@
    - Any unlayered consumer rule beats every rule in these layers.
    - A :root --base-* declaration reaches every --cp-* token.
    - A --cp-* override goes on the element: web-command-palette { --cp-… }
+
+   Class names are BEM on the block `cp` (rulebook C-NC-8): `.cp`, `.cp--modifier`,
+   `.cp__element`, `.cp__element--modifier`; never a second `__` level.
 */
 
 @layer variables, component, overrides;
 
 @import url('./variables.css')   layer(variables);
 @import url('./base.css')        layer(component);
+@import url('./controls.css')    layer(component);
+@import url('./floating.css')    layer(component);
+@import url('./states.css')      layer(component);
 @import url('./dialog.css')      layer(component);
 @import url('./search.css')      layer(component);
 @import url('./results.css')     layer(component);
