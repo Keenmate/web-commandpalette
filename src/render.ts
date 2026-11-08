@@ -6,7 +6,7 @@
  * (`listVersion` changed); moving the active row just toggles a class and scrolls
  * it into view, so keyboard navigation is pure DOM work.
  */
-import { renderLoader } from '@keenmate/web-components-core';
+import { getEnvironment, renderLoader, scrollIntoContainer } from '@keenmate/web-components-core';
 import { escapeHtml, renderIcon } from './icons';
 import type { HomeSection, PaletteEngine, TokenView, UsageView, ViewItem } from './palette';
 import { DEFAULT_PALETTE_KEYS, type PaletteKeys } from './keyboard';
@@ -99,7 +99,8 @@ function keycaps(keys: string[] | undefined): string {
 const fill = (template: string, values: Record<string, string | number>): string =>
   template.replace(/\{(\w+)\}/g, (m, k: string) => (k in values ? String(values[k]) : m));
 
-const isMac = (): boolean => typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+/** Apple keyboard (⌘) — core's environment detection (`os` is `macos` / `ios`). */
+const isMac = (): boolean => getEnvironment().isApple;
 
 /** Keycap text for a Ctrl/⌘ + letter shortcut: `Ctrl D` / `⌘D`; '' when the shortcut is off. */
 export const chordKeycap = (letter: string): string =>
@@ -311,8 +312,8 @@ export class Renderer {
   /**
    * Draw the searching loader into the slot the results HTML left
    * (`[data-cp-loader]`) through core `renderLoader()`: instance
-   * `renderLoadingCallback` > page-wide `window.components.renderLoaderCallback` >
-   * the default `.cp-loader`. The slot gets `role="status"` + `aria-label`.
+   * `renderLoadingCallback` > page-wide `window.components.renderLoadingCallback` >
+   * the default `.cp__loader`. The slot gets `role="status"` + `aria-label`.
    */
   #mountLoader(labels: Labels): void {
     const slot = this.#shell.results.querySelector<HTMLElement>('[data-cp-loader]');
@@ -422,6 +423,7 @@ export class Renderer {
 
   #scrollActive(): void {
     const el = this.#shell.results.querySelector('.pa-command-palette__item--active') as HTMLElement | null;
-    el?.scrollIntoView?.({ block: 'nearest' });
+    // Scroll the results list only, never the page (core SPEC §12.15).
+    if (el) scrollIntoContainer(el, { container: this.#shell.results });
   }
 }

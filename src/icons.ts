@@ -8,13 +8,11 @@
  *    `<span class="pa-icon pa-icon--NAME">` (a masked glyph in currentColor).
  *  - `🚀` / any other glyph        → rendered as text.
  */
+import { escapeHtml as escapeText } from '@keenmate/web-components-core/search';
+
+/** Core's `escapeHtml` (`/search`) for any value: `null` / `undefined` → `''`, others stringified. */
 export function escapeHtml(value: unknown): string {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+  return escapeText(String(value ?? ''));
 }
 
 /** HTML for an icon value, or `''` when there is none. */

@@ -48,7 +48,7 @@ export type {
   BeforeResultSelectCallback,
 } from './types';
 
-export { enableLogging, disableLogging, setLogLevel, setCategoryLevel, LOGGING_CATEGORIES } from './logger';
+export { enableLogging, disableLogging, resetLogging, setLogLevel, setCategoryLevel, LOGGING_CATEGORIES } from './logger';
 
 // Type declarations for build-time constants
 declare const __VERSION__: string;

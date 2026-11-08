@@ -6,6 +6,8 @@
 .pa-command-palette__results {
   max-height: min(var(--cp-results-max-height), max(calc(16 * var(--cp-rem)), 100dvh - var(--cp-offset-top) - calc(12 * var(--cp-rem))));
   overflow-y: auto;
+  /* A scroll at the list's edge doesn't chain to the page behind. */
+  overscroll-behavior: contain;
   padding: var(--cp-space-sm) 0;
   position: relative;
   /* Firefox, and Chromium 121+ (which then ignores ::-webkit-scrollbar) */
@@ -274,7 +276,7 @@
    max-height, so it wins (same specificity, later in the layer). */
 @media (max-width: 768px) {
   .pa-command-palette__results {
-    max-height: 60vh;
+    max-height: 60dvh;
   }
 }
 

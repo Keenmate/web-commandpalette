@@ -12,6 +12,7 @@
 import {
   BlissElement,
   adoptStyles,
+  createCustomStyles,
   createPresentationContext,
   getEnvironment,
   lockBodyScroll,
@@ -28,6 +29,8 @@ import {
   toText,
   toValue,
   type BeforeCallbackResult,
+  type CustomStylesCallback,
+  type CustomStylesHandle,
   type EnvironmentSnapshot,
   type InputDef,
   type Presentation,
@@ -95,14 +98,20 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'renderFeedbackCallback', converter: toFunction(), on: 'none', type: '(ctx: FeedbackContext) => string | HTMLElement | null | false',
     description: 'Render the text of the one-line feedback shown after a command ran (the ✓, "Done" and countdown stay). `ctx = { type, commandId?, commandText?, selections?, sentence, result?, scope?, duration }` + `controller` / `element`; `type` is `action` or `select`. Return markup / an element to replace the default, `null` for the default, or `false` to skip it this time. Search-result selections (`type: "select"`) get no feedback unless this returns content.' },
   { configKey: 'renderLoadingCallback', converter: toFunction(), on: 'none', type: '(ctx: LoaderRenderContext) => void | (() => void)',
-    description: 'Draw the searching loader yourself (shared loader, core SPEC §12.14). `ctx = { component, context, containerElement, element, label }`; `context` is `search` (a search / step-options request in flight, `labels.searching`). Fill `containerElement` (already `role="status"` + `aria-label`); optionally return a cleanup. Beats the page-wide `window.components.renderLoaderCallback`; unset = the default `.cp-loader` (`--cp-loader-*` tokens).' },
+    description: 'Draw the searching loader yourself (shared loader, core SPEC §12.14). `ctx = { component, context, containerElement, element, label }`; `context` is `search` (a search / step-options request in flight, `labels.searching`). Fill `containerElement` (already `role="status"` + `aria-label`); optionally return a cleanup. Beats the page-wide `window.components.renderLoadingCallback`; unset = the default `.cp__loader` (`--cp-loader-*` tokens).' },
   { configKey: 'saveUsageCallback', converter: toFunction(), on: 'none', type: '(ctx: { entry: UsageEntry }) => void | Promise<void>',
     description: 'Upsert one favorite/recent entry (`ctx.entry`, by `entry.key`) — called on every use and every star toggle when `loadUsageCallback` is set.' },
+
+  // ── Custom CSS (core createCustomStyles, rulebook C-CA-15) ───────────────
+  { configKey: 'customStyles', attribute: 'custom-styles', converter: toText({ isNullable: true }), on: 'update', type: 'string | null',
+    description: "Extra CSS for this palette's shadow root, after the component CSS and after the page-wide `window.components['web-command-palette'].customStyles`, so it overrides both. `@import`s are also linked once in the document head (fonts work). `getCustomStylesCallback` wins when both are set." },
+  { configKey: 'getCustomStylesCallback', converter: toFunction(), on: 'update', type: '(ctx: PaletteContext) => string | null | undefined',
+    description: 'Computed custom CSS for this palette (`ctx` = `controller` / `element` + the presentation flags); wins over `custom-styles`. Re-run on every build and when this or `custom-styles` changes.' },
 
   // ── Attributes ───────────────────────────────────────────────────────────
   { configKey: 'display', attribute: 'display', converter: toEnum(['inline', 'tokens'] as const, { default: 'inline' }), shouldReflect: true, on: 'update',
     description: 'Wizard display: `inline` keeps the accumulated sentence in the input (`/assign iPad to `, prefix locked); `tokens` shows prior answers as removable badges above an empty input.' },
-  { configKey: 'size', attribute: 'size', converter: toEnum(['sm', 'lg', 'xl'] as const, { shouldNullOnInvalid: true }), shouldReflect: true, on: 'update',
+  { configKey: 'size', attribute: 'size', converter: toEnum(['sm', 'lg', 'xl'] as const, { isNullable: true }), shouldReflect: true, on: 'update',
     description: 'Width/height preset (`sm` | `lg` | `xl`). Unset = default. For arbitrary sizes set `--cp-width` / `--cp-results-max-height`.' },
   { configKey: 'pageSize', attribute: 'page-size', converter: toInt({ min: 1, default: 8 }), on: 'update',
     description: 'Search results per page (←/→ to page). Default 8.' },
@@ -185,35 +194,10 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   protected static override inputs = INPUTS;
   protected static override events = EVENTS;
 
-  // Type-only: core installs the accessors at runtime from the input/event tables.
-  declare commands: Command[];
-  declare contexts: Context[];
-  declare labels: Partial<Labels> | undefined;
-  declare searchCallback: SearchCallback | null;
-  declare getStepOptionsCallback: StepOptionsCallback | null;
-  declare beforeActionCallback: BeforeActionCallback | null;
-  declare beforeResultSelectCallback: BeforeResultSelectCallback | null;
-  declare loadUsageCallback: LoadUsageCallback | null;
-  declare saveUsageCallback: SaveUsageCallback | null;
-  declare usageStorage: 'local' | 'none';
-  declare usageKey: string;
-  declare maxRecentCount: number;
-  declare maxFavoriteCount: number;
-  declare favoriteKey: string;
-  declare favoritesKey: string;
-  declare recentKey: string;
-  declare favoritesHotkey: string;
-  declare recentHotkey: string | null;
-  declare isFeedbackShown: boolean;
-  declare feedbackDuration: number;
-  declare renderFeedbackCallback: RenderFeedbackCallback | null;
-  declare renderLoadingCallback: RenderLoaderCallback | null;
-  declare display: Display;
-  declare size: 'sm' | 'lg' | 'xl' | null;
-  declare pageSize: number;
-  declare openKey: string;
-  declare searchDebounce: number;
-  declare presentation: 'auto' | 'floating' | 'fullscreen';
+  // The inputs are typed through the `CommandPaletteElement` interface merge below
+  // (core docs/usage.md "Typing the properties", rulebook C-CA-16); core installs
+  // the accessors at runtime from the input table. The `on*` twins come from the
+  // event table.
   // camelCase twins — called with the event DETAIL, before the DOM event.
   declare onOpen: ((detail: PaletteEventDetail) => void) | null;
   declare onClose: ((detail: PaletteEventDetail) => void) | null;
@@ -238,6 +222,8 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   #feedbackTimer: ReturnType<typeof setTimeout> | null = null;
   /** The event / row behind the engine call in progress (for the `action` detail). */
   #trigger: Trigger | null = null;
+  /** Page + instance custom CSS (core `createCustomStyles`), created on the first build. */
+  #customStyles: CustomStylesHandle | null = null;
 
   constructor() {
     super();
@@ -517,11 +503,17 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   #wireDom(): void {
     const { input, results, tokens, backdrop, closeButton, container } = this.#shell;
 
+    // Route the typed value once: skip the `input` events of an IME composition (its
+    // `compositionend` routes the result), and a value that already went through —
+    // Firefox fires `compositionend` and `input` for the same edit, which would re-route
+    // the term and restart the search.
+    const route = (): void => {
+      if (input.value !== this.#engine.input) this.#engine.setInput(input.value);
+    };
     input.addEventListener('input', (e) => {
-      if ((e as InputEvent).isComposing) return;
-      this.#engine.setInput(input.value);
+      if (!(e as InputEvent).isComposing) route();
     });
-    input.addEventListener('compositionend', () => this.#engine.setInput(input.value));
+    input.addEventListener('compositionend', route);
     input.addEventListener('keydown', (e) => {
       this.#withTrigger({ event: e, element: this.#activeRow() }, () => {
         if (handleInputKeydown(e, this.#engine, input, this.#keys(), this.isRtl)) this.log.INTERACTION.trace('key', e.key);
@@ -590,6 +582,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.#applyUsage();
     this.#renderer.keys = this.#keys();
     this.#engine.refresh();
+    this.#applyCustomStyles();
     this.#renderer.invalidate();
     this.#render();
   }
@@ -600,6 +593,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
       this.#renderer.invalidate();
     }
     if ('size' in partial) this.#applySize();
+    if ('customStyles' in partial || 'getCustomStylesCallback' in partial) this.#customStyles?.refresh();
     if ('presentation' in partial) this.#applyPresentation(getEnvironment());
     if ('commands' in partial || 'contexts' in partial) this.#engine.refresh();
     if ('display' in partial) this.#engine.displayChanged();
@@ -639,6 +633,24 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
         next.#globalKeys.install();
       }
     }
+  }
+
+  protected override destroyCallback(): void {
+    this.#customStyles?.destroy();
+    this.#customStyles = null;
+  }
+
+  /** Custom CSS, the canonical core adoption (docs/usage.md "Style injection", rulebook C-CA-15). */
+  #applyCustomStyles(): void {
+    if (this.#customStyles) return this.#customStyles.refresh();
+    this.#customStyles = createCustomStyles<PaletteContext>(this, this.#shadow, { // writes both layers now
+      cssClass: 'cp-custom-styles',
+      getContext: () => this.#ctx({}),
+      getInstanceStyles: () => ({
+        css: this.config.customStyles as string | null,
+        callback: this.config.getCustomStylesCallback as CustomStylesCallback<PaletteContext> | null,
+      }),
+    });
   }
 
   protected override environmentChanged(env: EnvironmentSnapshot): void {
@@ -807,12 +819,6 @@ function deepActiveElement(): HTMLElement | null {
   return el;
 }
 
-// Importing this module registers the element. The global-API publish + logger
-// wiring happens in index.ts via registerComponent(); both defines are idempotent.
-if (typeof customElements !== 'undefined' && !customElements.get('web-command-palette')) {
-  customElements.define('web-command-palette', CommandPaletteElement);
-}
-
 /** `''` (a deliberately empty label) removes the attribute instead of leaving it blank. */
 function setOrRemove(el: Element, name: string, value: string): void {
   if (value) el.setAttribute(name, value);
@@ -820,16 +826,54 @@ function setOrRemove(el: Element, name: string, value: string): void {
 }
 
 /**
- * Every input a `<web-command-palette>` accepts (configKey → value type) — the config
- * type the responsive rules target.
+ * Every input a `<web-command-palette>` accepts (configKey → value type), exactly the input
+ * table's rows — the config type the responsive rules target and the element's typed
+ * properties (merged into {@link CommandPaletteElement} below). `undefined` (or removing the
+ * attribute) resets an input to its default; `null` is a value only where the type lists it.
  */
-export type CommandPaletteConfig = Pick<CommandPaletteElement,
-  | 'commands' | 'contexts' | 'labels' | 'searchCallback' | 'getStepOptionsCallback'
-  | 'beforeActionCallback' | 'beforeResultSelectCallback' | 'loadUsageCallback' | 'saveUsageCallback'
-  | 'renderFeedbackCallback' | 'renderLoadingCallback' | 'usageStorage' | 'usageKey'
-  | 'maxRecentCount' | 'maxFavoriteCount' | 'favoriteKey' | 'favoritesKey' | 'recentKey'
-  | 'favoritesHotkey' | 'recentHotkey' | 'isFeedbackShown' | 'feedbackDuration'
-  | 'display' | 'size' | 'pageSize' | 'openKey' | 'searchDebounce' | 'presentation'>;
+export interface CommandPaletteConfig {
+  // data
+  commands: Command[];
+  contexts: Context[];
+  labels: Partial<Labels> | undefined;
+  // callbacks
+  searchCallback: SearchCallback | null;
+  getStepOptionsCallback: StepOptionsCallback | null;
+  beforeActionCallback: BeforeActionCallback | null;
+  beforeResultSelectCallback: BeforeResultSelectCallback | null;
+  loadUsageCallback: LoadUsageCallback | null;
+  renderFeedbackCallback: RenderFeedbackCallback | null;
+  renderLoadingCallback: RenderLoaderCallback | null;
+  saveUsageCallback: SaveUsageCallback | null;
+  // custom CSS
+  customStyles: string | null;
+  getCustomStylesCallback: CustomStylesCallback<PaletteContext> | null;
+  // attributes
+  display: Display;
+  size: 'sm' | 'lg' | 'xl' | null;
+  pageSize: number;
+  openKey: string;
+  searchDebounce: number;
+  isFeedbackShown: boolean;
+  feedbackDuration: number;
+  usageStorage: 'local' | 'none';
+  usageKey: string;
+  maxFavoriteCount: number;
+  maxRecentCount: number;
+  favoriteKey: string;
+  favoritesKey: string;
+  recentKey: string;
+  favoritesHotkey: string;
+  recentHotkey: string | null;
+  presentation: Presentation;
+  // reserved bridge hooks
+  searchEvent: string | null;
+  stepOptionsEvent: string | null;
+}
+
+// Every input as a typed property: el.commands, el.presentation, … (core docs/usage.md
+// "Typing the properties", rulebook C-CA-16).
+export interface CommandPaletteElement extends CommandPaletteConfig {}
 
 /**
  * Responsive rules map (core SPEC §6.7): `{ device?, breakpoint? }` — device class

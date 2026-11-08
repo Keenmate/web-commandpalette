@@ -19,4 +19,4 @@ const CATEGORIES = ['INIT', 'DATA', 'UI', 'INTERACTION'] as const;
 /** The core logger bundle; exposed on `window.components['web-command-palette'].logging`. */
 export const logging = createLoggers('COMMANDPALETTE', CATEGORIES);
 
-export const { enableLogging, disableLogging, setLogLevel, setCategoryLevel, LOGGING_CATEGORIES } = logging;
+export const { enableLogging, disableLogging, resetLogging, setLogLevel, setCategoryLevel, LOGGING_CATEGORIES } = logging;

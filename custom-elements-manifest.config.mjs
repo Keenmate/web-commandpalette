@@ -11,7 +11,7 @@ import { customElementJetBrainsPlugin } from 'custom-element-jet-brains-integrat
  */
 export default blissAnalyzerConfig({
   globs: ['src/**/*.ts'],
-  exclude: ['src/**/*.spec.ts', 'src/**/*.test.ts', 'src/**/*.d.ts', 'src/index.ts'],
+  exclude: ['src/**/*.spec.ts', 'src/**/*.test.ts', 'src/**/*.d.ts'],
   outdir: '.',
   plugins: [
     cssVariablesFromManifestPlugin(),
