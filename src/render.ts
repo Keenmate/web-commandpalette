@@ -7,7 +7,7 @@
  * it into view, so keyboard navigation is pure DOM work.
  */
 import { getEnvironment, renderLoader, scrollIntoContainer } from '@keenmate/web-components-core';
-import { escapeHtml, renderIcon } from './helpers/icons';
+import { escapeValue, renderIcon } from './helpers/icons';
 import type { HomeSection, PaletteEngine, TokenView, UsageView, ViewItem } from './palette';
 import { DEFAULT_PALETTE_KEYS, type Labels, type PaletteKeys } from './types';
 
@@ -76,22 +76,22 @@ export function createShell(): Shell {
 /** Escape `text`, wrapping case-insensitive occurrences of `needle` in `<mark>`. */
 export function highlight(text: string, needle: string): string {
   const q = needle.trim();
-  if (!q) return escapeHtml(text);
+  if (!q) return escapeValue(text);
   const lower = text.toLowerCase();
   const n = q.toLowerCase();
   let out = '';
   let i = 0;
   for (let at = lower.indexOf(n); at !== -1; at = lower.indexOf(n, i)) {
-    out += escapeHtml(text.slice(i, at)) + '<mark>' + escapeHtml(text.slice(at, at + n.length)) + '</mark>';
+    out += escapeValue(text.slice(i, at)) + '<mark>' + escapeValue(text.slice(at, at + n.length)) + '</mark>';
     i = at + n.length;
   }
-  return out + escapeHtml(text.slice(i));
+  return out + escapeValue(text.slice(i));
 }
 
 function keycaps(keys: string[] | undefined): string {
   if (!keys?.length) return '';
   return `<div class="cp__shortcut">${keys
-    .map((k) => `<span class="cp__key"><bdi>${escapeHtml(k)}</bdi></span>`)
+    .map((k) => `<span class="cp__key"><bdi>${escapeValue(k)}</bdi></span>`)
     .join(' ')}</div>`;
 }
 
@@ -118,26 +118,26 @@ function starHtml(item: ViewItem, index: number, ctx: RenderContext): string {
   const cap = chordKeycap(ctx.keys.favorite);
   return (
     `<button type="button" class="cp__star${on ? ' cp__star--on' : ''}" tabindex="-1" data-star="${index}"` +
-    ` aria-pressed="${on}" aria-label="${escapeHtml(text)}"` +
-    ` title="${escapeHtml(cap ? `${text} (${cap})` : text)}"><span class="cp__icon cp__icon--star${on ? '-filled' : ''}" aria-hidden="true"></span></button>`
+    ` aria-pressed="${on}" aria-label="${escapeValue(text)}"` +
+    ` title="${escapeValue(cap ? `${text} (${cap})` : text)}"><span class="cp__icon cp__icon--star${on ? '-filled' : ''}" aria-hidden="true"></span></button>`
   );
 }
 
 function itemHtml(item: ViewItem, index: number, active: boolean, needle: string, ctx: RenderContext): string {
   const icon = renderIcon(item.icon);
   const badge = item.badge
-    ? `<span class="cp__badge${item.badgeVariant ? ` cp__badge--${escapeHtml(item.badgeVariant)}` : ''}"><bdi>${escapeHtml(item.badge)}</bdi></span>`
+    ? `<span class="cp__badge${item.badgeVariant ? ` cp__badge--${escapeValue(item.badgeVariant)}` : ''}"><bdi>${escapeValue(item.badge)}</bdi></span>`
     : '';
   return (
     `<div class="cp__item${active ? ' cp__item--active' : ''}${item.isDefault ? ' cp__item--default' : ''}` +
     `${item.isDisabled ? ' cp__item--disabled' : ''}${item.isDanger ? ' cp__item--danger' : ''}` +
-    `${item.cssClass ? ` ${escapeHtml(item.cssClass)}` : ''}"` +
+    `${item.cssClass ? ` ${escapeValue(item.cssClass)}` : ''}"` +
     ` id="${itemId(index)}" data-index="${index}" role="option" aria-selected="${active}"` +
-    `${item.isDisabled ? ' aria-disabled="true"' : ''}${item.tooltip ? ` title="${escapeHtml(item.tooltip)}"` : ''}>` +
+    `${item.isDisabled ? ' aria-disabled="true"' : ''}${item.tooltip ? ` title="${escapeValue(item.tooltip)}"` : ''}>` +
     (icon ? `<div class="cp__item-icon" aria-hidden="true">${icon}</div>` : '') +
     `<div class="cp__item-content">` +
     `<div class="cp__item-title"><bdi>${highlight(item.title ?? '', needle)}</bdi></div>` +
-    (item.meta ? `<div class="cp__item-meta"><bdi>${escapeHtml(item.meta)}</bdi></div>` : '') +
+    (item.meta ? `<div class="cp__item-meta"><bdi>${escapeValue(item.meta)}</bdi></div>` : '') +
     `</div>` +
     badge +
     keycaps(item.keys) +
@@ -149,9 +149,9 @@ function itemHtml(item: ViewItem, index: number, active: boolean, needle: string
 /** A heading + rows. `more` = an optional control at the heading's end (e.g. "+2 · Ctrl F"). */
 function sectionHtml(heading: string, rows: string, more = ''): string {
   return (
-    `<div class="cp__home-section" role="group"${heading ? ` aria-label="${escapeHtml(heading)}"` : ''}>` +
+    `<div class="cp__home-section" role="group"${heading ? ` aria-label="${escapeValue(heading)}"` : ''}>` +
     (heading || more
-      ? `<div class="cp__home-heading cp__heading">${heading ? `<span aria-hidden="true">${escapeHtml(heading)}</span>` : ''}${more}</div>`
+      ? `<div class="cp__home-heading cp__heading">${heading ? `<span aria-hidden="true">${escapeValue(heading)}</span>` : ''}${more}</div>`
       : '') +
     `${rows}</div>`
   );
@@ -163,9 +163,9 @@ function moreHtml(view: UsageView, hidden: number, heading: string, ctx: RenderC
   const count = hidden > 0 ? fill(ctx.labels.showAll, { count: hidden }) : '';
   if (!count && !cap) return '';
   return (
-    `<button type="button" class="cp__more" tabindex="-1" data-view="${view}" aria-label="${escapeHtml(heading)}${cap ? ` (${escapeHtml(cap)})` : ''}">` +
-    (count ? `<span>${escapeHtml(count)}</span>` : '') +
-    (cap ? `<span class="cp__key">${escapeHtml(cap)}</span>` : '') +
+    `<button type="button" class="cp__more" tabindex="-1" data-view="${view}" aria-label="${escapeValue(heading)}${cap ? ` (${escapeValue(cap)})` : ''}">` +
+    (count ? `<span>${escapeValue(count)}</span>` : '') +
+    (cap ? `<span class="cp__key">${escapeValue(cap)}</span>` : '') +
     `</button>`
   );
 }
@@ -215,13 +215,13 @@ function tokensHtml(tokens: TokenView[] | null, labels: Labels): string {
     .map((t) => {
       switch (t.type) {
         case 'command':
-          return `<span class="cp__badge cp__badge--primary"><bdi>${escapeHtml(t.label)}</bdi></span>`;
+          return `<span class="cp__badge cp__badge--primary"><bdi>${escapeValue(t.label)}</bdi></span>`;
         case 'prompt':
-          return `<span class="cp__token-prompt">${escapeHtml(t.label)}</span>`;
+          return `<span class="cp__token-prompt">${escapeValue(t.label)}</span>`;
         case 'selection':
           return (
-            `<span class="cp__badge"><bdi>${escapeHtml(t.label)}</bdi>` +
-            `<button type="button" class="cp__badge-remove" data-token="${t.index}" aria-label="${escapeHtml(fill(labels.removeToken, { name: t.label }))}">` +
+            `<span class="cp__badge"><bdi>${escapeValue(t.label)}</bdi>` +
+            `<button type="button" class="cp__badge-remove" data-token="${t.index}" aria-label="${escapeValue(fill(labels.removeToken, { name: t.label }))}">` +
             `<span class="cp__icon cp__icon--remove" aria-hidden="true"></span></button></span>`
           );
       }
@@ -233,7 +233,7 @@ function footerHtml(m: PaletteEngine, ctx: RenderContext): string {
   const { labels } = ctx;
   // A label set to '' hides that hint (L4: '' = deliberately empty).
   const hint = (key: string, text: string): string =>
-    !text ? '' : `<div class="cp__hint"><span class="cp__key">${escapeHtml(key)}</span><span>${escapeHtml(text)}</span></div>`;
+    !text ? '' : `<div class="cp__hint"><span class="cp__key">${escapeValue(key)}</span><span>${escapeValue(text)}</span></div>`;
   // Mode-aware (IMPLEMENTATION_PLAN §10): ←→ only when paginated, ⌫ only where it
   // steps back, Esc reads Back/Close accordingly. In a wizard Tab = next step, and
   // Enter runs the rest of a replayed run. The star hint follows the active row.
@@ -257,13 +257,13 @@ function footerHtml(m: PaletteEngine, ctx: RenderContext): string {
  * an instant command shows its text.
  */
 export function confirmationBodyHtml(o: { trigger?: string; text: string; parts: TokenView[] }): string {
-  if (!o.parts.length) return `<strong class="cp__confirm-answer">${escapeHtml(o.text)}</strong>`;
+  if (!o.parts.length) return `<strong class="cp__confirm-answer">${escapeValue(o.text)}</strong>`;
   return [
-    o.trigger ? `<span class="cp__confirm-command">${escapeHtml(o.trigger)}</span>` : '',
+    o.trigger ? `<span class="cp__confirm-command">${escapeValue(o.trigger)}</span>` : '',
     ...o.parts.map((t) =>
       t.type === 'selection'
-        ? `<strong class="cp__confirm-answer">${escapeHtml(t.label)}</strong>`
-        : `<span class="cp__confirm-prompt">${escapeHtml(t.label)}</span>`,
+        ? `<strong class="cp__confirm-answer">${escapeValue(t.label)}</strong>`
+        : `<span class="cp__confirm-prompt">${escapeValue(t.label)}</span>`,
     ),
   ].filter(Boolean).join(' ');
 }
@@ -276,7 +276,7 @@ export function fillConfirmation(el: HTMLElement, heading: string, duration: num
   el.innerHTML =
     `<span class="cp__confirm-check cp__icon cp__icon--check" aria-hidden="true"></span>` +
     `<span class="cp__confirm-body" dir="auto"></span>` +
-    `<span class="cp__confirm-title">${escapeHtml(heading)}</span>` +
+    `<span class="cp__confirm-title">${escapeValue(heading)}</span>` +
     `<span class="cp__confirm-progress" style="animation-duration: ${Math.max(0, duration)}ms"></span>`;
   return el.querySelector('.cp__confirm-body') as HTMLElement;
 }
@@ -386,7 +386,7 @@ export class Renderer {
     if (m.mode === 'idle') return homeHtml(m, ctx);
     if (m.items.length) {
       const rows = rowsHtml(m, ctx);
-      const page = m.pageText ? `<div class="cp__pagination">${escapeHtml(m.pageText)}</div>` : '';
+      const page = m.pageText ? `<div class="cp__pagination">${escapeValue(m.pageText)}</div>` : '';
       return rows + page;
     }
     if (m.isLoading) {
@@ -394,10 +394,10 @@ export class Renderer {
         // The slot carries role="status" + aria-label (renderLoader), so the text is aria-hidden.
         `<div class="cp__loading">` +
         `<span class="cp__loader-slot" data-cp-loader="search"></span>` +
-        `<span aria-hidden="true">${escapeHtml(labels.searching)}</span></div>`
+        `<span aria-hidden="true">${escapeValue(labels.searching)}</span></div>`
       );
     }
-    return m.emptyText ? `<div class="cp__empty">${escapeHtml(m.emptyText)}</div>` : '';
+    return m.emptyText ? `<div class="cp__empty">${escapeValue(m.emptyText)}</div>` : '';
   }
 
   #paintActive(index: number): void {

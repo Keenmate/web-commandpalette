@@ -8,11 +8,15 @@
  *    `<span class="cp__icon cp__icon--NAME">` (a masked glyph in currentColor).
  *  - `🚀` / any other glyph        → rendered as text.
  */
-import { escapeHtml as escapeText } from '@keenmate/web-components-core/search';
+import { escapeHtml } from '@keenmate/web-components-core';
 
-/** Core's `escapeHtml` (`/search`) for any value: `null` / `undefined` → `''`, others stringified. */
-export function escapeHtml(value: unknown): string {
-  return escapeText(String(value ?? ''));
+/**
+ * Core's `escapeHtml` for any value: `null` / `undefined` → `''`, others stringified. Host
+ * data (`badge: 3`, a numeric `meta`) arrives from untyped JS; core's string-only escape
+ * would throw on it.
+ */
+export function escapeValue(value: unknown): string {
+  return escapeHtml(String(value ?? ''));
 }
 
 /** HTML for an icon value, or `''` when there is none. */
@@ -25,5 +29,5 @@ export function renderIcon(icon: string | null | undefined): string {
     const name = value.replace(/[^A-Za-z0-9_-]/g, '');
     return `<span class="cp__icon cp__icon--${name}" aria-hidden="true"></span>`;
   }
-  return escapeHtml(value);
+  return escapeValue(value);
 }

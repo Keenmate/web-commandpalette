@@ -11,6 +11,14 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Internal (core 1.0.0-rc21, 2026-11-09)
+
+- The private `deepActiveElement()` copy is gone — imported from core's main index (rc21). Focus
+  return on close now accepts any focusable `HTMLElement` / `SVGElement`; behaviour unchanged.
+- HTML escaping imports core's `escapeHtml` from the main index (was the `/search` re-export). The
+  local wrapper, renamed `escapeValue` so it no longer shadows core's, keeps stringifying
+  non-string host data (`badge: 3`) that core's string-only escape would throw on.
+
 ### Changed — BREAKING (rulebook alignment, 2026-11-08)
 
 - **Every class in the shadow root is BEM on the block `cp`** (rulebook C-NC-8 / C-CSS-7). Page CSS

@@ -19,6 +19,7 @@ import {
   observeKeyboardInset,
   registerOverlay,
   dismissAllOverlays,
+  deepActiveElement,
   resolvePresentation,
   runBeforeCallbackEager,
   toBool,
@@ -218,7 +219,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   #overlay: OverlayHandle | null = null;
   #releaseScroll: (() => void) | null = null;
   #releaseInset: (() => void) | null = null;
-  #returnFocus: HTMLElement | null = null;
+  #returnFocus: Element | null = null;
   /** Set while the one-line feedback is showing. */
   #feedbackTimer: ReturnType<typeof setTimeout> | null = null;
   /** The event / row behind the engine call in progress (for the `action` detail). */
@@ -776,7 +777,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     // Blur first: when focus came from <body> (not focusable), it would otherwise stay
     // in the hidden input — and `g <letter>` sequences ignore keys while typing.
     this.#shell.input.blur();
-    if (back?.isConnected && typeof back.focus === 'function') back.focus();
+    if ((back instanceof HTMLElement || back instanceof SVGElement) && back.isConnected) back.focus();
     this.log.UI.debug('close');
     this.emit('close');
   }
@@ -811,13 +812,6 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.open();
     if (this.#engine.usageView !== 'recent') this.#engine.showUsage('recent');
   }
-}
-
-/** The focused element, piercing shadow roots. */
-function deepActiveElement(): HTMLElement | null {
-  let el = document.activeElement as HTMLElement | null;
-  while (el?.shadowRoot?.activeElement) el = el.shadowRoot.activeElement as HTMLElement;
-  return el;
 }
 
 /** `''` (a deliberately empty label) removes the attribute instead of leaving it blank. */
