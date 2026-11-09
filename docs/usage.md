@@ -57,8 +57,10 @@ Objects and functions are **properties only** — set them from JS (or a framewo
 | `getStepOptionsCallback` | `({ commandId, stepId, term, selections, signal }) => Option[] \| Promise<Option[]>` | Fallback for steps without their own `getOptionsCallback`. |
 | `beforeActionCallback` | `(detail) => unknown` | Runs before a command fires `action` (same detail). `false` (async OK) cancels: no `onClick`, no event, nothing recorded; a wizard steps back to its last answer and the palette stays open. |
 | `beforeResultSelectCallback` | `({ result, scope }) => unknown` | Runs before a search result fires `result-select`. `false` (async OK) cancels; the palette stays open. Other return values continue. |
-| `loadUsageCallback` | `(ctx) => UsageEntry[] \| Promise<UsageEntry[]>` | Load favorites/recents from the host instead of `localStorage`. |
-| `saveUsageCallback` | `({ entry }) => void \| Promise<void>` | Upsert one entry (by `entry.key`) on every use / star toggle. |
+| `loadUsageCallback` | `(ctx) => UsageEntry[] \| Promise<UsageEntry[]>` | Per-entry host API: load favorites/recents from the host (wins over the state store). |
+| `saveUsageCallback` | `({ entry }) => void \| Promise<void>` | Upsert one entry (by `entry.key`) on every use / star toggle (with `loadUsageCallback`). |
+| `loadStateCallback` | `LoadStateCallback<PaletteUsageState>` | Core state store (SPEC §12.17): `({ key }) => { entries } \| null` (async OK) — the page keeps the whole list. Set both state callbacks; either one alone switches `localStorage` off. |
+| `saveStateCallback` | `SaveStateCallback<PaletteUsageState>` | `({ key, state })`, `state` = the WHOLE `{ entries }` on every use / star toggle. |
 | `labels` | `Partial<Labels>` | UI strings; unset keys fall back to English. |
 | `display` | `'inline' \| 'tokens'` | Wizard display. Default `inline`. |
 | `size` | `'sm' \| 'lg' \| 'xl' \| null` | Width/height preset. |
@@ -68,7 +70,7 @@ Objects and functions are **properties only** — set them from JS (or a framewo
 | `presentation` | `'auto' \| 'floating' \| 'fullscreen'` | `auto`: fullscreen sheet on touch phones only. |
 | `responsive` / `responsiveCallback` | `CommandPaletteResponsiveMap` / `CommandPaletteResponsiveCallback` | Instance responsive rules (core): `{ device?, breakpoint? }` → partial config per device class / width bucket, or `(ctx) => partial`. Beat page rules and the element's own attributes; never reflected. See [README → Responsive rules](../README.md#responsive-rules). |
 | `usageStorage` | `'local' \| 'none'` | Favorites + recents on (default) or off. |
-| `usageKey` | `string` | `localStorage` key. Default `'web-commandpalette:usage'` — put the user id in it. |
+| `storageKey` | `string` | Key of the persisted favorites/recents (attribute `storage-key`): `localStorage` `km-state:web-command-palette:<key>`, or `ctx.key` of the state callbacks. Default `'web-commandpalette:usage'` — put the user id in it. |
 | `maxFavoriteCount` / `maxRecentCount` | `number` | Rows each home section shows. Default `3`; `0` hides the section. |
 | `favoriteKey` / `favoritesKey` / `recentKey` | `string` | Ctrl/⌘ + key while open: star the active row / show all favorites / show all recent. Defaults `d` / `f` / `r`; `''` disables. |
 | `renderFeedbackCallback` | `(ctx) => string \| HTMLElement \| null \| false` | Custom feedback content; `false` skips it. See [Feedback](#feedback). |
@@ -87,7 +89,7 @@ LiveView bridge after `connectedCallback`.
 ## Attributes
 
 `display`, `size`, `page-size`, `open-key`, `search-debounce`, `presentation`,
-`usage-storage`, `usage-key`, `max-favorite-count`, `max-recent-count`, `favorite-key`, `favorites-key`,
+`usage-storage`, `storage-key`, `max-favorite-count`, `max-recent-count`, `favorite-key`, `favorites-key`,
 `recent-key`, `favorites-hotkey`, `recent-hotkey`, `show-feedback`, `feedback-duration`, `custom-styles`.
 `open` is **reflected** (present while open) — use the controller to open/close.
 Core (`BlissElement`): `defer` holds the first build until `el.release()`; `ready` is set once built
@@ -309,8 +311,17 @@ config hides them automatically.
   first (badged “Last used”). <kbd>Enter</kbd> accepts the remaining answers and runs;
   <kbd>Tab</kbd> accepts one step; typing replaces that step's answer; <kbd>Shift</kbd>+<kbd>Tab</kbd>
   steps back.
-- **Storage**: `localStorage` under `usage-key` (one JSON array) — set it per user, e.g.
-  `usage-key="cp:usage:42"`. Or keep it on the server:
+- **Storage** (core state store, SPEC §12.17): `localStorage` `km-state:web-command-palette:<storage-key>`
+  (`{ entries: UsageEntry[] }`) — set the key per user, e.g. `storage-key="cp:usage:42"`. The page can keep
+  the whole list itself with `loadStateCallback` / `saveStateCallback` (set both; either one alone switches
+  `localStorage` off):
+
+```js
+palette.loadStateCallback = ({ key }) => fetch(`/api/prefs/${key}`).then((r) => (r.ok ? r.json() : null));
+palette.saveStateCallback = ({ key, state }) => fetch(`/api/prefs/${key}`, { method: 'PUT', body: JSON.stringify(state) });
+```
+
+  Or upsert one entry at a time on the server (per-entry API, wins over the state store):
 
 ```js
 palette.loadUsageCallback = () => fetch('/api/me/palette-usage').then((r) => r.json());
@@ -330,8 +341,8 @@ interface UsageEntry {
 }
 ```
 
-The element keeps at most 50 non-favorite entries in `localStorage`; with callbacks, pruning is up
-to the server. `usage-storage="none"` turns stars and both sections off.
+The element keeps at most 50 non-favorite entries in the stored state; with the per-entry callbacks,
+pruning is up to the server. `usage-storage="none"` turns stars and both sections off.
 
 ## Feedback
 

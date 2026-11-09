@@ -13,6 +13,8 @@ test('a completed run shows under Recent (persisted) and Enter, Enter replays it
   await page.keyboard.press('Enter');
   await expect(p.root).not.toHaveClass(/--active/);
 
+  expect(await page.evaluate(() => localStorage.getItem('km-state:web-command-palette:web-commandpalette:usage'))).toContain('run:go:');
+
   await page.reload();
   await page.waitForFunction(() => (window as unknown as { ready?: boolean }).ready === true);
   await open(page);

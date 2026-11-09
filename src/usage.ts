@@ -1,9 +1,10 @@
 /**
  * Favorites + recently/frequently used items. DOM-free: the machine records and
- * reads entries; persistence is pluggable (`UsagePersistence`) — `localStorage`
- * by default, or the host's load/upsert callbacks.
+ * reads entries; persistence is pluggable (`UsagePersistence`) — core's state store
+ * by default (`stateStorePersistence`), or the host's per-entry load/upsert callbacks.
  */
-import type { MaybePromise, Result, Scope, Selection, UsageEntry } from './types';
+import type { StateStore } from '@keenmate/web-components-core';
+import type { MaybePromise, PaletteUsageState, Result, Scope, Selection, UsageEntry } from './types';
 
 /** Non-favorite entries kept (by rank). Favorites are never pruned. */
 export const MAX_RECENT_ENTRIES = 50;
@@ -153,16 +154,15 @@ function stripUndefined(t: UsageTarget): UsageTarget {
   return out as UsageTarget;
 }
 
-/** `localStorage` under `key` (the whole list as one JSON array). */
-export function localStoragePersistence(key: string): UsagePersistence {
+/**
+ * The default persistence: the whole list in core's state store (`createStateStore()`,
+ * SPEC §12.17) — `localStorage['km-state:web-command-palette:<storage-key>']`, or the page's
+ * `loadStateCallback` / `saveStateCallback` (whole state). The store never throws.
+ */
+export function stateStorePersistence(store: StateStore<PaletteUsageState>): UsagePersistence {
   return {
-    load: () => {
-      const raw = globalThis.localStorage?.getItem(key);
-      return raw ? (JSON.parse(raw) as UsageEntry[]) : [];
-    },
-    save: (_entry, all) => {
-      globalThis.localStorage?.setItem(key, JSON.stringify(all));
-    },
+    load: async () => (await store.load())?.entries ?? [],
+    save: (_entry, all) => store.save({ entries: [...all] }),
   };
 }
 

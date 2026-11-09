@@ -4,13 +4,13 @@ import { logging } from './logger';
 
 export { CommandPaletteElement };
 export type { CommandPaletteConfig, CommandPaletteResponsiveMap, CommandPaletteResponsiveCallback } from './web-component';
-export type { Presentation, ResponsiveMap, ResponsiveCallback, ResponsiveContext } from '@keenmate/web-components-core';
+export type { Presentation, ResponsiveMap, ResponsiveCallback, ResponsiveContext, LoadStateCallback, SaveStateCallback } from '@keenmate/web-components-core';
 
 // The DOM-free engine + helpers, for hosts that want to drive or test the logic directly
 // (the element never exposes it — use `el.controller`).
 export { PaletteEngine, PAGE_STEP } from './palette';
 export type { PaletteEngineHost, Effect, EffectOutcome, ViewItem, TokenView, NavDirection, HomeSection } from './palette';
-export { UsageStore, usageKey, frecency, localStoragePersistence, MAX_RECENT_ENTRIES } from './usage';
+export { UsageStore, usageKey, frecency, MAX_RECENT_ENTRIES } from './usage';
 export type { UsagePersistence, UsageTarget } from './usage';
 export { renderIcon } from './helpers/icons';
 
@@ -34,6 +34,7 @@ export type {
   SearchCallback,
   StepOptionsCallback,
   UsageEntry,
+  PaletteUsageState,
   LoadUsageCallback,
   SaveUsageCallback,
   FeedbackContext,

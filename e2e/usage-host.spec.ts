@@ -2,8 +2,9 @@ import { expect, load, open, palette, test, type Page } from './fixtures';
 
 /**
  * Host-side favorites/recents persistence: `loadUsageCallback` (async) +
- * `saveUsageCallback({ entry })`. Fixture: test/usage-host.html — `window.useHost(seed)`
- * installs both callbacks (load resolves `seed` after 50 ms, saves go to `window.saved`).
+ * `saveUsageCallback({ entry })` (per entry). Fixture: test/usage-host.html —
+ * `window.useHost(seed)` installs both callbacks (load resolves `seed` after 50 ms,
+ * saves go to `window.saved`). The whole-state callbacks: usage-state.spec.ts.
  */
 
 type Entry = { key: string; kind: string; label: string; count: number; isFavorite: boolean };
@@ -39,7 +40,7 @@ test('starring and running call saveUsageCallback({ entry }); localStorage stays
   await expect(p.root).not.toHaveClass(/--active/);
   await expect.poll(async () => (await saved(page)).map((e) => e.key)).toContain('command:reload');
   expect((await saved(page)).find((e) => e.key === 'command:reload')).toMatchObject({ count: 1 });
-  expect(await page.evaluate(() => localStorage.getItem('web-commandpalette:usage'))).toBeNull();
+  expect(await page.evaluate(() => Object.keys(localStorage))).toEqual([]);
 });
 
 test('saveUsageCallback without loadUsageCallback is ignored; localStorage is used (CP-3, current behaviour)', async ({ page }) => {
@@ -53,5 +54,14 @@ test('saveUsageCallback without loadUsageCallback is ignored; localStorage is us
   await page.keyboard.press('Control+d');
   await expect.poll(() => headings(page)).toEqual(['Favorites', 'Commands', 'Search']);
   expect(await saved(page)).toEqual([]);
-  expect(await page.evaluate(() => localStorage.getItem('web-commandpalette:usage'))).toContain('command:deploy');
+  expect(await page.evaluate(() => localStorage.getItem('km-state:web-command-palette:web-commandpalette:usage'))).toContain('command:deploy');
+});
+
+test('usage-storage="none": nothing is stored', async ({ page }) => {
+  await palette(page).host.evaluate((el) => el.setAttribute('usage-storage', 'none'));
+  await open(page);
+  await page.keyboard.type('/reload');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(100);
+  expect(await page.evaluate(() => Object.keys(localStorage))).toEqual([]);
 });

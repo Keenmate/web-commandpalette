@@ -43,7 +43,7 @@ the shape of the API is undecided.
 ## 3. CP-3 — `saveUsageCallback` is ignored unless `loadUsageCallback` is set
 
 **Where:** `src/web-component.ts` `#applyUsage()` — host persistence is chosen only
-when `loadUsageCallback` is set; otherwise `localStoragePersistence` is used and
+when `loadUsageCallback` is set; otherwise the core state store (`storage-key`; `localStorage` or `loadStateCallback` / `saveStateCallback`) is used and
 `saveUsageCallback` is never called.
 
 **Symptom:** a host that only wants to *mirror* usage to the server (sets

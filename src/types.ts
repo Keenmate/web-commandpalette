@@ -244,8 +244,8 @@ export interface Result {
 // ── favorites / recents ─────────────────────────────────────────────────────
 
 /**
- * One remembered thing — a favorite and/or a recently used item. Plain JSON: this
- * is what `localStorage` holds and what `saveUsageCallback` upserts.
+ * One remembered thing — a favorite and/or a recently used item. Plain JSON: the
+ * persisted state holds a list of them (`PaletteUsageState`) and `saveUsageCallback` upserts one.
  *  - `command` — an instant command, or a wizard to start blank (a starred command)
  *  - `run`     — a completed wizard with its answers; replayed with Tab / Enter
  *  - `context` — a search context
@@ -267,6 +267,14 @@ export interface UsageEntry {
   /** Epoch ms of the last use (or of starring). */
   lastUsed: number;
   isFavorite: boolean;
+}
+
+/**
+ * The palette's persisted state (core SPEC §12.17) — what `localStorage['km-state:web-command-palette:<storage-key>']`
+ * holds and what `saveStateCallback` gets as `ctx.state` (the whole list, every time).
+ */
+export interface PaletteUsageState {
+  entries: UsageEntry[];
 }
 
 export type LoadUsageCallback = (ctx: PaletteContext) => MaybePromise<UsageEntry[] | null | undefined>;

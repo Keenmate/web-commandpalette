@@ -11,6 +11,22 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Changed — BREAKING (persisted UI state the core way, SPEC §12.17 / rulebook C-CA-17, 2026-11-09)
+
+Needs core `createStateStore()` (`@keenmate/web-components-core` 1.0.0-rc21). No compatibility aliases.
+
+- **`usage-key` / `usageKey` → `storage-key` / `storageKey`** (same default `'web-commandpalette:usage'`).
+- **localStorage key `<usage-key>` → `km-state:web-command-palette:<storage-key>`** (core's default
+  store, keyed by the tag), and the value is `{ entries: UsageEntry[] }` (was the bare array). Stored
+  favorites / recents are not carried over.
+- **`localStoragePersistence` is removed** from the exports — nothing needs it; the default path is
+  the core state store. `UsagePersistence` / `UsageStore` stay (the seam for a headless store).
+- **New `loadStateCallback` / `saveStateCallback`** (core `LoadStateCallback` /
+  `SaveStateCallback<PaletteUsageState>`): the page keeps the whole list (`saveStateCallback` gets
+  `{ key, state: { entries } }` every time). Set both; either one alone switches localStorage off.
+  `loadUsageCallback` / `saveUsageCallback` (one entry per call) stay and win when set;
+  `usage-storage="none"` stays the off switch. New exported type `PaletteUsageState`.
+
 ### Internal (core 1.0.0-rc21, 2026-11-09)
 
 - The private `deepActiveElement()` copy is gone — imported from core's main index (rc21). Focus

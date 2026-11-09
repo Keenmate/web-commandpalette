@@ -51,11 +51,11 @@ const pickGroup = {               placeholder: 'Group…', getOptionsCallback: (
         The full lists are one chord away: <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>F</kbd> for favorites and
         <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>R</kbd> for recent (type to filter). Or click the section heading's “+N” control. With the palette
         closed, <kbd>g</kbd> <kbd>f</kbd> opens it straight on favorites.
-        By default everything lives in <code>localStorage</code> under <code>usage-key</code>; switch the user to see that
+        By default everything lives in <code>localStorage</code> under <code>storage-key</code> (core state store, key <code>km-state:web-command-palette:&lt;storage-key&gt;</code>); switch the user to see that
         each key keeps its own list.
     </p>
     <div class="controls">
-        <span>signed-in user (<code>usage-key</code>):</span>
+        <span>signed-in user (<code>storage-key</code>):</span>
         <label><input type="radio" name="fr02-user" value="alice" checked> alice</label>
         <label><input type="radio" name="fr02-user" value="bob"> bob</label>
     </div>
@@ -181,7 +181,7 @@ const pickGroup = {               placeholder: 'Group…', getOptionsCallback: (
 </div>
 
 <!-- One palette per page: it owns the global Ctrl/⌘+K listener. -->
-<web-command-palette id="palette" usage-key="demo:usage:alice"></web-command-palette>
+<web-command-palette id="palette" storage-key="demo:usage:alice"></web-command-palette>
 
 <!-- Page wiring -->
 <script type="module">
@@ -273,7 +273,7 @@ const pickGroup = {               placeholder: 'Group…', getOptionsCallback: (
         // FR02 — per-user key, limit, on/off
         const radio = (name, fn) => document.querySelectorAll(`input[name="${name}"]`).forEach((r) =>
             r.addEventListener('change', (e) => { if (e.target.checked) fn(e.target.value); }));
-        radio('fr02-user', (user) => palette.setAttribute('usage-key', `demo:usage:${user}`));
+        radio('fr02-user', (user) => palette.setAttribute('storage-key', `demo:usage:${user}`));
         radio('fr02-limit', (n) => { palette.setAttribute('max-favorite-count', n); palette.setAttribute('max-recent-count', n); });
         radio('fr02-storage', (v) => palette.setAttribute('usage-storage', v));
         document.getElementById('fr02-favorites').addEventListener('click', () => palette.controller.openFavorites());
@@ -282,7 +282,7 @@ const pickGroup = {               placeholder: 'Group…', getOptionsCallback: (
                 server.clear();
                 palette.loadUsageCallback = serverLoad; // re-assigning reloads
             } else {
-                localStorage.removeItem(palette.usageKey);
+                localStorage.removeItem(`km-state:web-command-palette:${palette.storageKey}`);
                 palette.setAttribute('usage-storage', 'none');
                 palette.setAttribute('usage-storage', document.querySelector('input[name="fr02-storage"]:checked').value);
             }

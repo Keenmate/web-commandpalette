@@ -1,7 +1,8 @@
 import { expect, load, open, palette, test, type Page } from './fixtures';
 
 /**
- * Home-screen caps for favorites / recents and `usage-key` isolation.
+ * Home-screen caps for favorites / recents and `storage-key` isolation (core state store:
+ * localStorage `km-state:web-command-palette:<storage-key>`).
  * Fixture: test/usage-limits.html (feedback off so runs close at once).
  */
 
@@ -67,16 +68,16 @@ test('max-recent-count="1": one row, the heading says "+1"; "0" hides it', async
   await expect.poll(() => headings(page)).toEqual(['Commands', 'Search']);
 });
 
-test('usage-key isolates the stored usage and switches live', async ({ page }) => {
-  await attr(page, 'usage-key', 'cp:usage:u1');
+test('storage-key isolates the stored usage and switches live', async ({ page }) => {
+  await attr(page, 'storage-key', 'cp:usage:u1');
   await open(page);
   await page.keyboard.press('Control+d');
   await expect.poll(() => headings(page)).toEqual(['Favorites', 'Commands', 'Search']);
-  expect(await page.evaluate(() => localStorage.getItem('cp:usage:u1'))).toContain('command:deploy');
-  expect(await page.evaluate(() => localStorage.getItem('web-commandpalette:usage'))).toBeNull();
+  expect(await page.evaluate(() => localStorage.getItem('km-state:web-command-palette:cp:usage:u1'))).toContain('command:deploy');
+  expect(await page.evaluate(() => localStorage.getItem('km-state:web-command-palette:web-commandpalette:usage'))).toBeNull();
 
-  await attr(page, 'usage-key', 'cp:usage:u2');
+  await attr(page, 'storage-key', 'cp:usage:u2');
   await expect.poll(() => headings(page)).toEqual(['Commands', 'Search']);
-  await attr(page, 'usage-key', 'cp:usage:u1');
+  await attr(page, 'storage-key', 'cp:usage:u1');
   await expect.poll(() => headings(page)).toEqual(['Favorites', 'Commands', 'Search']);
 });

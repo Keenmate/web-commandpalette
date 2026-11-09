@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>e2e fixture — usage-state</title>
+</head>
+<body>
+  <input id="outside" placeholder="outside input">
+  <web-command-palette id="palette" storage-key="cp:state:alice" show-feedback="false"></web-command-palette>
+
+  <script type="module">
+    import { setupStandard, ready } from './fixture-common.js';
+    const el = setupStandard('usage-state');
+    // Core state-store callbacks (whole state), set before the first build. The page's
+    // "server" is window.sink — seeded from window.seed (an init script) so it survives a reload.
+    window.sink = window.seed ?? null;
+    window.loads = [];
+    window.saves = [];
+    el.loadStateCallback = (ctx) => {
+      window.loads.push({ key: ctx.key, hasContext: ctx.element === el && !!ctx.controller });
+      return new Promise((r) => setTimeout(() => r(window.sink), 20));
+    };
+    el.saveStateCallback = (ctx) => {
+      window.saves.push({ key: ctx.key, state: JSON.parse(JSON.stringify(ctx.state)), hasContext: ctx.element === el && !!ctx.controller });
+      window.sink = JSON.parse(JSON.stringify(ctx.state));
+    };
+    ready();
+  </script>
+</body>
+</html>

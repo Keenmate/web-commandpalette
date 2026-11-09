@@ -10,6 +10,9 @@
  * listener and the `g <letter>` sequences.
  */
 import {
+  createStateStore,
+  type LoadStateCallback,
+  type SaveStateCallback,
   BlissElement,
   adoptStyles,
   createCustomStyles,
@@ -44,7 +47,7 @@ import { runAction } from '@keenmate/web-components-core/actions';
 import { PaletteEngine, type Effect, type EffectOutcome, type PaletteEngineHost, type TokenView } from './palette';
 import { Renderer, chordKeycap, confirmationBodyHtml, createShell, fillConfirmation, type Shell } from './render';
 import { GlobalKeys, handleInputKeydown, sequenceLetter } from './keyboard';
-import { UsageStore, localStoragePersistence, type UsagePersistence } from './usage';
+import { UsageStore, stateStorePersistence, type UsagePersistence } from './usage';
 import {
   DEFAULT_LABELS,
   resolveLabels,
@@ -60,6 +63,7 @@ import {
   type PaletteKeys,
   type LoadUsageCallback,
   type PaletteContext,
+  type PaletteUsageState,
   type PaletteEventDetail,
   type RenderFeedbackCallback,
   type Result,
@@ -96,13 +100,17 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'beforeResultSelectCallback', converter: toFunction(), on: 'none', type: '(ctx: ResultSelectEventDetail) => unknown',
     description: 'Runs before a search result fires `result-select` (`ctx = { result, scope }`). Return `false` (async OK) to cancel: no event, nothing recorded, the palette stays open. Other return values continue.' },
   { configKey: 'loadUsageCallback', converter: toFunction(), on: 'update', type: '(ctx: PaletteContext) => UsageEntry[] | Promise<UsageEntry[]>',
-    description: 'Load favorites/recents from the host (e.g. per user, from the server) instead of `localStorage`. Called on connect and when this or `usage-key` changes.' },
+    description: 'Per-entry host API for favorites/recents (e.g. per user, from the server): returns the whole list. Set → the palette uses it and `saveUsageCallback` instead of the state store (`storage-key`, `loadStateCallback` / `saveStateCallback`). Called on connect and when this or `storage-key` changes.' },
   { configKey: 'renderFeedbackCallback', converter: toFunction(), on: 'none', type: '(ctx: FeedbackContext) => string | HTMLElement | null | false',
     description: 'Render the text of the one-line feedback shown after a command ran (the ✓, "Done" and countdown stay). `ctx = { type, commandId?, commandText?, selections?, sentence, result?, scope?, duration }` + `controller` / `element`; `type` is `action` or `select`. Return markup / an element to replace the default, `null` for the default, or `false` to skip it this time. Search-result selections (`type: "select"`) get no feedback unless this returns content.' },
   { configKey: 'renderLoadingCallback', converter: toFunction(), on: 'none', type: '(ctx: LoaderRenderContext) => void | (() => void)',
     description: 'Draw the searching loader yourself (shared loader, core SPEC §12.14). `ctx = { component, context, containerElement, element, label }`; `context` is `search` (a search / step-options request in flight, `labels.searching`). Fill `containerElement` (already `role="status"` + `aria-label`); optionally return a cleanup. Beats the page-wide `window.components.renderLoadingCallback`; unset = the default `.cp__loader` (`--cp-loader-*` tokens).' },
   { configKey: 'saveUsageCallback', converter: toFunction(), on: 'none', type: '(ctx: { entry: UsageEntry }) => void | Promise<void>',
     description: 'Upsert one favorite/recent entry (`ctx.entry`, by `entry.key`) — called on every use and every star toggle when `loadUsageCallback` is set.' },
+  { configKey: 'loadStateCallback', converter: toFunction(), on: 'update', type: 'LoadStateCallback<PaletteUsageState>',
+    description: 'Persisted state source (core SPEC §12.17): `(ctx) => { entries } | null | Promise<…>`, `ctx = { key }` + `controller` / `element`. Set both callbacks; either one alone switches `localStorage` off. `loadUsageCallback` (per entry) wins when set.' },
+  { configKey: 'saveStateCallback', converter: toFunction(), on: 'none', type: 'SaveStateCallback<PaletteUsageState>',
+    description: 'Persisted state sink (core SPEC §12.17): `ctx = { key, state }` + `controller` / `element`, `state` = the WHOLE `{ entries }` on every use / star toggle. Set both callbacks; either one alone switches `localStorage` off.' },
 
   // ── Custom CSS (core createCustomStyles, rulebook C-CA-15) ───────────────
   { configKey: 'customStyles', attribute: 'custom-styles', converter: toText({ isNullable: true }), on: 'update', type: 'string | null',
@@ -126,9 +134,9 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'feedbackDuration', attribute: 'feedback-duration', converter: toInt({ min: 0, default: 1500 }), on: 'none',
     description: 'How long the feedback stays (ms). Default 1500; `0` turns it off.' },
   { configKey: 'usageStorage', attribute: 'usage-storage', converter: toEnum(['local', 'none'] as const, { default: 'local' }), shouldReflect: true, on: 'update',
-    description: 'Favorites + recents. `local` (default) keeps them in `localStorage` under `usage-key` — or in the host, via `loadUsageCallback` / `saveUsageCallback`, when those are set; `none` turns stars and the Favorites/Recent sections off.' },
-  { configKey: 'usageKey', attribute: 'usage-key', converter: toText({ default: 'web-commandpalette:usage' }), on: 'update',
-    description: '`localStorage` key for favorites/recents. Put the user id in it (`cp:usage:42`) so users sharing a browser never see each other’s.' },
+    description: 'Favorites + recents. `local` (default) keeps them under `storage-key` (core state store: `localStorage` `km-state:web-command-palette:<storage-key>`, or `loadStateCallback` / `saveStateCallback`) — or in the host per entry, via `loadUsageCallback` / `saveUsageCallback`, when those are set; `none` turns stars and the Favorites/Recent sections off.' },
+  { configKey: 'storageKey', attribute: 'storage-key', converter: toText({ default: 'web-commandpalette:usage' }), on: 'update',
+    description: 'Key of the persisted favorites/recents (core SPEC §12.17): `localStorage` `km-state:web-command-palette:<storage-key>`, or `ctx.key` of `loadStateCallback` / `saveStateCallback`. Put the user id in it (`cp:usage:42`) so users sharing a browser never see each other’s. `usage-storage="none"` turns persistence off.' },
   { configKey: 'maxFavoriteCount', attribute: 'max-favorite-count', converter: toInt({ min: 0, default: 3 }), on: 'update',
     description: 'How many favorites the home screen shows (one-line rows). The heading shows how many more there are; all of them are behind `favorites-key` / `favorites-hotkey`. `0` hides the section.' },
   { configKey: 'maxRecentCount', attribute: 'max-recent-count', converter: toInt({ min: 0, default: 3 }), on: 'update',
@@ -474,7 +482,18 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.#renderer.invalidate();
   }
 
-  /** (Re)build the favorites/recents store from `usage-storage` / `usage-key` / the usage callbacks, and load it. */
+  /**
+   * Persisted favorites/recents (core SPEC §12.17, rulebook C-CA-17): `storage-key` +
+   * `loadStateCallback` / `saveStateCallback`, default `localStorage['km-state:web-command-palette:<key>']`.
+   */
+  readonly #stateStore = createStateStore<PaletteUsageState>(this, {
+    getKey: () => this.config.storageKey as string,
+    getLoadCallback: () => this.config.loadStateCallback as LoadStateCallback<PaletteUsageState> | null,
+    getSaveCallback: () => this.config.saveStateCallback as SaveStateCallback<PaletteUsageState> | null,
+    toContext: (data) => this.#ctx(data),
+  });
+
+  /** (Re)build the favorites/recents store from `usage-storage` / `storage-key` / the usage callbacks, and load it. */
   #applyUsage(): void {
     if (this.config.usageStorage === 'none') {
       this.#usage = null;
@@ -488,7 +507,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
           // Read live, so a callback assigned later is still used.
           save: (entry) => (this.config.saveUsageCallback as SaveUsageCallback | null)?.(this.#ctx({ entry })),
         }
-      : localStoragePersistence((this.config.usageKey as string) || 'web-commandpalette:usage');
+      : stateStorePersistence(this.#stateStore);
     this.#usage = new UsageStore(persistence, () => this.#engine.usageChanged(), (err) => this.log.DATA.error('usage storage failed', err));
     this.#usage.load();
   }
@@ -600,7 +619,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     if ('commands' in partial || 'contexts' in partial) this.#engine.refresh();
     if ('display' in partial) this.#engine.displayChanged();
     if ('pageSize' in partial) this.#engine.pageSizeChanged();
-    if ('usageStorage' in partial || 'usageKey' in partial || 'loadUsageCallback' in partial) this.#applyUsage();
+    if ('usageStorage' in partial || 'storageKey' in partial || 'loadUsageCallback' in partial || 'loadStateCallback' in partial) this.#applyUsage();
     else if ('maxRecentCount' in partial || 'maxFavoriteCount' in partial) this.#engine.refresh();
     if ('favoriteKey' in partial || 'favoritesKey' in partial || 'recentKey' in partial) {
       this.#renderer.keys = this.#keys();
@@ -840,6 +859,8 @@ export interface CommandPaletteConfig {
   renderFeedbackCallback: RenderFeedbackCallback | null;
   renderLoadingCallback: RenderLoaderCallback | null;
   saveUsageCallback: SaveUsageCallback | null;
+  loadStateCallback: LoadStateCallback<PaletteUsageState> | null;
+  saveStateCallback: SaveStateCallback<PaletteUsageState> | null;
   // custom CSS
   customStyles: string | null;
   getCustomStylesCallback: CustomStylesCallback<PaletteContext> | null;
@@ -852,7 +873,7 @@ export interface CommandPaletteConfig {
   isFeedbackShown: boolean;
   feedbackDuration: number;
   usageStorage: 'local' | 'none';
-  usageKey: string;
+  storageKey: string;
   maxFavoriteCount: number;
   maxRecentCount: number;
   favoriteKey: string;
