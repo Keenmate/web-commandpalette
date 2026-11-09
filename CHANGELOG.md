@@ -15,9 +15,9 @@ callback and item API below is breaking.
 
 - The private `deepActiveElement()` copy is gone — imported from core's main index (rc21). Focus
   return on close now accepts any focusable `HTMLElement` / `SVGElement`; behaviour unchanged.
-- HTML escaping imports core's `escapeHtml` from the main index (was the `/search` re-export). The
-  local wrapper, renamed `escapeValue` so it no longer shadows core's, keeps stringifying
-  non-string host data (`badge: 3`) that core's string-only escape would throw on.
+- HTML escaping calls core's `escapeHtml` from the main index directly (was a local wrapper over
+  the `/search` re-export). Core's now takes any value (`null` / `undefined` → `''`, others
+  stringified), so the wrapper is gone; non-string host data (`badge: 3`) still renders.
 
 ### Changed — BREAKING (rulebook alignment, 2026-11-08)
 

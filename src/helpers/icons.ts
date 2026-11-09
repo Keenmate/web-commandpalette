@@ -10,15 +10,6 @@
  */
 import { escapeHtml } from '@keenmate/web-components-core';
 
-/**
- * Core's `escapeHtml` for any value: `null` / `undefined` → `''`, others stringified. Host
- * data (`badge: 3`, a numeric `meta`) arrives from untyped JS; core's string-only escape
- * would throw on it.
- */
-export function escapeValue(value: unknown): string {
-  return escapeHtml(String(value ?? ''));
-}
-
 /** HTML for an icon value, or `''` when there is none. */
 export function renderIcon(icon: string | null | undefined): string {
   if (icon == null) return '';
@@ -29,5 +20,5 @@ export function renderIcon(icon: string | null | undefined): string {
     const name = value.replace(/[^A-Za-z0-9_-]/g, '');
     return `<span class="cp__icon cp__icon--${name}" aria-hidden="true"></span>`;
   }
-  return escapeValue(value);
+  return escapeHtml(value);
 }
