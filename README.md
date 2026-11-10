@@ -127,7 +127,7 @@ per tag or per instance (the generic core mechanism,
 [core SPEC §6.7](https://github.com/KeenMate/web-components-core/blob/prod/docs/SPEC.md#67-responsive-rules--partial-configs-per-device-class-page--tag--instance)):
 
 ```js
-// page-wide (every KeenMate component) and per tag — may be set before the script loads
+// page-wide (every Keenmate component) and per tag — may be set before the script loads
 window.components.responsive = { device: { mobile: { presentation: 'fullscreen' } } };
 window.components['web-command-palette'].responsiveCallback = (ctx) =>
   ctx.deviceClass === 'desktop' ? undefined : { display: 'tokens', pageSize: 5 };

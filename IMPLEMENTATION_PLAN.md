@@ -152,7 +152,7 @@ unit-testable without the DOM.
 
 ## 5. Element API surface (design for "easy to configure")
 
-> **API names updated (2026-10, interaction model).** The names below follow the KeenMate
+> **API names updated (2026-10, interaction model).** The names below follow the Keenmate
 > interaction model (web-components-core `/actions`): events without the `cp-` prefix, one
 > `action` event per command run, single-ctx callbacks, commands as core action items,
 > `el.controller`. `docs/usage.md` is the reference; the CHANGELOG `[Unreleased]` section has the

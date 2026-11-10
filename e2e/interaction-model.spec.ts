@@ -1,7 +1,7 @@
 import { expect, load, palette, test, type Page } from './fixtures';
 
 /**
- * The KeenMate interaction model (web-components-core `/actions`, SPEC §12.5 / §12.12):
+ * The Keenmate interaction model (web-components-core `/actions`, SPEC §12.5 / §12.12):
  *   - events `open` / `close` / `result-select` / `action` / `ready` (no `cp-` prefix), bubbling,
  *     not composed; the camelCase `on*` twin gets the SAME detail first
  *   - a command is a core action item: one `action` event per run (instant or after the
