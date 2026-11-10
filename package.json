@@ -35,6 +35,7 @@
     "docs/examples.md",
     "docs/accessibility.md",
     "component-variables.manifest.json",
+    "release-notes",
     "custom-elements.json",
     "web-types.json",
     "vscode.html-custom-data.json",
