@@ -88,12 +88,12 @@
     "url": "https://github.com/keenmate/web-commandpalette/issues"
   },
   "peerDependencies": {
-    "@keenmate/web-components-core": "^1.0.0-rc20"
+    "@keenmate/web-components-core": "^1.0.0-rc21"
   },
   "devDependencies": {
     "@custom-elements-manifest/analyzer": "^0.11.0",
     "@keenmate/base-css-variables": "^2.0.1",
-    "@keenmate/web-components-core": "^1.0.0-rc20",
+    "@keenmate/web-components-core": "^1.0.0-rc21",
     "@keenmate/web-components-devkit": "^1.0.0-rc01",
     "@playwright/test": "^1.60.0",
     "custom-element-jet-brains-integration": "^1.7.0",

@@ -13,7 +13,7 @@ callback and item API below is breaking.
 
 ### Changed — BREAKING (persisted UI state the core way, SPEC §12.17 / rulebook C-CA-17, 2026-11-09)
 
-Needs core `createStateStore()` (`@keenmate/web-components-core` 1.0.0-rc21). No compatibility aliases.
+Needs core `createStateStore()`: requires `@keenmate/web-components-core` `^1.0.0-rc21` (was `^1.0.0-rc20`). No compatibility aliases.
 
 - **`usage-key` / `usageKey` → `storage-key` / `storageKey`** (same default `'web-commandpalette:usage'`).
 - **localStorage key `<usage-key>` → `km-state:web-command-palette:<storage-key>`** (core's default
