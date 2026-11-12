@@ -11,6 +11,9 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Internal — core 1.0.0-rc22 (2026-11-13)
+- **Requires `@keenmate/web-components-core` `^1.0.0-rc22`** (was `^1.0.0-rc21`).
+
 ### Changed — BREAKING (persisted UI state the core way, SPEC §12.17 / rulebook C-CA-17, 2026-11-09)
 
 Needs core `createStateStore()`: requires `@keenmate/web-components-core` `^1.0.0-rc21` (was `^1.0.0-rc20`). No compatibility aliases.
