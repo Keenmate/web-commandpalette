@@ -71,7 +71,7 @@ nginx, port 12410; see BUILD.md). Don't run the publish targets unless the user 
 state machine and talks to hosts only through properties, events (`open`, `close`, `select`,
 `action`, `ready` + camelCase `on*` twins that receive the detail), single-ctx callbacks
 (`searchCallback`, `getStepOptionsCallback`, `before{Action,Select}Callback`) and `el.controller`
-(the public facade). It follows the KeenMate interaction model (web-components-core `/actions`):
+(the public facade). It follows the Keenmate interaction model (web-components-core `/actions`):
 a command is a core `ActionItem` and running one goes through `runAction`
 (`beforeActionCallback` → `onClick` → `action` event). It replaces three drifting implementations (pure-admin
 vanilla, svelte-pure-admin, keen-pure-admin LiveComponent). **Top design priority: easy to
@@ -152,5 +152,51 @@ See plan §10. These are the bugs that motivated the project.
 - `Step.getOptionsCallback`, `Context.searchCallback`, `Step.getIsVisibleCallback` and the command
   `get*Callback` / `onClick` are JS-only conveniences; the central `getStepOptionsCallback` /
   `searchCallback` and the `action` event must keep working for server-driven hosts.
+
+## Mirrored in the devkit spotlight
+
+The devkit's example-site chapter search (`../web-components/src/examples/spotlight.js`,
+`chapter-search.js`, `css/spotlight.css`) mirrors this component without depending on it: the
+shell markup and classes (as `kmwc-spotlight__*`), `matchesAny()` / `highlight()` / `escapeHtml()`,
+`isTypingTarget()`, `GlobalKeys.handle()`, the input keyboard map, `move()` / `PAGE_STEP`,
+`open()` / `close()`, and the dialog / search / results / footer CSS. When you fix a bug in one of
+those, port it there too (`../web-components/scripts/spotlight-mirror.json` lists every pair; its
+`npm run check:spotlight-mirror` reports what changed here since the last alignment).
+
+**Deliberate differences — open for discussion** (each is marked in the spotlight's code). Decide
+per item whether wcp should adopt it, or whether the spotlight should drop it:
+
+- **Rows are links** (`<a href>`), so Ctrl+click and Ctrl/⌘+Enter open a new tab. wcp rows are
+  `<div>`s and Ctrl/⌘+Enter means nothing. Worth it for navigation-type commands here?
+- **Tab does nothing** in the spotlight (it only keeps focus in the input), because a chapter
+  list has no wizard steps. In wcp, Tab selects one wizard step.
+- **The section code takes wcp's icon slot** (`__item-code` where wcp renders `__item-icon`), as
+  a monospace chip. wcp has no equivalent "short code" field on an item.
+- **The search button in the page header is the kit's own** (`kmwc-spotlight__trigger`, a
+  🔍 + `Ctrl K` pill). wcp ships no trigger; hosts open it from their own UI.
+
+**Also to discuss — opening the palette makes the page jump sideways** (wcp AND the spotlight).
+Both lock scroll with core's `lockBodyScroll()` (`web-components-core` `overlay/scroll-lock.ts`),
+which only sets `overflow: hidden` on `<body>`. The page scrollbar disappears and the content
+widens by its width — measured on wcp's own example page: 1265 → 1280 px at a 1280 px window
+(classic Windows scrollbars; overlay scrollbars hide the problem). The original palette in
+`../pure-admin` doesn't jump, for two reasons:
+
+1. **Page CSS:** `html { scrollbar-gutter: stable; }` (pure-admin
+   `packages/core/src/scss/core-components/_base.scss`). It must be on `<html>`: Chromium only
+   takes the gutter for the viewport from the root element, so on `<body>` it does nothing.
+2. **A stronger lock** in pure-css's shared overlay stack (`../pure-css/src/js/pure-css.js`,
+   `pa.overlay` `applyLock` / `releaseLock`, used by pure-admin's `command-palette.js` through
+   `pureCss.overlay.open(…, { modal: true })`): it pins `<body>` with `position: fixed;
+   top: -scrollY` (the only lock iOS Safari honours for touch scrolling) and scrolls back to the
+   same place on release. If the scrollbar still disappears (no gutter on `<html>`), it adds the
+   lost width back as `padding-inline-end` on `<body>`.
+
+Proposal: bring (2) into core's `lockBodyScroll()` (ref counting stays), so wcp, multiselect's
+fullscreen sheet and every other core overlay stop jumping without the host page having to set
+(1). Then port it to the spotlight's mirrored copy and move the core `alignedCommit` in
+`../web-components/scripts/spotlight-mirror.json`. Tried in the devkit playground:
+`scrollbar-gutter: stable` on `<html>` during the lock keeps the layout still (card edge stays
+at 1233 px open and closed).
 
 Out of scope here: the keen bridge, Svelte/React/Razor wrappers, the directive-return channel, and migrating the existing palettes.
