@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/keenmate/schemas/main/component-variables.schema.json",
+  "$schema": "https://schemas.keenmate.dev/component-variables/v1.schema.json",
   "component": "@keenmate/web-commandpalette",
   "prefix": "cp",
   "note": "The palette ships its own plain CSS (src/css/*.css, multiselect-style layers). Every --cp-* knob is declared on :host and reads the shared --base-* contract (@keenmate/base-css-variables 2.0) with an inline fallback, so a :root theme reaches it; set --cp-* on the element itself.",
