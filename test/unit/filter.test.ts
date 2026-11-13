@@ -42,6 +42,9 @@ describe('render helpers', () => {
   it('highlight escapes and marks every case-insensitive occurrence', () => {
     expect(highlight('Air<Pods> pods', 'pods')).toBe('Air&lt;<mark>Pods</mark>&gt; <mark>pods</mark>');
     expect(highlight('a&b', '')).toBe('a&amp;b');
+    // 'İ' lower-cases to two characters — the mark must not slide off the match.
+    expect(highlight('İzmir, Smyrna', 'smyrna')).toBe('İzmir, <mark>Smyrna</mark>');
+    expect(highlight('a.b (c)', '(c)')).toBe('a.b <mark>(c)</mark>');
   });
 
   it('renderIcon: svg raw, name → cp__icon span, glyph → escaped text', () => {

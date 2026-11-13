@@ -11,6 +11,13 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Fixed — search highlight with characters whose lower case is longer (2026-11-13)
+
+- `highlight()` matched on `text.toLowerCase()` but cut the original text at those indexes: a title
+  with `İ` (lower-cases to two characters) before the match marked the wrong characters
+  (`İzmir, S<mark>myrna</mark>`). It now matches in the original text. Ported from the devkit
+  spotlight, which mirrors it.
+
 ### Changed — the phone sheet bar is core's sheet chrome (SPEC §12.9, rulebook C-RO-17, 2026-11-13)
 
 Needs core's `SHEET_CHROME_CSS` (core 1.0.0-rc24; the package range follows when it is published).

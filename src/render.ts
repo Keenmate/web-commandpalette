@@ -75,13 +75,13 @@ export function createShell(): Shell {
 export function highlight(text: string, needle: string): string {
   const q = needle.trim();
   if (!q) return escapeHtml(text);
-  const lower = text.toLowerCase();
-  const n = q.toLowerCase();
+  // Matched in the original text: toLowerCase() may change its length ('İ' → 'i̇'), shifting every index.
+  const pattern = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'giu');
   let out = '';
   let i = 0;
-  for (let at = lower.indexOf(n); at !== -1; at = lower.indexOf(n, i)) {
-    out += escapeHtml(text.slice(i, at)) + '<mark>' + escapeHtml(text.slice(at, at + n.length)) + '</mark>';
-    i = at + n.length;
+  for (const match of text.matchAll(pattern)) {
+    out += escapeHtml(text.slice(i, match.index)) + '<mark>' + escapeHtml(match[0]) + '</mark>';
+    i = match.index + match[0].length;
   }
   return out + escapeHtml(text.slice(i));
 }
