@@ -13,7 +13,7 @@
         fully working palette. Press <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>, then type
         <code>/</code> for commands, <code>:</code> for contexts, or anything else for global search.
     </p>
-    <div class="code-block"><pre><code>palette.commands = [{ id: 'home', trigger: '/home', text: 'Go home', shortcut: 'g h' }, …];
+    <div class="code-block" data-language="js"><pre><code>palette.commands = [{ id: 'home', trigger: '/home', text: 'Go home', shortcut: 'g h' }, …];
 palette.contexts = [{ id: 'people', trigger: ':people', aliases: [':p'], text: 'People' }];
 palette.searchCallback = async ({ scope, term, signal }) =&gt; fetchResults(scope, term, signal);</code></pre></div>
     <div class="demo-area">

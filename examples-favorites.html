@@ -13,7 +13,7 @@
         (<code>isLiveSearch: true</code>) lookup; <code>pickGroup</code> / <code>pickSite</code> load once and filter in the browser; the
         permission list is fixed inline.
     </p>
-<pre>const pickUser  = { isLiveSearch: true, placeholder: 'User…',  getOptionsCallback: ({ term, signal }) =&gt; api.users(term, signal) };
+<div class="code-block" data-language="js"><pre><code>const pickUser  = { isLiveSearch: true, placeholder: 'User…',  getOptionsCallback: ({ term, signal }) =&gt; api.users(term, signal) };
 const pickGroup = {               placeholder: 'Group…', getOptionsCallback: ({ signal }) =&gt; api.groups(signal) };
 
 { id: 'add-permission', trigger: '/add-permission', steps: [
@@ -26,7 +26,7 @@ const pickGroup = {               placeholder: 'Group…', getOptionsCallback: (
         { id: 'group', text: 'group', steps: [{ id: 'group', ...pickGroup }] },
         { id: 'site',  text: 'site',  steps: [{ id: 'site',  ...pickSite }] },
     ] },
-] }</pre>
+] }</code></pre></div>
     <div class="demo-area">
         <button type="button" data-open="/add-permission ">/add-permission</button>
         <button type="button" class="secondary" data-open="/assign-admin ">/assign-admin</button>
@@ -168,11 +168,11 @@ const pickGroup = {               placeholder: 'Group…', getOptionsCallback: (
         <label><input type="radio" name="fr06-render" value="default" checked> default</label>
         <label><input type="radio" name="fr06-render" value="custom"> custom callback (+ search results)</label>
     </div>
-<pre>palette.renderFeedbackCallback = (ctx) =&gt; {
+<div class="code-block" data-language="js" data-kmwc-snippet><pre><code>palette.renderFeedbackCallback = (ctx) =&gt; {
     if (ctx.type === 'select') return `Opening &lt;b&gt;${ctx.sentence}&lt;/b&gt;…`;
     if (ctx.commandId === 'reload') return false;             // no confirmation for this one
     return `&lt;b&gt;${ctx.commandText}&lt;/b&gt; queued — ${ctx.selections.map((s) =&gt; s.label).join(' → ')}`;
-};</pre>
+};</code></pre></div>
     <div class="demo-area">
         <button type="button" data-open="/set-priority ">/set-priority</button>
         <button type="button" class="secondary" data-open="/reload">/reload (instant)</button>

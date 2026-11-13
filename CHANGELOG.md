@@ -29,6 +29,13 @@ Needs core's `SHEET_CHROME_CSS` (core 1.0.0-rc24; the package range follows when
 - The close button's accessible name is still `labels.close`; the desktop dialog has no close
   button, so it is unchanged.
 
+### Internal — devkit 1.0.0-rc14 (2026-11-13)
+- `@keenmate/web-components-devkit` `^1.0.0-rc14` (was `^1.0.0-rc01`); `kmwc sync` refreshed the Makefile, the
+  CLAUDE.md devkit block and added `check:pages`. The example pages' code snippets are highlighted
+  `.code-block[data-language="js"]` blocks (the bare `<pre>` snippets in Favorites included); the theme
+  gallery's fixed colours are marked `data-kmwc-fixed-colors`; the variables manifest points at the
+  published `$schema`. The pages have no API reference tables; their snippets match the current API.
+
 ### Internal — core 1.0.0-rc22 (2026-11-13)
 - **Requires `@keenmate/web-components-core` `^1.0.0-rc22`** (was `^1.0.0-rc21`).
 

@@ -13,7 +13,7 @@
         <code>term</code>. After that, typing filters in the browser with no round-trips.
         <code>/assign</code> fetches products, then users, through the callback. <code>/go</code> uses inline options.
     </p>
-    <div class="code-block"><pre><code>{ id: 'go', trigger: '/go', text: 'Go to Page',
+    <div class="code-block" data-language="js"><pre><code>{ id: 'go', trigger: '/go', text: 'Go to Page',
   steps: [{ id: 'page', options: [{ text: 'Users', value: '/users' }, …] }] }</code></pre></div>
     <div class="demo-area">
         <button type="button" data-open="/assign ">/assign</button>
