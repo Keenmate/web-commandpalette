@@ -15,6 +15,7 @@ import {
   type SaveStateCallback,
   BlissElement,
   adoptStyles,
+  SHEET_CHROME_CSS,
   createCustomStyles,
   createPresentationContext,
   getEnvironment,
@@ -238,7 +239,9 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   constructor() {
     super();
     this.#shadow = this.attachShadow({ mode: 'open' });
-    adoptStyles(this.#shadow, styles);
+    // The phone sheet bar is core's sheet chrome (SPEC §12.9); after the palette's own CSS, so
+    // dialog.css hides the bar off the fullscreen sheet with a stronger selector.
+    adoptStyles(this.#shadow, styles, SHEET_CHROME_CSS);
     this.#shell = createShell();
     this.#shadow.appendChild(this.#shell.root);
     this.#renderer = new Renderer(this.#shell, this);

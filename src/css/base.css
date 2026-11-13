@@ -37,7 +37,7 @@
           mask: var(--_cp-icon-src, linear-gradient(transparent, transparent)) no-repeat center / contain;
 }
 
-/* ✕ — the fullscreen close button (and the `x` / `close` icon names). */
+/* ✕ — the `x` / `close` icon names (the fullscreen close is core's sheet chrome). */
 .cp__icon--x,
 .cp__icon--close {
   --_cp-icon-src: var(--cp-icon-close);

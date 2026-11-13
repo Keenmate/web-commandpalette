@@ -12,7 +12,7 @@
     {
       "name": "base-border-radius-md",
       "required": false,
-      "usage": "Corner radius of the container, search input, close button and badges (unitless multiplier of the rem unit)"
+      "usage": "Corner radius of the container, search input and badges (unitless multiplier of the rem unit)"
     },
     {
       "name": "base-border-radius-sm",
@@ -162,7 +162,7 @@
     {
       "name": "base-icon-close",
       "required": false,
-      "usage": "✕ glyph: fullscreen close button, `close` / `x` icon names (chained by --cp-icon-close)"
+      "usage": "✕ glyph: token remove, `close` / `x` icon names (chained by --cp-icon-close); the fullscreen close reads it through core's sheet chrome"
     },
     {
       "name": "base-icon-collapse",
@@ -277,27 +277,22 @@
     {
       "name": "base-input-bg",
       "required": false,
-      "usage": "Search input and close-button background"
+      "usage": "Search input background"
     },
     {
       "name": "base-input-border",
       "required": false,
-      "usage": "Search input / close-button border"
+      "usage": "Search input border"
     },
     {
       "name": "base-input-border-color",
       "required": false,
-      "usage": "Search input / close-button outline (fallback chain)"
+      "usage": "Search input outline (fallback chain)"
     },
     {
       "name": "base-input-border-focus",
       "required": false,
       "usage": "Search input focus border"
-    },
-    {
-      "name": "base-input-border-hover",
-      "required": false,
-      "usage": "Close-button hover border"
     },
     {
       "name": "base-input-box-shadow-focus",
@@ -317,7 +312,7 @@
     {
       "name": "base-input-size-lg-height",
       "required": false,
-      "usage": "Search input and close-button height (unitless multiplier of the rem unit)"
+      "usage": "Search input height (unitless multiplier of the rem unit)"
     },
     {
       "name": "base-input-text-color",
@@ -483,6 +478,11 @@
       "name": "base-loader-size",
       "required": false,
       "usage": "Loader size"
+    },
+    {
+      "name": "base-touch-target-min",
+      "required": false,
+      "usage": "Phone fullscreen sheet bar: close chip size (core's sheet chrome, --km-sheet-close-size default)"
     }
   ],
   "componentVariables": [
@@ -684,7 +684,7 @@
     },
     {
       "name": "cp-icon-close",
-      "usage": "✕ glyph (token remove, fullscreen close): any url(...). Falls back to --base-icon-close, then an inline Lucide SVG"
+      "usage": "✕ glyph (token remove; `close` / `x` / `clear` icon names): any url(...). Falls back to --base-icon-close, then an inline Lucide SVG. The fullscreen close takes --cp-sheet-close-icon"
     },
     {
       "name": "cp-icon-collapse",
@@ -788,7 +788,7 @@
     },
     {
       "name": "cp-input-border",
-      "usage": "Search input / close-button border"
+      "usage": "Search input border"
     },
     {
       "name": "cp-input-border-color",
@@ -797,10 +797,6 @@
     {
       "name": "cp-input-border-focus",
       "usage": "Search input focus border"
-    },
-    {
-      "name": "cp-input-border-hover",
-      "usage": "Close-button hover border"
     },
     {
       "name": "cp-input-box-shadow-focus",
@@ -812,7 +808,7 @@
     },
     {
       "name": "cp-input-height",
-      "usage": "Search input / close-button height"
+      "usage": "Search input height"
     },
     {
       "name": "cp-input-padding-h",
@@ -997,6 +993,82 @@
     {
       "name": "cp-z-index",
       "usage": "Stacking of the overlay: one step above --base-z-popover (7601 without the base layer)"
+    },
+    {
+      "name": "cp-sheet-header-gap",
+      "usage": "Phone fullscreen sheet bar: gap between the title and the close button. Unset by default; maps onto core's --_km-sheet-header-gap (then --km-sheet-header-gap, then the --base-* default)"
+    },
+    {
+      "name": "cp-sheet-header-padding-block",
+      "usage": "Phone fullscreen sheet bar: block padding of the bar. Unset by default; maps onto core's --_km-sheet-header-padding-block (then --km-sheet-header-padding-block, then the --base-* default)"
+    },
+    {
+      "name": "cp-sheet-header-padding-inline",
+      "usage": "Phone fullscreen sheet bar: inline padding of the bar. Unset by default; maps onto core's --_km-sheet-header-padding-inline (then --km-sheet-header-padding-inline, then the --base-* default)"
+    },
+    {
+      "name": "cp-sheet-header-min-height",
+      "usage": "Phone fullscreen sheet bar: minimum height of the bar. Unset by default; maps onto core's --_km-sheet-header-min-height (then --km-sheet-header-min-height, then the --base-* default)"
+    },
+    {
+      "name": "cp-sheet-header-bg",
+      "usage": "Phone fullscreen sheet bar: bar background. Unset by default; maps onto core's --_km-sheet-header-bg (then --km-sheet-header-bg, then the --base-* default)"
+    },
+    {
+      "name": "cp-sheet-header-border",
+      "usage": "Phone fullscreen sheet bar: bar bottom divider (border shorthand). Unset by default; maps onto core's --_km-sheet-header-border (then --km-sheet-header-border, then the --base-* default)"
+    },
+    {
+      "name": "cp-sheet-title-color",
+      "usage": "Phone fullscreen sheet bar: title text colour. Unset by default; maps onto core's --_km-sheet-title-color (then --km-sheet-title-color, then the --base-* default)"
+    },
+    {
+      "name": "cp-sheet-title-font-size",
+      "usage": "Phone fullscreen sheet bar: title font size. Unset by default; maps onto core's --_km-sheet-title-font-size (then --km-sheet-title-font-size, then the --base-* default)"
+    },
+    {
+      "name": "cp-sheet-title-font-weight",
+      "usage": "Phone fullscreen sheet bar: title font weight. Unset by default; maps onto core's --_km-sheet-title-font-weight (then --km-sheet-title-font-weight, then the --base-* default)"
+    },
+    {
+      "name": "cp-sheet-close-size",
+      "usage": "Phone fullscreen sheet bar: close chip size (touch target). Unset by default; maps onto core's --_km-sheet-close-size (then --km-sheet-close-size, then the --base-* default)"
+    },
+    {
+      "name": "cp-sheet-close-icon-size",
+      "usage": "Phone fullscreen sheet bar: ✕ glyph size. Unset by default; maps onto core's --_km-sheet-close-icon-size (then --km-sheet-close-icon-size, then the --base-* default)"
+    },
+    {
+      "name": "cp-sheet-close-icon",
+      "usage": "Phone fullscreen sheet bar: ✕ glyph (any url(...)). Unset by default; maps onto core's --_km-sheet-close-icon (then --km-sheet-close-icon, then the --base-* default)"
+    },
+    {
+      "name": "cp-sheet-close-color",
+      "usage": "Phone fullscreen sheet bar: ✕ colour. Unset by default; maps onto core's --_km-sheet-close-color (then --km-sheet-close-color, then the --base-* default)"
+    },
+    {
+      "name": "cp-sheet-close-bg",
+      "usage": "Phone fullscreen sheet bar: close chip background. Unset by default; maps onto core's --_km-sheet-close-bg (then --km-sheet-close-bg, then the --base-* default)"
+    },
+    {
+      "name": "cp-sheet-close-bg-hover",
+      "usage": "Phone fullscreen sheet bar: close chip hover background. Unset by default; maps onto core's --_km-sheet-close-bg-hover (then --km-sheet-close-bg-hover, then the --base-* default)"
+    },
+    {
+      "name": "cp-sheet-close-border",
+      "usage": "Phone fullscreen sheet bar: close chip border (border shorthand). Unset by default; maps onto core's --_km-sheet-close-border (then --km-sheet-close-border, then the --base-* default)"
+    },
+    {
+      "name": "cp-sheet-close-border-radius",
+      "usage": "Phone fullscreen sheet bar: close chip corner radius. Unset by default; maps onto core's --_km-sheet-close-border-radius (then --km-sheet-close-border-radius, then the --base-* default)"
+    },
+    {
+      "name": "cp-sheet-close-edge-nudge",
+      "usage": "Phone fullscreen sheet bar: how far the chip slides toward the trailing edge. Unset by default; maps onto core's --_km-sheet-close-edge-nudge (then --km-sheet-close-edge-nudge, then the --base-* default)"
+    },
+    {
+      "name": "cp-sheet-close-focus-color",
+      "usage": "Phone fullscreen sheet bar: close chip focus outline colour. Unset by default; maps onto core's --_km-sheet-close-focus-color (then --km-sheet-close-focus-color, then the --base-* default)"
     }
   ]
 }

@@ -102,6 +102,28 @@ motion is CSS only:
 | `--cp-scrollbar-width` / `-thumb-border-radius` | Results scrollbar size and thumb radius (WebKit; Firefox and Chromium 121+ draw a thin bar) |
 | `--cp-confirm-min-height` | Height the dialog shrinks to (animated) while showing the confirmation. Default 16 × `--base-rem` |
 
+### Phone sheet bar
+
+On a touch phone the palette is a fullscreen sheet with a title + ✕ bar on top. That bar is
+core's shared sheet chrome (`.km-sheet-header` / `.km-sheet-title` / `.km-sheet-close`, the same one
+every Keenmate sheet uses — a round 44px ✕ chip drawn from `--base-icon-close`). Its knobs are
+`--cp-sheet-*`, **unset by default**: an unset knob falls through to the page-wide `--km-sheet-*`
+and then to core's `--base-*` default.
+
+| Variable | Purpose |
+|---|---|
+| `--cp-sheet-header-bg` / `-header-border` / `-header-min-height` / `-header-gap` / `-header-padding-block` / `-header-padding-inline` | The bar |
+| `--cp-sheet-title-color` / `-title-font-size` / `-title-font-weight` | The title (`labels.fullscreenTitle`) |
+| `--cp-sheet-close-size` / `-close-icon-size` / `-close-icon` / `-close-color` | The ✕ chip and its glyph (any `url(...)`) |
+| `--cp-sheet-close-bg` / `-close-bg-hover` / `-close-border` / `-close-border-radius` / `-close-focus-color` / `-close-edge-nudge` | Chip surface, focus ring, and how far it slides toward the edge |
+
+```css
+/* every Keenmate sheet on the page */
+:root { --km-sheet-close-bg: var(--base-subtle-bg); }
+/* just this palette: a bordered square button */
+web-command-palette { --cp-sheet-close-border: 1px solid currentColor; --cp-sheet-close-border-radius: 6px; }
+```
+
 `size="sm|lg|xl"` presets set width + results height together (480/288, 768/512, 896/640 px at
 the default `--base-rem`).
 
@@ -137,7 +159,7 @@ chains to the shared `--base-icon-*` glyph where one exists, then to an inline L
 
 | Variable | Glyph | Chain |
 |---|---|---|
-| `--cp-icon-close` | ✕ fullscreen close | → `--base-icon-close` → Lucide `x` |
+| `--cp-icon-close` | ✕ (`close` / `x` icon names; the fullscreen close takes `--cp-sheet-close-icon`) | → `--base-icon-close` → Lucide `x` |
 | `--cp-icon-remove` | ✕ take a command token out | → `--base-icon-remove` → `--cp-icon-close` |
 | `--cp-icon-check` | ✓ confirmation | → `--base-icon-check` → Lucide `check` |
 | `--cp-icon-star` / `--cp-icon-star-filled` | ☆ / ★ favorite toggle | → Lucide `star` (outline / filled) |

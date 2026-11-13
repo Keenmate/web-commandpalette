@@ -52,7 +52,7 @@
   --cp-hover-bg: var(--base-hover-bg, light-dark(color-mix(in oklch, oklch(from var(--cp-bg) calc(l - 0.45) c h) 14%, transparent), color-mix(in oklch, oklch(from var(--cp-bg) calc(l + 0.45) c h) 28%, transparent)));
 
   /* Borders: --cp-border-color is the quiet divider (search row, sections, footer,
-     keycaps); controls (the input, the close button) use the stronger
+     keycaps); controls (the search input) use the stronger
      --cp-input-border-color, like every other Keenmate field. */
   --cp-border-width: var(--base-border-width, 1px);
   --cp-border-color: var(--base-border-color, light-dark(oklch(from var(--cp-bg) calc(l - 0.096) c h), oklch(from var(--cp-bg) calc(l + 0.192) c h)));
@@ -119,7 +119,6 @@
   --cp-input-color: var(--base-input-text-color, var(--cp-text-color-1));
   --cp-input-border-color: var(--base-input-border-color, light-dark(color-mix(in srgb, var(--cp-text-color-1) 45%, var(--cp-bg)), color-mix(in srgb, var(--cp-text-color-1) 35%, var(--cp-bg))));
   --cp-input-border: var(--base-input-border, var(--cp-border-width) solid var(--cp-input-border-color));
-  --cp-input-border-hover: var(--base-input-border-hover, var(--cp-border-width) solid var(--cp-accent-color));
   --cp-input-border-focus: var(--base-input-border-focus, var(--cp-border-width) solid var(--cp-accent-color));
   --cp-input-box-shadow-focus: var(--base-input-box-shadow-focus, 0 0 0 3px var(--base-input-shadow-color-focus, color-mix(in srgb, var(--cp-accent-color) 5%, transparent)));
   --cp-input-placeholder-color: var(--base-input-placeholder-color, var(--cp-text-color-3));
@@ -236,4 +235,32 @@
   --cp-icon-warning: var(--base-icon-warning, url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3%22/%3E%3Cpath d=%22M12 9v4%22/%3E%3Cpath d=%22M12 17h.01%22/%3E%3C/svg%3E"));
   --cp-icon-danger: var(--base-icon-danger, url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%2210%22/%3E%3Cpath d=%22m15 9-6 6%22/%3E%3Cpath d=%22m9 9 6 6%22/%3E%3C/svg%3E"));
   --cp-icon-clear: var(--base-icon-clear, var(--cp-icon-close));
+
+  /* ==========================================================================
+     PHONE SHEET BAR (core sheet chrome, SPEC §12.9)
+     ==========================================================================
+     The fullscreen bar (title + ✕) is core's .km-sheet-header / -title / -close.
+     Each --cp-sheet-* knob is UNSET by default and maps onto core's private
+     --_km-sheet-* with no fallback, so an unset knob falls through to the
+     page-wide --km-sheet-* and then core's --base-* default.
+       web-command-palette { --cp-sheet-close-bg: transparent; } */
+  --_km-sheet-header-gap: var(--cp-sheet-header-gap);
+  --_km-sheet-header-padding-block: var(--cp-sheet-header-padding-block);
+  --_km-sheet-header-padding-inline: var(--cp-sheet-header-padding-inline);
+  --_km-sheet-header-min-height: var(--cp-sheet-header-min-height);
+  --_km-sheet-header-bg: var(--cp-sheet-header-bg);
+  --_km-sheet-header-border: var(--cp-sheet-header-border);
+  --_km-sheet-title-color: var(--cp-sheet-title-color);
+  --_km-sheet-title-font-size: var(--cp-sheet-title-font-size);
+  --_km-sheet-title-font-weight: var(--cp-sheet-title-font-weight);
+  --_km-sheet-close-size: var(--cp-sheet-close-size);
+  --_km-sheet-close-icon-size: var(--cp-sheet-close-icon-size);
+  --_km-sheet-close-icon: var(--cp-sheet-close-icon);
+  --_km-sheet-close-color: var(--cp-sheet-close-color);
+  --_km-sheet-close-bg: var(--cp-sheet-close-bg);
+  --_km-sheet-close-bg-hover: var(--cp-sheet-close-bg-hover);
+  --_km-sheet-close-border: var(--cp-sheet-close-border);
+  --_km-sheet-close-border-radius: var(--cp-sheet-close-border-radius);
+  --_km-sheet-close-edge-nudge: var(--cp-sheet-close-edge-nudge);
+  --_km-sheet-close-focus-color: var(--cp-sheet-close-focus-color);
 }

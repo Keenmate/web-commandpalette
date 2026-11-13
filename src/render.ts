@@ -37,11 +37,9 @@ export function createShell(): Shell {
   root.innerHTML = `
     <div class="cp__backdrop" part="backdrop"></div>
     <div class="cp__container" part="container" role="dialog" aria-modal="true">
-      <div class="cp__fullscreen-bar">
-        <span class="cp__fullscreen-title"></span>
-        <button type="button" class="cp__close">
-          <span class="cp__icon cp__icon--x" aria-hidden="true"></span>
-        </button>
+      <div class="cp__fullscreen-bar km-sheet-header">
+        <span class="cp__fullscreen-title km-sheet-title"></span>
+        <button type="button" class="cp__close km-sheet-close"></button>
       </div>
       <div class="cp__search">
         <div class="cp__tokens"></div>

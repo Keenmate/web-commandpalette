@@ -11,6 +11,24 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Changed — the phone sheet bar is core's sheet chrome (SPEC §12.9, rulebook C-RO-17, 2026-11-13)
+
+Needs core's `SHEET_CHROME_CSS` (core 1.0.0-rc24; the package range follows when it is published).
+
+- The fullscreen bar, its title and its ✕ now carry core's `km-sheet-header` / `km-sheet-title` /
+  `km-sheet-close` (the `cp__fullscreen-bar` / `cp__fullscreen-title` / `cp__close` classes stay as
+  hooks): the same bar as every Keenmate sheet — a round, borderless 44px ✕ chip (the glyph is a
+  `--base-icon-close` mask, its tap area reaches into the top corner), core's padding / divider /
+  title type. Visual change: the ✕ was a bordered input-height square.
+- New `--cp-sheet-*` knobs (header-bg / -border / -min-height / -gap / -padding-block /
+  -padding-inline, title-color / -font-size / -font-weight, close-size / -icon-size / -icon /
+  -color / -bg / -bg-hover / -border / -border-radius / -focus-color / -edge-nudge), unset by
+  default — an unset one falls through to the page-wide `--km-sheet-*`, then core's default.
+- **BREAKING (theming):** `--cp-input-border-hover` is removed (it only styled the old ✕ hover);
+  `--cp-icon-close` no longer reaches the fullscreen ✕ — use `--cp-sheet-close-icon`.
+- The close button's accessible name is still `labels.close`; the desktop dialog has no close
+  button, so it is unchanged.
+
 ### Internal — core 1.0.0-rc22 (2026-11-13)
 - **Requires `@keenmate/web-components-core` `^1.0.0-rc22`** (was `^1.0.0-rc21`).
 
