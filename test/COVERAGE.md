@@ -92,6 +92,8 @@ Known bugs are in `test/NOTES.md`.
 | `renderFeedbackCallback` custom / `false` | ✓ | `confirmation.spec.ts` | `confirmation.html` |
 | `feedback-duration` (`0` + custom) | ✓ | `confirmation.spec.ts` | `confirmation.html` |
 | Select: none by default, custom render when the callback returns content | ✓ | `confirmation.spec.ts` | `confirmation.html` |
+| Countdown bar shown by default; left out at `motion="none"` / ancestor `data-motion="none"` / reduced motion, timer unchanged | ✓ | `motion.spec.ts` | `motion.html` |
+| Closing animation: state + `close` at the start, removal at the end; instant at motion none / reduced motion; re-open cancels | ✓ | `motion.spec.ts` | `motion.html` |
 
 ## 7. Favorites / recents (usage)
 

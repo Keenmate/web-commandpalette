@@ -15,6 +15,7 @@ import {
   type SaveStateCallback,
   BlissElement,
   adoptStyles,
+  animateOut,
   SHEET_CHROME_CSS,
   createCustomStyles,
   createPresentationContext,
@@ -33,6 +34,7 @@ import {
   toObjectArray,
   toText,
   toValue,
+  type AnimateOutHandle,
   type BeforeCallbackResult,
   type CustomStylesCallback,
   type CustomStylesHandle,
@@ -231,6 +233,8 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   #returnFocus: Element | null = null;
   /** Set while the one-line feedback is showing. */
   #feedbackTimer: ReturnType<typeof setTimeout> | null = null;
+  /** The closing animation in flight (core `animateOut`); the dialog leaves the DOM when it ends. */
+  #closing: AnimateOutHandle | null = null;
   /** The event / row behind the engine call in progress (for the `action` detail). */
   #trigger: Trigger | null = null;
   /** Page + instance custom CSS (core `createCustomStyles`), created on the first build. */
@@ -444,7 +448,9 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     // The dialog collapses to this one line (CSS hides the search row, results and
     // footer under `.cp--confirming`); the line takes focus so any key dismisses it.
     const { confirm, live, root } = this.#shell;
-    const body = fillConfirmation(confirm, this.#labels.done, duration);
+    // The countdown bar shows the timer — decorative, so it goes when motion is off (SPEC §12.16);
+    // the timer itself keeps `feedback-duration`.
+    const body = fillConfirmation(confirm, this.#labels.done, duration, !this.#isMotionOff());
     if (custom instanceof HTMLElement) body.appendChild(custom);
     else if (typeof custom === 'string') body.innerHTML = custom;
     else {
@@ -474,10 +480,26 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     return true;
   }
 
-  #endFeedback(): void {
+  /**
+   * Motion off where the palette sits: the RESOLVED speed is `0s` — `motion="none"` on the
+   * element, a `data-motion="none"` section or page (core MOTION_CSS, closest wins by
+   * inheritance), or OS reduced motion all zero `--cp-transition-normal`.
+   */
+  #isMotionOff(): boolean {
+    if (typeof getComputedStyle !== 'function') return false;
+    return parseFloat(getComputedStyle(this).getPropertyValue('--cp-transition-normal')) === 0;
+  }
+
+  /** Stop the feedback timer (the line stays drawn until #hideFeedback). */
+  #stopFeedback(): void {
     if (!this.#feedbackTimer) return;
     clearTimeout(this.#feedbackTimer);
     this.#feedbackTimer = null;
+  }
+
+  /** Take the one-line feedback down (after the dialog has gone, so it never snaps back mid-close). */
+  #hideFeedback(): void {
+    if (!this.#shell.root.classList.contains('cp--confirming')) return;
     this.#shell.confirm.hidden = true;
     this.#shell.confirm.replaceChildren();
     this.#shell.container.style.height = '';
@@ -644,6 +666,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
 
   protected override disconnect(): void {
     this.close();
+    this.#finishClosingNow();
     this.#overlay?.destroy();
     this.#overlay = null;
     connected.delete(this);
@@ -761,6 +784,8 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   open(): void {
     // Re-opening while the feedback shows (e.g. `g d` right after a run) starts fresh.
     if (this.#feedbackTimer) this.close();
+    // Re-opened while the closing animation runs: stop it, the dialog animates in again.
+    this.#finishClosingNow();
     if (this.#isOpen) return;
     this.flush();
     // One overlay at a time: dismiss any open KM popovers (closed palette ignores its own dismiss).
@@ -780,15 +805,19 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.emit('open');
   }
 
-  /** Close and reset. No-op when already closed. */
+  /**
+   * Close and reset. No-op when already closed. The palette is closed at once — `isOpen`, the
+   * `open` attribute, scroll lock, focus return and the `close` event all happen now; only the
+   * dialog's exit animation (backdrop fade, dialog slide-up, timed by `--cp-transition-normal`)
+   * plays after, then it leaves the DOM. Motion off / reduced motion: it leaves at once.
+   */
   close(): void {
     if (!this.#isOpen) return;
-    this.#endFeedback();
+    this.#stopFeedback();
     this.#isOpen = false;
     this.#renderer.clearLoader();
     this.#engine.dispose();
     this.#engine.reset();
-    this.#shell.root.classList.remove('cp--active');
     this.toggleAttribute('open', false);
     this.#overlay?.deactivate();
     this.#releaseScroll?.();
@@ -800,8 +829,37 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     // in the hidden input — and `g <letter>` sequences ignore keys while typing.
     this.#shell.input.blur();
     if ((back instanceof HTMLElement || back instanceof SVGElement) && back.isConnected) back.focus();
+    // Started before the event, so a `close` listener that re-opens cancels it.
+    this.#animateClose();
     this.log.UI.debug('close');
     this.emit('close');
+  }
+
+  /** The exit animation (core `animateOut`, SPEC §12.16): the dialog decides when both go. */
+  #animateClose(): void {
+    const { container, backdrop } = this.#shell;
+    backdrop.classList.add('cp__backdrop--closing');
+    this.#closing = animateOut(container, {
+      className: 'cp__container--closing',
+      onDone: () => this.#removeDialog(),
+    });
+  }
+
+  /** Out of the page: hide the dialog, drop the closing classes and the feedback line. */
+  #removeDialog(): void {
+    this.#closing = null;
+    const { root, container, backdrop } = this.#shell;
+    root.classList.remove('cp--active');
+    container.classList.remove('cp__container--closing');
+    backdrop.classList.remove('cp__backdrop--closing');
+    this.#hideFeedback();
+  }
+
+  /** A closing animation in flight ends now (re-open, disconnect). */
+  #finishClosingNow(): void {
+    if (!this.#closing) return;
+    this.#closing.cancel();
+    this.#removeDialog();
   }
 
   /** Open when closed, close when open. */

@@ -18,6 +18,23 @@
   }
 }
 
+/* The closing mirror of the two above (the `--closing` classes in dialog.css). */
+@keyframes cp-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes cp-slide-up {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
 @keyframes cp-loader-spin {
   to { transform: rotate(var(--cp-loader-rotate)); }
 }
@@ -41,7 +58,8 @@
 
 /* Reduced motion: every transition / animation timed by --cp-transition-* stops (the
    contract does the same for --base-duration-*; this holds without it). The feedback
-   countdown bar is timed from `feedback-duration`, so it is hidden from the motion instead.
+   countdown bar is timed from `feedback-duration`, so it is hidden instead (the element
+   leaves it out whenever the resolved speed is 0s — this rule covers it in CSS too).
    The loader keeps turning, slower (--base-loader-duration): it is the only sign that a
    search is running. */
 @media (prefers-reduced-motion: reduce) {
@@ -52,6 +70,6 @@
   }
 
   .cp__confirm-progress {
-    animation: none;
+    display: none;
   }
 }

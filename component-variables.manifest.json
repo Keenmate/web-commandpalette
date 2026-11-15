@@ -60,6 +60,11 @@
       "usage": "Easing of the border / color transitions"
     },
     {
+      "name": "base-ease-in",
+      "required": false,
+      "usage": "Easing of the closing animation"
+    },
+    {
       "name": "base-ease-standard",
       "required": false,
       "usage": "Easing of the animations"
@@ -609,6 +614,10 @@
     {
       "name": "cp-easing-out",
       "usage": "Easing for border / color transitions (--base-ease-out)"
+    },
+    {
+      "name": "cp-easing-in",
+      "usage": "Easing of the closing animation (--base-ease-in)"
     },
     {
       "name": "cp-font-family",

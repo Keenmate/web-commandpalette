@@ -269,13 +269,14 @@ export function confirmationBodyHtml(o: { trigger?: string; text: string; parts:
 /**
  * Fill the one-line confirmation: ✓, a body slot, the heading at the end, and a
  * countdown bar whose animation lasts `duration` ms. Returns the body slot.
+ * `hasProgress: false` leaves the bar out (motion off — the bar is decorative, SPEC §12.16).
  */
-export function fillConfirmation(el: HTMLElement, heading: string, duration: number): HTMLElement {
+export function fillConfirmation(el: HTMLElement, heading: string, duration: number, hasProgress = true): HTMLElement {
   el.innerHTML =
     `<span class="cp__confirm-check cp__icon cp__icon--check" aria-hidden="true"></span>` +
     `<span class="cp__confirm-body" dir="auto"></span>` +
     `<span class="cp__confirm-title">${escapeHtml(heading)}</span>` +
-    `<span class="cp__confirm-progress" style="animation-duration: ${Math.max(0, duration)}ms"></span>`;
+    (hasProgress ? `<span class="cp__confirm-progress" style="animation-duration: ${Math.max(0, duration)}ms"></span>` : '');
   return el.querySelector('.cp__confirm-body') as HTMLElement;
 }
 

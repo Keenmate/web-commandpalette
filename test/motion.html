@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>e2e fixture — motion (countdown bar, closing animation)</title>
+  <style>body { font-family: system-ui, sans-serif; }</style>
+</head>
+<body>
+  <button id="opener" type="button">open</button>
+  <!-- A section the specs set data-motion on (an ancestor level, SPEC §12.16). -->
+  <section id="section">
+    <web-command-palette id="palette"></web-command-palette>
+  </section>
+
+  <script type="module">
+    import { setupStandard, ready } from './fixture-common.js';
+    setupStandard('motion');
+    ready();
+  </script>
+</body>
+</html>

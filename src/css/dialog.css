@@ -52,6 +52,16 @@
   overflow: hidden;
 }
 
+/* Closing: the mirror of the opening, then the element hides the dialog (core animateOut waits
+   for the container's animation; the backdrop runs alongside). 0s → it goes at once. */
+.cp__backdrop--closing {
+  animation: cp-fade-out var(--cp-transition-normal) var(--cp-easing-in) forwards;
+}
+
+.cp__container--closing {
+  animation: cp-slide-up var(--cp-transition-normal) var(--cp-easing-in) forwards;
+}
+
 /* Narrow (desktop) windows keep the floating dialog, just closer to the edges. */
 @media (max-width: 768px) {
   .cp {

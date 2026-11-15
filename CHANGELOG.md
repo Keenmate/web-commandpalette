@@ -11,6 +11,25 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Changed — motion: closing animation, countdown bar follows the motion level (core SPEC §12.16, 2026-11-15)
+
+Needs core's `animateOut` (core 1.0.0-rc24; the package range follows when it is published).
+
+- **Closing mirrors the opening:** the backdrop fades out and the dialog slides up
+  (`cp-fade-out` / `cp-slide-up`, `--cp-transition-normal` + the new `--cp-easing-in` →
+  `--base-ease-in`), through core `animateOut`. `close()` still closes at once — `isOpen`, the
+  `open` attribute, the scroll lock, focus return and the `close` event all happen at the start;
+  only the dialog's removal waits for the animation (inert meanwhile). Instant at `motion="none"`,
+  an ancestor `data-motion="none"` and OS reduced motion; `open()` during it cancels it. The phone
+  sheet has no open animation, so it closes at once too. Closing from the feedback line keeps the
+  line until the dialog is gone.
+- **The feedback countdown bar is decorative:** it is left out whenever the resolved speed is `0s`
+  — `motion="none"` on the element, a section's / the page's `data-motion="none"`, OS reduced motion
+  (it used to be only reduced motion, and there it stood still at full width). The feedback timer
+  (`feedback-duration`) keeps its time.
+- Docs: the Motion section describes core's `motion` switch (it said there was no attribute); the
+  sheet-bar variables carry the shared "sheet" definition.
+
 ### Fixed — search highlight with characters whose lower case is longer (2026-11-13)
 
 - `highlight()` matched on `text.toLowerCase()` but cut the original text at those indexes: a title

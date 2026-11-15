@@ -75,14 +75,19 @@ Keycaps use the same font by default; `--cp-key-font-family` changes them.
 
 Durations use the contract's speeds only: `--cp-transition-fast` / `-normal` / `-medium` read
 `--base-duration-fast` / `-normal` / `-medium` (0.1s / 0.15s / 0.25s); easings `--cp-easing` /
-`-easing-out` read `--base-ease-standard` / `--base-ease-out`. There is no attribute for it —
-motion is CSS only:
+`-easing-out` / `-easing-in` read `--base-ease-standard` / `--base-ease-out` / `--base-ease-in`.
+The switch is core's `motion` (`auto | none | snappy | smooth`, core SPEC §12.16) — closest wins:
 
-- **One palette:** `web-command-palette { --cp-transition-fast: 0s; --cp-transition-normal: 0s; --cp-transition-medium: 0s; }`
-- **The whole page:** `:root { --base-duration-fast: 0s; --base-duration-normal: 0s; --base-duration-medium: 0s; --base-duration-slow: 0s; }`
-- **`prefers-reduced-motion: reduce`** sets the `--cp-transition-*` durations to `0s` and hides the
-  feedback countdown bar. The "Searching…" spinner keeps turning (1s per turn): it is the only sign
-  that a search is running.
+- **One palette:** `<web-command-palette motion="none">` (or `el.motion = 'none'`).
+- **A section / the page:** `data-motion="none"` on any ancestor, or `window.components.motion = 'none'`.
+- **`prefers-reduced-motion: reduce`** always wins: the durations are `0s`.
+
+What it covers: the dialog's opening (backdrop fade-in, dialog slide-down) and closing (backdrop
+fade-out, dialog slide-up, `-easing-in`), the feedback shrink, hovers. At `0s` they are instant,
+and the feedback **countdown bar** — a picture of the timer, so decorative — is left out (the
+element reads the resolved `--cp-transition-normal` when the feedback opens). Not covered: the
+feedback **timer** (`feedback-duration`) keeps its time, and the "Searching…" spinner keeps turning
+(1s per turn) — it is the only sign that a search is running.
 
 ## Palette knobs
 
@@ -103,6 +108,10 @@ motion is CSS only:
 | `--cp-confirm-min-height` | Height the dialog shrinks to (animated) while showing the confirmation. Default 16 × `--base-rem` |
 
 ### Phone sheet bar
+
+A **sheet** is a panel that covers the page on a phone — a bottom sheet, a side drawer, a full-screen
+picker. These variables style its top bar: the strip (`header-*`), its title (`title-*`) and the round
+close button (`close-*`).
 
 On a touch phone the palette is a fullscreen sheet with a title + ✕ bar on top. That bar is
 core's shared sheet chrome (`.km-sheet-header` / `.km-sheet-title` / `.km-sheet-close`, the same one

@@ -92,6 +92,7 @@
   --cp-transition-medium: var(--base-duration-medium, 0.25s);
   --cp-easing: var(--base-ease-standard, cubic-bezier(0.4, 0, 0.2, 1));
   --cp-easing-out: var(--base-ease-out, cubic-bezier(0, 0, 0.2, 1));
+  --cp-easing-in: var(--base-ease-in, cubic-bezier(0.4, 0, 1, 1));
 
   /* ==========================================================================
      DIALOG

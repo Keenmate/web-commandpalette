@@ -109,7 +109,7 @@ a `{:reply}`-backed `searchCallback` / `getStepOptionsCallback` (it pushes the c
 | Member | |
 |---|---|
 | `isOpen` | Whether the palette is open. |
-| `open()` / `close()` / `toggle()` | Open on the home screen / close and reset / either. |
+| `open()` / `close()` / `toggle()` | Open on the home screen / close and reset / either. `close()` is closed at once (`isOpen`, the `open` attribute, focus return, the `close` event); only the exit animation plays after it (instant when motion is off); `open()` during it cancels it. |
 | `openWith(term)` | Open pre-filled, e.g. `'/deploy '`, `':products laptop'`, `'mac'`. |
 | `reset()` | Back to the home screen (stays open). |
 | `commands` / `contexts` | The same properties as on the element (assignable). |
@@ -353,6 +353,8 @@ and a countdown bar — then closes. A wizard reads as the sentence the user bui
 
 - The `action` event fires **immediately**; only the close waits.
   `close` fires when the panel goes.
+- The countdown bar is left out when motion is off (`motion="none"`, a `data-motion="none"`
+  section / page, OS reduced motion); the timer keeps its time.
 - Any key or click dismisses it; <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd> goes straight to a fresh palette.
 - `show-feedback="false"` (or `feedback-duration="0"`) turns it off.
 - Search-result selections (`result-select`) get no panel by default — they usually navigate away.
