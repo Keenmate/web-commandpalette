@@ -13,7 +13,7 @@ callback and item API below is breaking.
 
 ### Changed — motion: closing animation, countdown bar follows the motion level (core SPEC §12.16, 2026-11-15)
 
-Needs core's `animateOut` (core 1.0.0-rc24; the package range follows when it is published).
+Needs core's `animateOut`: needs `@keenmate/web-components-core` `^1.0.0-rc24`.
 
 - **Closing mirrors the opening:** the backdrop fades out and the dialog slides up
   (`cp-fade-out` / `cp-slide-up`, `--cp-transition-normal` + the new `--cp-easing-in` →
@@ -39,7 +39,7 @@ Needs core's `animateOut` (core 1.0.0-rc24; the package range follows when it is
 
 ### Changed — the phone sheet bar is core's sheet chrome (SPEC §12.9, rulebook C-RO-17, 2026-11-13)
 
-Needs core's `SHEET_CHROME_CSS` (core 1.0.0-rc24; the package range follows when it is published).
+Needs core's `SHEET_CHROME_CSS`: needs `@keenmate/web-components-core` `^1.0.0-rc24`.
 
 - The fullscreen bar, its title and its ✕ now carry core's `km-sheet-header` / `km-sheet-title` /
   `km-sheet-close` (the `cp__fullscreen-bar` / `cp__fullscreen-title` / `cp__close` classes stay as
@@ -54,6 +54,9 @@ Needs core's `SHEET_CHROME_CSS` (core 1.0.0-rc24; the package range follows when
   `--cp-icon-close` no longer reaches the fullscreen ✕ — use `--cp-sheet-close-icon`.
 - The close button's accessible name is still `labels.close`; the desktop dialog has no close
   button, so it is unchanged.
+
+### Internal — core 1.0.0-rc24 (2026-11-15)
+- core `^1.0.0-rc24` (was `^1.0.0-rc22`).
 
 ### Internal — devkit 1.0.0-rc14 (2026-11-13)
 - `@keenmate/web-components-devkit` `^1.0.0-rc14` (was `^1.0.0-rc01`); `kmwc sync` refreshed the Makefile, the
