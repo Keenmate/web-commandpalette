@@ -835,12 +835,11 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.emit('close');
   }
 
-  /** The exit animation (core `animateOut`, SPEC §12.16): the dialog decides when both go. */
+  /** The exit animation (core `animateOut`, SPEC §12.16): both go once the longer animation ends. */
   #animateClose(): void {
     const { container, backdrop } = this.#shell;
-    backdrop.classList.add('cp__backdrop--closing');
-    this.#closing = animateOut(container, {
-      className: 'cp__container--closing',
+    this.#closing = animateOut([container, backdrop], {
+      className: (el) => (el === backdrop ? 'cp__backdrop--closing' : 'cp__container--closing'),
       onDone: () => this.#removeDialog(),
     });
   }
