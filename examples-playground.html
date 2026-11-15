@@ -47,6 +47,15 @@
         <label><input type="radio" name="pg01-debounce" value="400"> 400</label>
     </div>
     <div class="controls">
+        <span><code>motion</code>:</span>
+        <label><input type="radio" name="pg01-motion" value="auto" checked> auto</label>
+        <label><input type="radio" name="pg01-motion" value="none"> none</label>
+        <label><input type="radio" name="pg01-motion" value="snappy"> snappy</label>
+        <label><input type="radio" name="pg01-motion" value="smooth"> smooth</label>
+        <span class="muted">— the open / close animation; at <code>none</code> also the feedback's countdown bar (the
+            <code>feedback-duration</code> timer keeps its time)</span>
+    </div>
+    <div class="controls">
         <span><code>show-feedback</code>:</span>
         <label><input type="radio" name="pg01-confirmation" value="true" checked> on</label>
         <label><input type="radio" name="pg01-confirmation" value="false"> off</label>
@@ -135,6 +144,9 @@
         bindRadios('pg01-debounce', (v) => palette.setAttribute('search-debounce', v));
         // Direction: `dir` on the element (or any ancestor / <html>) mirrors the palette.
         bindRadios('pg01-dir', (v) => palette.setAttribute('dir', v));
+
+        // Motion (core): decorative animations only — not the feedback timer.
+        bindRadios('pg01-motion', (v) => { palette.motion = v; });
 
         // Confirmation
         bindRadios('pg01-confirmation', (v) => palette.setAttribute('show-feedback', v));
