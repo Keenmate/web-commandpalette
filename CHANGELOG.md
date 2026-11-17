@@ -17,6 +17,8 @@ Internal, no visible change. Needs `@keenmate/web-components-core` `^1.0.0-rc25`
 
 - Typed text through core `onTextInput` (committed text only — IME syllables and Firefox's duplicate
   `input` skipped) and the input keydown returns on `isImeEnter(e)` (also Safari's `keyCode` 229 Enter) (core SPEC §12.30).
+- `el.controller` through core `createControllerFacade` — same members (`open` / `close` / `toggle` / `reset` /
+  `openWith` / `openFavorites` / `openRecent`, read-only `isOpen`, settable `commands` / `contexts`); the object is now frozen (core SPEC §12.34).
 
 ### Changed — active row through core `createActiveDescendant` (core SPEC §12.25, rulebook C-CA-25, 2026-11-17)
 

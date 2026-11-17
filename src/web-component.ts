@@ -17,6 +17,7 @@ import {
   adoptStyles,
   animateOut,
   SHEET_CHROME_CSS,
+  createControllerFacade,
   createCustomStyles,
   createPresentationContext,
   getEnvironment,
@@ -699,32 +700,13 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
 
   /** The public facade (`el.controller`): the imperative methods below, never the engine. */
   protected override createController(): CommandPaletteController {
-    const el = this;
-    const controller = {
-      get isOpen(): boolean {
-        return el.isOpen;
-      },
+    // The target is the element itself (always there): no empty answers needed. Frozen (SPEC §12.34).
+    return createControllerFacade<CommandPaletteController>(() => this, {
+      methods: CONTROLLER_METHODS,
       // State = the same-named property on element and controller (no set*() duplicates).
-      get commands(): Command[] {
-        return el.commands;
-      },
-      set commands(list: Command[]) {
-        el.commands = list;
-      },
-      get contexts(): Context[] {
-        return el.contexts;
-      },
-      set contexts(list: Context[]) {
-        el.contexts = list;
-      },
-    } as CommandPaletteController;
-    for (const name of CONTROLLER_METHODS) {
-      Object.defineProperty(controller, name, {
-        value: (...args: unknown[]) => (el[name] as (...a: unknown[]) => void)(...args),
-        enumerable: true,
-      });
-    }
-    return controller;
+      state: { isOpen: false },
+      writable: ['commands', 'contexts'],
+    });
   }
 
   /** Presentation flags on every event detail and callback ctx (the palette is a popup). */
