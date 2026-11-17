@@ -55,10 +55,10 @@ export async function hints(footer: Locator): Promise<string[]> {
 }
 
 /**
- * The keycap the palette draws for Ctrl/⌘ + `letter`: `⌘E` on Apple platforms, `Ctrl E`
+ * The keycap the palette draws for Ctrl/⌘ + `letter`: `⌘E` on Apple platforms, `Ctrl+E`
  * elsewhere — core's environment OS detection (the Playwright WebKit project reports a Mac UA).
  */
 export async function chordCap(page: Page, letter: string): Promise<string> {
   const isApple = await page.evaluate(() => /macintosh|mac os x|iphone|ipad/i.test(navigator.userAgent));
-  return isApple ? `⌘${letter.toUpperCase()}` : `Ctrl ${letter.toUpperCase()}`;
+  return isApple ? `⌘${letter.toUpperCase()}` : `Ctrl+${letter.toUpperCase()}`;
 }

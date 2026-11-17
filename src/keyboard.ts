@@ -1,10 +1,11 @@
 /**
- * Keyboard handling (IMPLEMENTATION_PLAN §10 keyboard map).
+ * Keyboard handling (IMPLEMENTATION_PLAN §10 keyboard map). Every key combo goes through
+ * core `/actions` (`bindShortcuts`, `matchesShortcut`, `parseShortcut` — SPEC §12.12).
  *
- *  - Global (document): Ctrl/⌘+<openKey> toggles; `g <letter>` leading-key
- *    sequences open a command — modifier-free, inert while typing or while the
- *    palette is open, 1200 ms window. (Chosen over Alt+letter, which types glyphs
- *    on macOS: Option+G = ©.)
+ *  - Global (document): Ctrl/⌘+<openKey> (`Mod+<openKey>`) toggles; sequences (`g <letter>`)
+ *    open a command — plain keys, inert while typing or while the palette is open, core's
+ *    sequence window (1000 ms). (Chosen over Alt+letter, which types glyphs on macOS:
+ *    Option+G = ©.)
  *  - Input: ↑↓ wrap, PgUp/PgDn ±8 clamp, Home/End, ←→ page (search modes, caret at
  *    the edge; mirrored in RTL), Tab select (one wizard step), Shift+Tab step back, Enter select —
  *    and in a replayed run, accept the remaining remembered answers — Esc
@@ -12,110 +13,50 @@
  *    active row. Navigation never awaits a provider.
  */
 import { isImeEnter } from '@keenmate/web-components-core';
+import { bindShortcuts, matchesShortcut, parseShortcut, type ShortcutBinding } from '@keenmate/web-components-core/actions';
 import type { PaletteEngine } from './palette';
 import { DEFAULT_PALETTE_KEYS, type Command, type PaletteKeys } from './types';
 
-export const SEQUENCE_LEADER = 'g';
-export const SEQUENCE_WINDOW_MS = 1200;
+/** `'Mod+<letter>'` — the palette's Ctrl/⌘ chords (open key, star, favorites, recent); '' when off. */
+export const modChord = (key: string | null | undefined): string => (key ? `Mod+${key}` : '');
 
-/** `"g f"` → `"f"`; anything that isn't a `g <letter>` sequence → null. */
-export function sequenceLetter(hotkey: string | null | undefined): string | null {
-  const parts = (hotkey ?? '').trim().toLowerCase().split(/\s+/);
-  return parts.length === 2 && parts[0] === SEQUENCE_LEADER && parts[1].length === 1 ? parts[1] : null;
-}
-
-/** The command whose `shortcut` is the sequence `g <letter>`. Chords (`Ctrl+K`) never match. */
-export function findSequenceCommand(commands: readonly Command[], letter: string): Command | undefined {
-  const key = letter.toLowerCase();
-  return commands.find((c) => sequenceLetter(c.shortcut) === key);
-}
-
-/** Is the (shadow-piercing) event origin a text-entry field? */
-export function isTypingTarget(e: Event): boolean {
-  const t = (e.composedPath?.()[0] ?? e.target) as HTMLElement | null;
-  if (!t || !(t instanceof Element)) return false;
-  const tag = t.tagName;
-  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t as HTMLElement).isContentEditable;
-}
+/** Is `shortcut` a key sequence (`'g d'`)? Only sequences run globally; a chord (`'Ctrl+K'`) is display-only. */
+export const isSequence = (shortcut: string | null | undefined): boolean => parseShortcut(shortcut ?? undefined).length > 1;
 
 export interface GlobalKeysHost {
   isOpen(): boolean;
   toggle(): void;
   openKey(): string;
   commands(): readonly Command[];
-  /** Run a command bound to a `g <letter>` sequence; `e` is the keydown. */
+  /** Run a command bound to a sequence; `e` is the keydown. */
   runCommand(command: Command, e: KeyboardEvent): void;
-  /** Built-in sequences (e.g. `g f` → favorites): letter → action. Commands win on a clash. */
+  /** Built-in sequences (e.g. `'g f'` → favorites): shortcut → action. Commands win on a clash. */
   sequences?(): ReadonlyMap<string, () => void>;
 }
 
 /**
- * The document-level listener. One palette per page owns it (the element only
- * installs it for the first connected instance).
+ * Bind the document-level keys; returns the unbind. One palette per page owns them (the
+ * element binds them only for the first connected instance). The sequences are bound first, so
+ * Ctrl/⌘+<openKey> also cancels a started sequence; the open key is its own binding so it works
+ * even right after a sequence's first key.
  */
-export class GlobalKeys {
-  #host: GlobalKeysHost;
-  #armed = false;
-  #timer: ReturnType<typeof setTimeout> | null = null;
-  #keydownHandler = (e: KeyboardEvent): void => this.handleKeydown(e);
-
-  constructor(host: GlobalKeysHost) {
-    this.#host = host;
-  }
-
-  install(): void {
-    document.addEventListener('keydown', this.#keydownHandler);
-  }
-
-  uninstall(): void {
-    document.removeEventListener('keydown', this.#keydownHandler);
-    this.#disarm();
-  }
-
-  handleKeydown(e: KeyboardEvent): void {
-    if (e.defaultPrevented) return;
-    const openKey = this.#host.openKey();
-    if (openKey && (e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === openKey.toLowerCase()) {
-      e.preventDefault();
-      this.#disarm();
-      this.#host.toggle();
-      return;
-    }
-    // Sequences are modifier-free and inert while typing or with the palette open.
-    if (e.ctrlKey || e.metaKey || e.altKey || this.#host.isOpen() || isTypingTarget(e)) {
-      this.#disarm();
-      return;
-    }
-    if (!this.#armed) {
-      if (e.key.toLowerCase() === SEQUENCE_LEADER && this.#hasSequences()) {
-        this.#armed = true;
-        this.#timer = setTimeout(() => this.#disarm(), SEQUENCE_WINDOW_MS);
-      }
-      return;
-    }
-    this.#disarm();
-    const command = findSequenceCommand(this.#host.commands(), e.key);
-    if (command) {
-      e.preventDefault();
-      this.#host.runCommand(command, e);
-      return;
-    }
-    const builtin = this.#host.sequences?.().get(e.key.toLowerCase());
-    if (builtin) {
-      e.preventDefault();
-      builtin();
-    }
-  }
-
-  #hasSequences(): boolean {
-    return !!this.#host.sequences?.().size || this.#host.commands().some((c) => sequenceLetter(c.shortcut) !== null);
-  }
-
-  #disarm(): void {
-    this.#armed = false;
-    if (this.#timer) clearTimeout(this.#timer);
-    this.#timer = null;
-  }
+export function bindGlobalKeys(host: GlobalKeysHost): () => void {
+  const isClosed = (): boolean => !host.isOpen();
+  const sequences = (): ShortcutBinding[] => [
+    // Commands first: the first full match wins, so a command beats a built-in on the same keys.
+    ...host.commands()
+      .filter((c) => isSequence(c.shortcut))
+      .map((c): ShortcutBinding => ({ shortcut: c.shortcut, run: (e) => host.runCommand(c, e), isEnabled: isClosed })),
+    ...Array.from(host.sequences?.() ?? [], ([shortcut, run]): ShortcutBinding => ({ shortcut, run: () => run(), isEnabled: isClosed })),
+  ];
+  const unbindSequences = bindShortcuts(document, sequences);
+  const unbindOpen = bindShortcuts(document, () => [
+    { shortcut: modChord(host.openKey()), run: () => host.toggle() },
+  ]);
+  return () => {
+    unbindSequences();
+    unbindOpen();
+  };
 }
 
 /** Keydown inside the palette input. Returns true when handled. */
@@ -128,14 +69,11 @@ export function handleInputKeydown(
   isRTL = false,
 ): boolean {
   if (isImeEnter(e)) return false;
-  // Ctrl/⌘ + letter: palette shortcuts (they shadow the browser's find/reload/bookmark while open).
-  if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.length === 1) {
-    const k = e.key.toLowerCase();
-    const is = (key: string): boolean => !!key && k === key.toLowerCase();
-    if (is(keys.favorite)) { m.toggleFavorite(); e.preventDefault(); return true; }
-    if (is(keys.favorites)) { m.showUsage('favorites'); e.preventDefault(); return true; }
-    if (is(keys.recent)) { m.showUsage('recent'); e.preventDefault(); return true; }
-  }
+  // Ctrl/⌘ + key (`Mod+<key>`): palette shortcuts (they shadow the browser's find/reload/bookmark while open).
+  const is = (key: string): boolean => matchesShortcut(e, modChord(key));
+  if (is(keys.favorite)) { m.toggleFavorite(); e.preventDefault(); return true; }
+  if (is(keys.favorites)) { m.showUsage('favorites'); e.preventDefault(); return true; }
+  if (is(keys.recent)) { m.showUsage('recent'); e.preventDefault(); return true; }
   const start = input.selectionStart ?? 0;
   const end = input.selectionEnd ?? 0;
   const handled = (): true => {

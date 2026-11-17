@@ -25,13 +25,18 @@ What the user types decides the mode:
 | Keys | Where | Does |
 |---|---|---|
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd> | anywhere | open / close (`open-key`) |
-| <kbd>g</kbd> then a letter | anywhere, not typing | run the command with that `shortcut`; `g f` opens favorites |
+| <kbd>g</kbd> then a letter | anywhere, not typing, palette closed | run the command with that sequence `shortcut`; `g f` opens favorites |
 | <kbd>↑</kbd><kbd>↓</kbd> <kbd>PgUp</kbd><kbd>PgDn</kbd> <kbd>Home</kbd><kbd>End</kbd> | list | move — pure client-side, never waits on a provider |
 | <kbd>←</kbd><kbd>→</kbd> | search, caret at the edge | previous / next page (mirrored in RTL) |
 | <kbd>Enter</kbd> | list | select; in a replayed run, also accept the remaining remembered answers |
 | <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> | wizard | accept this step / step back |
 | <kbd>Esc</kbd>, <kbd>⌫</kbd> at the locked prefix | wizard, scoped search, full lists | step back; <kbd>Esc</kbd> elsewhere closes |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>D</kbd> / <kbd>F</kbd> / <kbd>R</kbd> | palette open | star the active row / all favorites / all recent |
+
+Every key combo goes through core `/actions` (`bindShortcuts` / `matchesShortcut`): a `shortcut` uses core's
+syntax — a chord `'Ctrl+K'` / `'Mod+K'` (⌘ on Apple, Ctrl elsewhere) or a sequence `'g d'` (each next key within
+core's 1000 ms window). Ctrl/⌘ above is `Mod`: ⌘ on a Mac, Ctrl elsewhere, other modifiers must be up. Keycaps show core's
+platform format (`shortcutKeycaps` / `formatShortcut`): `G` `D`, `Ctrl+D`, Apple `⌘D`.
 
 ## Callback contexts
 
@@ -80,7 +85,7 @@ Objects and functions are **properties only** — set them from JS (or a framewo
 | `customStyles` / `getCustomStylesCallback` | `string \| null` / `(ctx) => string \| null \| undefined` | Extra CSS for this palette's shadow root (attribute `custom-styles`), after the component CSS and after the page-wide `window.components['web-command-palette'].customStyles` / `.getCustomStylesCallback`, so the instance wins. The callback wins over `customStyles`. See [Theming → Custom CSS](theming.md#custom-css-shadow-root). |
 | `isFeedbackShown` | `boolean` | Show the one-line feedback after a command ran. Default `true` (attribute `show-feedback`). |
 | `feedbackDuration` | `number` | How long it stays (ms). Default `1500`; `0` = off. |
-| `favoritesHotkey` / `recentHotkey` | `string` | `g <letter>` sequence (palette closed) that opens on that list. Defaults `'g f'` / off. |
+| `favoritesHotkey` / `recentHotkey` | `string` | Key sequence (`'g f'`, palette closed) that opens on that list. Defaults `'g f'` / off. |
 | `onOpen` / `onClose` / `onResultSelect` / `onAction` / `onReady` | `(detail) => void` | Event twins — see [Events](#events). |
 | `controller` *(read-only)* | `CommandPaletteController` | The public facade. |
 | `isOpen` *(read-only)* | `boolean` | |
@@ -182,7 +187,7 @@ interface Command {
   trigger: string;           // "/deploy" — the slash token that runs it
   text: string;
   aliases?: string[];        // ["/d"]
-  shortcut?: string;         // "g d" (runs from anywhere while closed) — a chord like "Ctrl+K" is display-only
+  shortcut?: string;         // "g d" — a sequence runs from anywhere while closed; a chord like "Ctrl+K" is display-only
   description?: string;      // the row's second line
   icon?: string;             // see Icons
   steps?: Step[];            // absent/empty → fires `action` at once
@@ -291,7 +296,7 @@ palette.searchCallback = async ({ term }) => [
 
 On by default. The home screen starts with **Favorites** (starred) and **Recent** (ranked by
 frequency × recency), then Commands and Search. The two remembered sections stay compact: at most
-`max-favorite-count` / `max-recent-count` one-line rows (default 3 each), with a “+N · Ctrl F” control at
+`max-favorite-count` / `max-recent-count` one-line rows (default 3 each), with a “+N · Ctrl+F” control at
 the heading's end.
 
 - **Full lists**: <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>F</kbd> shows every favorite,

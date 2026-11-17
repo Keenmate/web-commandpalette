@@ -22,7 +22,7 @@ test('home screen lists commands and contexts with keycaps', async ({ page }) =>
   await open(page);
   await expect(p.titles).toHaveText(['Deploy to Environment', 'Go to Page', 'Reload Data', 'Products', 'Users']);
   await expect(p.host.locator('.cp__home-heading')).toHaveText(['Commands', 'Search']);
-  await expect(p.items.first().locator('.cp__key')).toHaveText(['g', 'd']);
+  await expect(p.items.first().locator('.cp__key')).toHaveText(['G', 'D']);
 });
 
 test('Esc on the home screen and a backdrop click both close; focus returns to the opener', async ({ page }) => {

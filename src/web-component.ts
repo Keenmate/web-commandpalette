@@ -51,7 +51,7 @@ import { runAction } from '@keenmate/web-components-core/actions';
 import { createLabels } from '@keenmate/web-components-core/locale';
 import { PaletteEngine, type Effect, type EffectOutcome, type PaletteEngineHost, type TokenView } from './palette';
 import { Renderer, chordKeycap, confirmationBodyHtml, createShell, fillConfirmation, type Shell } from './render';
-import { GlobalKeys, handleInputKeydown, sequenceLetter } from './keyboard';
+import { bindGlobalKeys, handleInputKeydown, isSequence, type GlobalKeysHost } from './keyboard';
 import { UsageStore, stateStorePersistence, type UsagePersistence } from './usage';
 import {
   DEFAULT_LABELS,
@@ -230,7 +230,9 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   #shell: Shell;
   #renderer: Renderer;
   #engine: PaletteEngine;
-  #globalKeys: GlobalKeys;
+  #globalKeys: GlobalKeysHost;
+  /** Unbinds the document-level keys while this palette owns them (core `bindShortcuts`). */
+  #unbindGlobalKeys: (() => void) | null = null;
   #usage: UsageStore | null = null;
   #isOpen = false;
   #isFullscreen = false;
@@ -261,29 +263,29 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.#shadow.appendChild(this.#shell.root);
     this.#renderer = new Renderer(this.#shell, this);
     this.#engine = new PaletteEngine(this.#engineHost());
-    this.#globalKeys = new GlobalKeys({
+    this.#globalKeys = {
       isOpen: () => this.#isOpen,
       toggle: () => this.toggle(),
       openKey: () => this.config.openKey as string ?? 'k',
-      // Hidden / disabled commands don't claim their `g <letter>` sequence.
+      // Hidden / disabled commands don't claim their sequence.
       commands: () => this.#commands().filter((c) => this.#engine.isCommandEnabled(c)),
       runCommand: (command, e) => {
         this.open();
         this.#withTrigger({ event: e }, () => this.#engine.enterCommand(command));
       },
       sequences: () => this.#sequences(),
-    });
+    };
     this.#wireDom();
   }
 
-  /** Built-in `g <letter>` sequences: favorites / recent lists (only while favorites are on). */
+  /** Built-in sequences (`'g f'`): favorites / recent lists (only while favorites are on). */
   #sequences(): ReadonlyMap<string, () => void> {
     const map = new Map<string, () => void>();
     if (!this.#usage) return map;
-    const fav = sequenceLetter(this.config.favoritesHotkey as string | null);
-    const recent = sequenceLetter(this.config.recentHotkey as string | null);
-    if (fav) map.set(fav, () => this.openFavorites());
-    if (recent && !map.has(recent)) map.set(recent, () => this.openRecent());
+    const fav = this.config.favoritesHotkey as string | null;
+    const recent = this.config.recentHotkey as string | null;
+    if (fav && isSequence(fav)) map.set(fav, () => this.openFavorites());
+    if (recent && isSequence(recent) && !map.has(recent)) map.set(recent, () => this.openRecent());
     return map;
   }
 
@@ -657,7 +659,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     connected.add(this);
     if (!keyOwner) {
       keyOwner = this;
-      this.#globalKeys.install();
+      this.#unbindGlobalKeys = bindGlobalKeys(this.#globalKeys);
     } else if (keyOwner !== this) {
       this.log.INIT.warn('more than one <web-command-palette> is connected; only the first owns the global hotkeys');
     }
@@ -668,13 +670,14 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.#finishClosingNow();
     connected.delete(this);
     if (keyOwner === this) {
-      this.#globalKeys.uninstall();
+      this.#unbindGlobalKeys?.();
+      this.#unbindGlobalKeys = null;
       keyOwner = null;
       // Hand the global keys to another connected palette, if any.
       const next = connected.values().next().value as CommandPaletteElement | undefined;
       if (next) {
         keyOwner = next;
-        next.#globalKeys.install();
+        next.#unbindGlobalKeys = bindGlobalKeys(next.#globalKeys);
       }
     }
   }

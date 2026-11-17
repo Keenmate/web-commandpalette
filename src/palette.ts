@@ -7,7 +7,7 @@
  * Behavioural sources of truth: pure-admin `command-palette.js` (routing, wizard,
  * keyboard) and keen `live.ex` (step-back, pagination, global prepend).
  */
-import { resolveActionItem, type ResolvedActionItem } from '@keenmate/web-components-core/actions';
+import { resolveActionItem, shortcutKeycaps, type ResolvedActionItem } from '@keenmate/web-components-core/actions';
 import { createRegexCompiler } from '@keenmate/web-components-core/search';
 import {
   DEFAULT_SEARCH_RULES,
@@ -146,8 +146,14 @@ export type TokenView =
 export type NavDirection = 'up' | 'down' | 'pageUp' | 'pageDown' | 'home' | 'end';
 
 
-/** Split a hotkey into keycaps: `"g d"` → `[g, d]`, `"Ctrl+K"` → `[Ctrl, K]`. */
-export const hotkeyKeys = (hotkey: string): string[] => hotkey.split(/[+\s]+/).filter(Boolean);
+/**
+ * A shortcut's keycaps, one per cap — core `shortcutKeycaps` in the platform format: `"g d"` → `[G, D]`,
+ * `"Mod+K"` → `[Ctrl, K]` / Apple `[⌘, K]`. Free text that isn't a shortcut shows as one cap.
+ */
+export const hotkeyKeys = (hotkey: string): string[] => {
+  const caps = shortcutKeycaps(hotkey).flat();
+  return caps.length ? caps : [hotkey];
+};
 
 /** The resolved action-item fields a command row shows. */
 function commandState(r: ResolvedActionItem): Pick<ViewItem, 'title' | 'icon' | 'tooltip' | 'cssClass' | 'isDisabled' | 'isDanger'> {
@@ -686,7 +692,7 @@ export class PaletteEngine {
     this.emptyLabel = all.length
       ? { key: 'noResults' }
       : view === 'favorites'
-        ? { key: 'noFavorites', params: { key: this.#host.starKey?.() ?? 'Ctrl D' } }
+        ? { key: 'noFavorites', params: { key: this.#host.starKey?.() ?? 'Ctrl+D' } }
         : { key: 'noRecent' };
     this.#setItems(q ? all.filter((i) => matchesAny([i.title, i.meta], this.#query(q))) : all);
   }

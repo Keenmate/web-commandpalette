@@ -7,11 +7,13 @@
  * `createActiveDescendant` (ARIA only — the keys stay the palette's) points
  * `aria-activedescendant` at it and scrolls it into view, so keyboard navigation is pure DOM work.
  */
-import { escapeHtml, getEnvironment, renderLoader } from '@keenmate/web-components-core';
+import { escapeHtml, renderLoader } from '@keenmate/web-components-core';
+import { formatShortcut } from '@keenmate/web-components-core/actions';
 import { createActiveDescendant, type ActiveDescendant } from '@keenmate/web-components-core/a11y';
 import { findHighlightRanges, wrapRanges } from '@keenmate/web-components-core/search';
 import { NO_SEARCH_QUERY, type SearchQuery } from './helpers/filter';
 import { renderIcon } from './helpers/icons';
+import { modChord } from './keyboard';
 import type { HomeSection, PaletteEngine, TokenView, UsageView, ViewItem } from './palette';
 import { DEFAULT_PALETTE_KEYS, type CommandPaletteLabels, type PaletteKeys, type PaletteLabels } from './types';
 
@@ -93,12 +95,8 @@ function keycaps(keys: string[] | undefined): string {
     .join(' ')}</div>`;
 }
 
-/** Apple keyboard (⌘) — core's environment detection (`os` is `macos` / `ios`). */
-const isMac = (): boolean => getEnvironment().isApple;
-
-/** Keycap text for a Ctrl/⌘ + letter shortcut: `Ctrl D` / `⌘D`; '' when the shortcut is off. */
-export const chordKeycap = (letter: string): string =>
-  !letter ? '' : isMac() ? `⌘${letter.toUpperCase()}` : `Ctrl ${letter.toUpperCase()}`;
+/** Keycap text for a Ctrl/⌘ + key shortcut — core `formatShortcut('Mod+<key>')`: `Ctrl+D` / Apple `⌘D`; '' when off. */
+export const chordKeycap = (key: string): string => formatShortcut(modChord(key));
 
 /** What the markup helpers need besides the engine. */
 export interface RenderContext {
@@ -156,7 +154,7 @@ const labelHeading = (labels: PaletteLabels, key: keyof CommandPaletteLabels & s
   html: labels.html(key),
 });
 
-/** A heading + rows. `more` = an optional control at the heading's end (e.g. "+2 · Ctrl F"). */
+/** A heading + rows. `more` = an optional control at the heading's end (e.g. "+2 · Ctrl+F"). */
 function sectionHtml(heading: Heading, rows: string, more = ''): string {
   return (
     `<div class="cp__home-section" role="group"${heading.text ? ` aria-label="${escapeHtml(heading.text)}"` : ''}>` +
@@ -167,7 +165,7 @@ function sectionHtml(heading: Heading, rows: string, more = ''): string {
   );
 }
 
-/** "+2 · Ctrl F" on a capped home section: click/tap (or the chord) opens the full list. */
+/** "+2 · Ctrl+F" on a capped home section: click/tap (or the chord) opens the full list. */
 function moreHtml(view: UsageView, hidden: number, heading: string, ctx: RenderContext): string {
   const cap = chordKeycap(view === 'favorites' ? ctx.keys.favorites : ctx.keys.recent);
   const count = hidden > 0 ? ctx.labels.html('showAll', { count: hidden }) : '';

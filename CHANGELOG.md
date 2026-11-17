@@ -11,6 +11,23 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Changed — shortcuts through core `/actions` (core SPEC §12.12, 2026-11-17)
+
+- **Key handling is core's:** the global keys (Ctrl/⌘+`open-key`, the `g <letter>` sequences of commands and
+  `favorites-hotkey` / `recent-hotkey`) bind through core `bindShortcuts`; the in-palette Ctrl/⌘+D / F / R
+  (`favorite-key` / `favorites-key` / `recent-key`) match with `matchesShortcut('Mod+<key>')`; `isTypingTarget`
+  is core's. The one-owner-per-page guard stays (core binds, the palette decides who owns the page keys).
+  The own `GlobalKeys` class, `sequenceLetter`, `findSequenceCommand`, `isTypingTarget` and the
+  `SEQUENCE_LEADER` / `SEQUENCE_WINDOW_MS` exports of `keyboard.ts` are gone.
+- **BREAKING (visible): keycaps use core's platform format** (`formatShortcut` / `shortcutKeycaps`): the
+  Ctrl/⌘ chords read `Ctrl+D` / `Ctrl+F` (was `Ctrl D` / `Ctrl F`; Apple `⌘D` unchanged), a command's
+  sequence keycaps read `G` `D` (was `g` `d`), and an explicit `Ctrl+K` shortcut shows `⌃` `K` on a Mac.
+- **Sequence window 1200 ms → 1000 ms** (core's default): the second key of `g d` must follow within 1 s.
+- **Ctrl/⌘ is exact (`Mod`):** ⌘ on Apple, Ctrl elsewhere; an extra Shift no longer counts
+  (Ctrl+Shift+K does not toggle). The first key of a sequence (`g`) now has its default prevented while a
+  sequence is possible. Any key sequence works for a command `shortcut` / `favorites-hotkey` /
+  `recent-hotkey`, not only `g <letter>`; a chord there stays display-only / ignored.
+
 ### Changed — labels through core `/locale`: page-wide labels, locale-formatted counts (core SPEC §12.24, 2026-11-17)
 
 - **Page-wide labels:** every UI string resolves through core `createLabels` — the instance `labels` → the

@@ -64,7 +64,7 @@
   letter-spacing: 0.05em;
 }
 
-/* Capped sections: heading text + "+N · Ctrl F" at the end. */
+/* Capped sections: heading text + "+N · Ctrl+F" at the end. */
 .cp__heading {
   display: flex;
   align-items: center;

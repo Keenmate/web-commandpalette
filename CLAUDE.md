@@ -110,8 +110,8 @@ configure** — `commands` + `searchCallback` must be a complete setup.
 - `src/render.ts` — builds the shadow DOM once (`createShell`) and patches it (`Renderer`). Results
   are rebuilt only when `listVersion`/list state changes; moving the active row only toggles a
   class. Markup must match pure-admin-core's `snippets/command-palette.html`.
-- `src/keyboard.ts` — the document-level `GlobalKeys` (Ctrl/⌘+K, `g <letter>`) and the input
-  keydown map.
+- `src/keyboard.ts` — `bindGlobalKeys()` (Ctrl/⌘+K, `g <letter>` sequences over core `/actions`
+  `bindShortcuts`) and the input keydown map (`matchesShortcut('Mod+<key>')`).
 - `src/web-component.ts` — thin `BlissElement` subclass: the `static inputs` / `static events`
   tables (CEM metadata is generated from them), the `PaletteEngineHost` adapter (incl. `context()` = `withContext`, so engine-built ctxs carry
   `controller` / `element` / presentation), `createController()` (facade from a method list), overlay/scroll-lock,
@@ -183,7 +183,7 @@ See plan §10. These are the bugs that motivated the project.
 The devkit's example-site chapter search (`../web-components/src/examples/spotlight.js`,
 `chapter-search.js`, `css/spotlight.css`) mirrors this component without depending on it: the
 shell markup and classes (as `kmwc-spotlight__*`), `matchesAny()` / `highlight()` / `escapeHtml()`,
-`isTypingTarget()`, `GlobalKeys.handle()`, the input keyboard map, `move()` / `PAGE_STEP`,
+`bindGlobalKeys()` (core `bindShortcuts` / `isTypingTarget` here; the mirror keeps its own), the input keyboard map, `move()` / `PAGE_STEP`,
 `open()` / `close()`, and the dialog / search / results / footer CSS. When you fix a bug in one of
 those, port it there too (`../web-components/scripts/spotlight-mirror.json` lists every pair; its
 `npm run check:spotlight-mirror` reports what changed here since the last alignment).

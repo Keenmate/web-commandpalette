@@ -45,7 +45,7 @@ test('max-favorite-count="1": one row, the heading says "+1"', async ({ page }) 
 test('favorites default limit (3) shows both, with no "+N"', async ({ page }) => {
   await starTwo(page);
   await expect(section(page, 'Favorites').locator('.cp__item')).toHaveCount(2);
-  await expect(section(page, 'Favorites').locator('.cp__more')).not.toContainText('+');
+  await expect(section(page, 'Favorites').locator('.cp__more')).not.toContainText(/\+\d/); // the keycap 'Ctrl+F' has a '+'
 });
 
 test('max-favorite-count="0" hides the section; Ctrl+F still lists them', async ({ page }) => {

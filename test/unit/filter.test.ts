@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { filterOptions, findByTrigger, globalMatches, matchesAny, prepareQuery, type SearchRules } from '../../src/helpers/filter';
-import { findSequenceCommand } from '../../src/keyboard';
+import { bindGlobalKeys, isSequence, modChord } from '../../src/keyboard';
 import { highlight } from '../../src/render';
 import { renderIcon } from '../../src/helpers/icons';
 import { COMMANDS, CONTEXTS } from './helpers';
@@ -44,10 +44,38 @@ describe('filter', () => {
   });
 });
 
-describe('keyboard helpers', () => {
-  it('resolves "g <letter>" sequences only (never chords)', () => {
-    expect(findSequenceCommand(COMMANDS, 'd')?.id).toBe('deploy');
-    expect(findSequenceCommand([{ id: 'k', trigger: '/k', text: 'K', shortcut: 'Ctrl+K' }], 'k')).toBeUndefined();
+describe('keyboard helpers (core /actions shortcuts)', () => {
+  it('only sequences run globally (never chords); Mod chords for the palette keys', () => {
+    expect(isSequence('g d')).toBe(true);
+    expect(isSequence('Ctrl+K')).toBe(false);
+    expect(isSequence('')).toBe(false);
+    expect(modChord('d')).toBe('Mod+d');
+    expect(modChord('')).toBe('');
+  });
+
+  it('bindGlobalKeys: a command sequence runs while closed, a chord shortcut does not, Mod+<openKey> toggles', () => {
+    const ran: string[] = [];
+    let isOpen = false;
+    const press = (key: string, init: KeyboardEventInit = {}): void => {
+      document.body.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init }));
+    };
+    const unbind = bindGlobalKeys({
+      isOpen: () => isOpen,
+      toggle: () => ran.push('toggle'),
+      openKey: () => 'k',
+      commands: () => [...COMMANDS, { id: 'chord', trigger: '/c', text: 'C', shortcut: 'Ctrl+J' }],
+      runCommand: (c) => ran.push(c.id),
+      sequences: () => new Map([['g f', () => ran.push('favorites')]]),
+    });
+    press('g'); press('d');
+    press('g'); press('f');
+    press('j', { ctrlKey: true });
+    press('k', { ctrlKey: true });
+    isOpen = true;
+    press('g'); press('d');
+    unbind();
+    press('k', { ctrlKey: true });
+    expect(ran).toEqual(['deploy', 'favorites', 'toggle']);
   });
 });
 

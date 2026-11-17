@@ -17,7 +17,7 @@ describe('idle home', () => {
 
   it('shows hotkey keycaps for commands and the shortcut for contexts', () => {
     const { m } = harness();
-    expect(m.items[0].keys).toEqual(['g', 'g']);
+    expect(m.items[0].keys).toEqual(['G', 'G']);
     expect(m.items[2].keys).toEqual(['/signout']);
     expect(m.items[3].keys).toEqual([':products']);
   });

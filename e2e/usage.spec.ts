@@ -2,7 +2,7 @@ import { expect, test, events, load, open, palette } from './fixtures';
 
 test.beforeEach(async ({ page }) => load(page, 'usage'));
 
-/** Home section headings (the label only, not the "+N · Ctrl F" button). */
+/** Home section headings (the label only, not the "+N · Ctrl+F" button). */
 const headings = (page: import('@playwright/test').Page) =>
   palette(page).host.locator('.cp__home-heading > span:first-child').allTextContents();
 
