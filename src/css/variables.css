@@ -86,7 +86,7 @@
   --cp-border-radius-md: calc(var(--base-border-radius-md, 0.6) * var(--cp-rem));
 
   /* Motion: the contract's speeds only. Off = `0s` (here, or --base-duration-* page-wide);
-     prefers-reduced-motion sets them to 0s (animations.css). */
+     `motion="none"`, `data-motion="none"` and prefers-reduced-motion zero them (core MOTION_CSS). */
   --cp-transition-fast: var(--base-duration-fast, 0.1s);
   --cp-transition-normal: var(--base-duration-normal, 0.15s);
   --cp-transition-medium: var(--base-duration-medium, 0.25s);

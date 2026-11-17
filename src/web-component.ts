@@ -21,6 +21,7 @@ import {
   createCustomStyles,
   createPresentationContext,
   getEnvironment,
+  isMotionOff,
   lockBodyScroll,
   onTextInput,
   observeKeyboardInset,
@@ -452,7 +453,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     const { confirm, live, root } = this.#shell;
     // The countdown bar shows the timer — decorative, so it goes when motion is off (SPEC §12.16);
     // the timer itself keeps `feedback-duration`.
-    const body = fillConfirmation(confirm, this.#labels.done, duration, !this.#isMotionOff());
+    const body = fillConfirmation(confirm, this.#labels.done, duration, !isMotionOff(this));
     if (custom instanceof HTMLElement) body.appendChild(custom);
     else if (typeof custom === 'string') body.innerHTML = custom;
     else {
@@ -480,16 +481,6 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.log.UI.debug('feedback', ctx);
     this.#feedbackTimer = setTimeout(() => this.close(), duration);
     return true;
-  }
-
-  /**
-   * Motion off where the palette sits: the RESOLVED speed is `0s` — `motion="none"` on the
-   * element, a `data-motion="none"` section or page (core MOTION_CSS, closest wins by
-   * inheritance), or OS reduced motion all zero `--cp-transition-normal`.
-   */
-  #isMotionOff(): boolean {
-    if (typeof getComputedStyle !== 'function') return false;
-    return parseFloat(getComputedStyle(this).getPropertyValue('--cp-transition-normal')) === 0;
   }
 
   /** Stop the feedback timer (the line stays drawn until #hideFeedback). */

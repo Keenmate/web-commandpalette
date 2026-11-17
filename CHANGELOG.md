@@ -19,6 +19,8 @@ Internal, no visible change. Needs `@keenmate/web-components-core` `^1.0.0-rc25`
   `input` skipped) and the input keydown returns on `isImeEnter(e)` (also Safari's `keyCode` 229 Enter) (core SPEC §12.30).
 - `el.controller` through core `createControllerFacade` — same members (`open` / `close` / `toggle` / `reset` /
   `openWith` / `openFavorites` / `openRecent`, read-only `isOpen`, settable `commands` / `contexts`); the object is now frozen (core SPEC §12.34).
+- The countdown bar's motion check is core `isMotionOff(this)`; the own `@media (prefers-reduced-motion)` block is gone —
+  core `MOTION_CSS` zeroes `--base-duration-*` (and so `--cp-transition-*`) under OS reduced motion (core SPEC §12.16).
 
 ### Changed — active row through core `createActiveDescendant` (core SPEC §12.25, rulebook C-CA-25, 2026-11-17)
 

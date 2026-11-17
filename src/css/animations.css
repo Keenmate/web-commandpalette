@@ -55,21 +55,3 @@
   background: currentColor;
   animation: cp-loader-spin var(--cp-loader-duration) linear infinite;
 }
-
-/* Reduced motion: every transition / animation timed by --cp-transition-* stops (the
-   contract does the same for --base-duration-*; this holds without it). The feedback
-   countdown bar is timed from `feedback-duration`, so it is hidden instead (the element
-   leaves it out whenever the resolved speed is 0s — this rule covers it in CSS too).
-   The loader keeps turning, slower (--base-loader-duration): it is the only sign that a
-   search is running. */
-@media (prefers-reduced-motion: reduce) {
-  :host {
-    --cp-transition-fast: 0s;
-    --cp-transition-normal: 0s;
-    --cp-transition-medium: 0s;
-  }
-
-  .cp__confirm-progress {
-    display: none;
-  }
-}
