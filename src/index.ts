@@ -32,6 +32,8 @@ export type {
   StepOptionsContext,
   SearchContext,
   SearchCallback,
+  SearchBehavior,
+  SearchMatch,
   StepOptionsCallback,
   UsageEntry,
   PaletteUsageState,

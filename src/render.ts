@@ -9,6 +9,8 @@
  */
 import { escapeHtml, getEnvironment, renderLoader } from '@keenmate/web-components-core';
 import { createActiveDescendant, type ActiveDescendant } from '@keenmate/web-components-core/a11y';
+import { findHighlightRanges, wrapRanges } from '@keenmate/web-components-core/search';
+import { NO_SEARCH_QUERY, type SearchQuery } from './helpers/filter';
 import { renderIcon } from './helpers/icons';
 import type { HomeSection, PaletteEngine, TokenView, UsageView, ViewItem } from './palette';
 import { DEFAULT_PALETTE_KEYS, type Labels, type PaletteKeys } from './types';
@@ -73,19 +75,15 @@ export function createShell(): Shell {
   };
 }
 
-/** Escape `text`, wrapping case-insensitive occurrences of `needle` in `<mark>`. */
-export function highlight(text: string, needle: string): string {
-  const q = needle.trim();
-  if (!q) return escapeHtml(text);
-  // Matched in the original text: toLowerCase() may change its length ('İ' → 'i̇'), shifting every index.
-  const pattern = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'giu');
-  let out = '';
-  let i = 0;
-  for (const match of text.matchAll(pattern)) {
-    out += escapeHtml(text.slice(i, match.index)) + '<mark>' + escapeHtml(match[0]) + '</mark>';
-    i = match.index + match[0].length;
-  }
-  return out + escapeHtml(text.slice(i));
+/**
+ * Escape `text`, wrapping the matches of `query` in `<mark>` — core's highlight mapping
+ * (SPEC §12.11), under the same `search-behavior` / `search-match` rules as the filter
+ * (`ces` marks `Čes` in `Český`). Titles are plain text, so every slice is HTML-escaped.
+ */
+export function highlight(text: string, query: SearchQuery): string {
+  if (query.term.kind === 'none' || !text) return escapeHtml(text);
+  const { text: nfc, ranges } = findHighlightRanges(text, query.term, query);
+  return wrapRanges(nfc, ranges);
 }
 
 function keycaps(keys: string[] | undefined): string {
@@ -123,7 +121,7 @@ function starHtml(item: ViewItem, index: number, ctx: RenderContext): string {
   );
 }
 
-function itemHtml(item: ViewItem, index: number, active: boolean, needle: string, ctx: RenderContext): string {
+function itemHtml(item: ViewItem, index: number, active: boolean, query: SearchQuery, ctx: RenderContext): string {
   const icon = renderIcon(item.icon);
   const badge = item.badge
     ? `<span class="cp__badge${item.badgeVariant ? ` cp__badge--${escapeHtml(item.badgeVariant)}` : ''}"><bdi>${escapeHtml(item.badge)}</bdi></span>`
@@ -136,7 +134,7 @@ function itemHtml(item: ViewItem, index: number, active: boolean, needle: string
     `${item.isDisabled ? ' aria-disabled="true"' : ''}${item.tooltip ? ` title="${escapeHtml(item.tooltip)}"` : ''}>` +
     (icon ? `<div class="cp__item-icon" aria-hidden="true">${icon}</div>` : '') +
     `<div class="cp__item-content">` +
-    `<div class="cp__item-title"><bdi>${highlight(item.title ?? '', needle)}</bdi></div>` +
+    `<div class="cp__item-title"><bdi>${highlight(item.title ?? '', query)}</bdi></div>` +
     (item.meta ? `<div class="cp__item-meta"><bdi>${escapeHtml(item.meta)}</bdi></div>` : '') +
     `</div>` +
     badge +
@@ -180,7 +178,7 @@ function homeHtml(m: PaletteEngine, ctx: RenderContext): string {
   };
   const section = (key: HomeSection): string => {
     const rows = m.items
-      .map((item, index) => (item.section === key ? itemHtml(item, index, index === m.activeIndex, '', ctx) : ''))
+      .map((item, index) => (item.section === key ? itemHtml(item, index, index === m.activeIndex, NO_SEARCH_QUERY, ctx) : ''))
       .join('');
     if (!rows) return '';
     const more = key === 'favorites' || key === 'recent' ? moreHtml(key, m.homeMore[key], headings[key], ctx) : '';
@@ -203,7 +201,7 @@ function rowsHtml(m: PaletteEngine, ctx: RenderContext): string {
       flush();
       group = item.group;
     }
-    rows += itemHtml(item, i, i === m.activeIndex, m.highlight, ctx);
+    rows += itemHtml(item, i, i === m.activeIndex, m.highlightQuery, ctx);
   });
   flush();
   return out;

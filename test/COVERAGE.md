@@ -65,6 +65,8 @@ Known bugs are in `test/NOTES.md`.
 | Global search: local matches with no `searchCallback` | ✓ | `search.spec.ts` | `search.html` |
 | Global search: local first, then provider hits (debounced) | ✓ | `search.spec.ts` | `search.html` |
 | List modes filter client-side | ✓ | `search.spec.ts` | `search.html` |
+| Core search: accent-insensitive filter (`ces` → `Český`) + core highlight; `search-behavior` / `search-match` defaults + live re-filter | ✓ | `search.spec.ts` | `search.html` |
+| `searchCallback` ctx = core `SearchCallbackContext` (`term`, `signal`, `entries`) + `scope` + `controller` / `element` | ✓ | `search.spec.ts` | `search.html` |
 | Race: superseded request aborted, late result dropped; close aborts | ✓ | `search-async.spec.ts` | `search-async.html` |
 | Rejecting / throwing provider → usable palette (CP-2: no error UI) | ✓ | `search-async.spec.ts` | `search-async.html` |
 | Loader / `results--loading` while pending | ✓ | `search-async.spec.ts` | `search-async.html` |

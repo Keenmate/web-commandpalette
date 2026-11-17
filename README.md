@@ -30,7 +30,7 @@ top; the CSS is the component's own (plain CSS in the shadow root).
 
 - **First release — one palette instead of three** — `<web-command-palette>` replaces the three command palettes that had drifted apart in pure-admin vanilla, svelte-pure-admin and the keen-pure-admin LiveComponent. Each one re-implemented routing, search and keyboard handling, and each had its own bugs. The element now owns that whole logic, and hosts talk to it only through properties, `cp-*` events and async callbacks. Hosts (plain JS, Svelte, React, Blazor, Phoenix LiveView) become thin adapters, with no copy of the palette logic in each. `commands` plus a `searchCallback` is a complete setup. Every callback argument and event detail is plain JSON, so it can travel over a LiveView bridge.
 
-- **Commands, contexts and global search — with the async rules built in** — `/` lists commands and `:` lists search contexts, and anything else is a global search. Global search shows matching commands and contexts right away, then appends the server results. Static lists filter on the client. Provider calls are debounced (`search-debounce`) and cancelled with an `AbortSignal` when a newer query replaces them, and late answers are dropped. A context search with an empty query never calls the server. Keyboard navigation never waits for a request, so arrows stay instant while results load.
+- **Commands, contexts and global search — with the async rules built in** — `/` lists commands and `:` lists search contexts, and anything else is a global search. Global search shows matching commands and contexts right away, then appends the server results. Static lists filter on the client with the standard Keenmate search (core): case- and accent-insensitive by default (`ces` finds `Český`), tuned with `search-behavior` / `search-match` like web-multiselect. Provider calls are debounced (`search-debounce`) and cancelled with an `AbortSignal` when a newer query replaces them, and late answers are dropped. A context search with an empty query never calls the server. Keyboard navigation never waits for a request, so arrows stay instant while results load.
 
 - **Multi-step wizards that can branch** — A command can ask a series of steps, such as `/deploy` → environment → branch. Each step can use fixed `options`, a list loaded once, a live `search: true` lookup, `freeText`, or a conditional `shouldShow`. An option can carry its own `steps`, so one command can fork: `/assign-admin John to group Finance` and `… to site Intranet` ask different follow-up questions. `Step.load` and `Context.search` let you define a picker once and reuse it across commands. The central `stepOptionsCallback` / `searchCallback` keep working for server-driven hosts.
 
@@ -48,7 +48,7 @@ top; the CSS is the component's own (plain CSS in the shadow root).
 > `on*` twins receive the event **detail**. Commands are core action items (`name` → `text`,
 > `shortcut` → `trigger`, `hotkey` → `shortcut`, plus `isVisible` / `isDisabled` / `isDanger` /
 > `onClick` / `get*Callback`); options use `text`; every callback takes one `ctx`
-> (`searchCallback({ scope, term, signal })`, `getStepOptionsCallback(ctx)`);
+> (`searchCallback(ctx)` gets core's shared `SearchCallbackContext` `{ term, signal, entries }` + `scope`, `getStepOptionsCallback(ctx)`);
 > `beforeActionCallback` / `beforeResultSelectCallback` can cancel; `el.controller` is the public facade.
 > The full old → new table is in the [CHANGELOG `[Unreleased]` section](CHANGELOG.md#unreleased);
 > the docs below already describe the new API.

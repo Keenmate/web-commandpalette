@@ -53,7 +53,7 @@ Objects and functions are **properties only** — set them from JS (or a framewo
 |---|---|---|
 | `commands` | `Command[]` | Home screen + `/`. Core action items — see [Data shapes](#data-shapes). |
 | `contexts` | `Context[]` | Home screen + `:`. |
-| `searchCallback` | `({ scope, term, signal }) => Result[] \| Promise<Result[]>` | Context + global search. `scope` is `'global'` or `{ contextId }`. Called only for **non-empty** terms, debounced. |
+| `searchCallback` | `(ctx: SearchContext) => Result[] \| Promise<Result[]>` | Context + global search. `ctx` is core's shared `SearchCallbackContext` — `{ term, signal, entries }`, the same shape as every Keenmate component (`entries` is always `[]`: the palette has no client-side records behind a search) — plus `scope` (`'global'` or `{ contextId }`) and `controller` / `element`. Called only for **non-empty** terms (as typed, trimmed), debounced. |
 | `getStepOptionsCallback` | `({ commandId, stepId, term, selections, signal }) => Option[] \| Promise<Option[]>` | Fallback for steps without their own `getOptionsCallback`. |
 | `beforeActionCallback` | `(detail) => unknown` | Runs before a command fires `action` (same detail). `false` (async OK) cancels: no `onClick`, no event, nothing recorded; a wizard steps back to its last answer and the palette stays open. |
 | `beforeResultSelectCallback` | `({ result, scope }) => unknown` | Runs before a search result fires `result-select`. `false` (async OK) cancels; the palette stays open. Other return values continue. |
@@ -67,6 +67,8 @@ Objects and functions are **properties only** — set them from JS (or a framewo
 | `pageSize` | `number` | Search results per page. Default `8`. |
 | `openKey` | `string` | Ctrl/⌘ + this key toggles. Default `'k'`; `''` disables. |
 | `searchDebounce` | `number` | ms before a provider call. Default `150`. |
+| `searchBehavior` | `'normalized' \| 'case-insensitive' \| 'exact'` | Built-in filter + highlight normalization (core search, same as web-multiselect). Default `normalized`: ignores case and diacritics — `ces` finds `Český`. Not applied to the provider callbacks or `regex`. |
+| `searchMatch` | `'contains' \| 'equals' \| 'starts-with' \| 'word-starts-with' \| 'ends-with' \| 'word-ends-with' \| 'regex'` | Where the built-in filter looks for the term in each field. Default `contains`. `regex` tests the raw value (an invalid pattern keeps the last valid result). |
 | `presentation` | `'auto' \| 'floating' \| 'fullscreen'` | `auto`: fullscreen sheet on touch phones only. |
 | `responsive` / `responsiveCallback` | `CommandPaletteResponsiveMap` / `CommandPaletteResponsiveCallback` | Instance responsive rules (core): `{ device?, breakpoint? }` → partial config per device class / width bucket, or `(ctx) => partial`. Beat page rules and the element's own attributes; never reflected. See [README → Responsive rules](../README.md#responsive-rules). |
 | `usageStorage` | `'local' \| 'none'` | Favorites + recents on (default) or off. |
@@ -88,7 +90,7 @@ LiveView bridge after `connectedCallback`.
 
 ## Attributes
 
-`display`, `size`, `page-size`, `open-key`, `search-debounce`, `presentation`,
+`display`, `size`, `page-size`, `open-key`, `search-debounce`, `search-behavior`, `search-match`, `presentation`,
 `usage-storage`, `storage-key`, `max-favorite-count`, `max-recent-count`, `favorite-key`, `favorites-key`,
 `recent-key`, `favorites-hotkey`, `recent-hotkey`, `show-feedback`, `feedback-duration`, `custom-styles`.
 `open` is **reflected** (present while open) — use the controller to open/close.
@@ -207,7 +209,7 @@ interface Step {
 }
 
 interface Context { id: string; trigger: string; text: string; aliases?: string[]; description?: string; icon?: string;
-                    searchCallback?: (ctx: { scope, term, signal }) => Result[] | Promise<Result[]>; }   // JS hosts only
+                    searchCallback?: (ctx: SearchContext) => Result[] | Promise<Result[]>; }   // JS hosts only — { scope, term, signal, entries }
 interface Option  { id?: string; text: string; value?: unknown; description?: string; icon?: string;
                     steps?: Step[]; }       // branch: asked right after this option is chosen
 interface Result  { id: string; title: string; subtitle?: string; icon?: string; badge?: string;

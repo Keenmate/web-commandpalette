@@ -1,28 +1,41 @@
 import { describe, expect, it } from 'vitest';
-import { filterOptions, findByTrigger, globalMatches, matchesAny } from '../../src/helpers/filter';
+import { filterOptions, findByTrigger, globalMatches, matchesAny, prepareQuery, type SearchRules } from '../../src/helpers/filter';
 import { findSequenceCommand } from '../../src/keyboard';
 import { highlight } from '../../src/render';
 import { renderIcon } from '../../src/helpers/icons';
 import { COMMANDS, CONTEXTS } from './helpers';
 
 describe('filter', () => {
-  it('matchesAny is a case-insensitive substring match; empty needle matches', () => {
-    expect(matchesAny(['Production'], 'DUCT')).toBe(true);
-    expect(matchesAny(['Production'], 'x')).toBe(false);
-    expect(matchesAny(['anything'], '  ')).toBe(true);
+  const q = (needle: string, rules?: SearchRules) => prepareQuery(needle, rules);
+
+  it('matchesAny is core search: case- and accent-insensitive by default; empty needle matches', () => {
+    expect(matchesAny(['Production'], q('DUCT'))).toBe(true);
+    expect(matchesAny(['Production'], q('x'))).toBe(false);
+    expect(matchesAny(['anything'], q('  '))).toBe(true);
+    expect(matchesAny(['Český Krumlov'], q('ces'))).toBe(true);
+    expect(matchesAny(['Müller'], q('muller'))).toBe(true);
+  });
+
+  it('honours search-behavior and search-match', () => {
+    expect(matchesAny(['Český'], q('ces', { behavior: 'case-insensitive', match: 'contains' }))).toBe(false);
+    expect(matchesAny(['Český'], q('čes', { behavior: 'case-insensitive', match: 'contains' }))).toBe(true);
+    expect(matchesAny(['Český'], q('čes', { behavior: 'exact', match: 'contains' }))).toBe(false);
+    expect(matchesAny(['Deploy staging'], q('sta', { behavior: 'normalized', match: 'word-starts-with' }))).toBe(true);
+    expect(matchesAny(['Deploy staging'], q('ploy', { behavior: 'normalized', match: 'word-starts-with' }))).toBe(false);
+    expect(matchesAny(['Deploy staging'], q('^Dep', { behavior: 'normalized', match: 'regex' }))).toBe(true);
   });
 
   it('filterOptions searches text, primitive value and description', () => {
     const opts = [{ text: 'A', value: 'alpha' }, { text: 'B', description: 'beta thing' }, { text: 'C', value: { x: 1 } }];
-    expect(filterOptions(opts, 'alp').map((o) => o.text)).toEqual(['A']);
-    expect(filterOptions(opts, 'beta').map((o) => o.text)).toEqual(['B']);
-    expect(filterOptions(opts, 'object').map((o) => o.text)).toEqual([]);
+    expect(filterOptions(opts, q('alp')).map((o) => o.text)).toEqual(['A']);
+    expect(filterOptions(opts, q('beta')).map((o) => o.text)).toEqual(['B']);
+    expect(filterOptions(opts, q('object')).map((o) => o.text)).toEqual([]);
   });
 
   it('globalMatches ignores descriptions and empty queries', () => {
-    expect(globalMatches(COMMANDS, '').length).toBe(0);
-    expect(globalMatches(COMMANDS, 'session')).toEqual([]);
-    expect(globalMatches(CONTEXTS, ':u').map((c) => c.id)).toEqual(['users']);
+    expect(globalMatches(COMMANDS, q('')).length).toBe(0);
+    expect(globalMatches(COMMANDS, q('session'))).toEqual([]);
+    expect(globalMatches(CONTEXTS, q(':u')).map((c) => c.id)).toEqual(['users']);
   });
 
   it('findByTrigger matches the trigger or an alias exactly, case-insensitively', () => {
@@ -39,12 +52,13 @@ describe('keyboard helpers', () => {
 });
 
 describe('render helpers', () => {
-  it('highlight escapes and marks every case-insensitive occurrence', () => {
-    expect(highlight('Air<Pods> pods', 'pods')).toBe('Air&lt;<mark>Pods</mark>&gt; <mark>pods</mark>');
-    expect(highlight('a&b', '')).toBe('a&amp;b');
+  it('highlight escapes and marks every match through core (accent-insensitive by default)', () => {
+    expect(highlight('Air<Pods> pods', prepareQuery('pods'))).toBe('Air&lt;<mark>Pods</mark>&gt; <mark>pods</mark>');
+    expect(highlight('a&b', prepareQuery(''))).toBe('a&amp;b');
     // 'İ' lower-cases to two characters — the mark must not slide off the match.
-    expect(highlight('İzmir, Smyrna', 'smyrna')).toBe('İzmir, <mark>Smyrna</mark>');
-    expect(highlight('a.b (c)', '(c)')).toBe('a.b <mark>(c)</mark>');
+    expect(highlight('İzmir, Smyrna', prepareQuery('smyrna'))).toBe('İzmir, <mark>Smyrna</mark>');
+    expect(highlight('a.b (c)', prepareQuery('(c)'))).toBe('a.b <mark>(c)</mark>');
+    expect(highlight('Český <b>', prepareQuery('ces'))).toBe('<mark>Čes</mark>ký &lt;b&gt;');
   });
 
   it('renderIcon: svg raw, name → cp__icon span, glyph → escaped text', () => {

@@ -11,6 +11,25 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Changed — standard Keenmate search: accent-insensitive filter, `search-behavior` / `search-match`, core `SearchCallbackContext` (core SPEC §12.11, 2026-11-17)
+
+- **Accent-insensitive filtering (visible change):** the client-side filter (the `/` and `:` lists, static
+  steps, the favorites / recent lists, the commands / contexts prepended to global search) is now core's
+  standard search, like every Keenmate component: it ignores case **and diacritics** by default — `ces`
+  finds `Český`, `muller` finds `Müller` (was a lower-cased substring match). The `<mark>` highlight goes
+  through core (`findHighlightRanges` + `wrapRanges`, escaped) under the same rules, so `ces` marks `Čes`.
+- **New `search-behavior` / `search-match` inputs** (`searchBehavior` / `searchMatch`), the same names,
+  values and defaults as web-multiselect: `normalized` | `case-insensitive` | `exact` (default `normalized`)
+  and `contains` | `equals` | `starts-with` | `word-starts-with` | `ends-with` | `word-ends-with` | `regex`
+  (default `contains`). Live: changing either re-runs the current search. They don't touch the provider
+  callbacks, which still get the term as typed (trimmed).
+- **BREAKING (`searchCallback` ctx type):** `SearchContext` (of `searchCallback` and `Context.searchCallback`)
+  is now core's shared `SearchCallbackContext` — `{ term, signal, entries }`, the same shape web-multiselect
+  passes — plus the palette's `scope` and `controller` / `element`. `entries` (non-enumerable, like `signal`)
+  is always `[]`: the palette has no client-side records behind a search. Destructuring
+  `({ scope, term, signal })` keeps working; code that typed the ctx by hand or spread / compared it should
+  move to `SearchContext`. `SearchBehavior` / `SearchMatch` are re-exported from the package.
+
 ### Changed — the palette is a core modal: modal tier, modal session, phone Back (core SPEC §12.18 / §12.19, 2026-11-17)
 
 Needs `@keenmate/web-components-core` `^1.0.0-rc25`.

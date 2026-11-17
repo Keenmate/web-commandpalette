@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { COMMANDS, CONTEXTS, harness, titles } from './helpers';
-import type { Command, Option, Result } from '../../src/types';
+import type { Command, Option, Result, SearchContext } from '../../src/types';
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
@@ -340,7 +340,11 @@ describe('context search (:)', () => {
     await vi.advanceTimersByTimeAsync(150);
     expect(search).toHaveBeenCalledTimes(1);
     expect(search.mock.calls[0][0]).toEqual({ scope: { contextId: 'products' }, term: 'ipad' });
-    expect((search.mock.calls[0][0] as unknown as { signal: AbortSignal }).signal).toBeInstanceOf(AbortSignal);
+    // Core's shared SearchCallbackContext: signal + entries (always empty), both non-enumerable.
+    const ctx = search.mock.calls[0][0] as unknown as SearchContext;
+    expect(ctx.signal).toBeInstanceOf(AbortSignal);
+    expect(ctx.entries).toEqual([]);
+    expect(Object.keys(ctx).sort()).toEqual(['scope', 'term']);
     expect(titles(m)).toEqual(['iPad Air']);
     expect(m.items[0].badge).toBe('New');
     m.select();
@@ -469,5 +473,42 @@ describe('misc', () => {
     h.host.state.commands = [COMMANDS[2]];
     h.m.refresh();
     expect(titles(h.m)).toEqual(['Sign out', 'Products', 'Users']);
+  });
+});
+
+describe('search rules (core /search)', () => {
+  const accented: Command[] = [
+    { id: 'cz', trigger: '/cesky', text: 'Český Krumlov' },
+    { id: 'de', trigger: '/strasse', text: 'Hauptstraße' },
+  ];
+
+  it('filters accent-insensitively by default (`ces` finds `Český`)', () => {
+    const { m } = harness({ commands: accented });
+    m.setInput('/krum');
+    expect(titles(m)).toEqual(['Český Krumlov']);
+    m.setInput('/čes');
+    expect(titles(m)).toEqual(['Český Krumlov']);
+    m.setInput('Ces');
+    expect(titles(m)).toEqual(['Český Krumlov']);
+    expect(m.highlightQuery.term).toEqual({ kind: 'text', text: 'ces' });
+  });
+
+  it('search-behavior / search-match change re-runs the current filter', () => {
+    const { m, host } = harness({ commands: accented });
+    m.setInput('/Krumlov');
+    expect(titles(m)).toEqual(['Český Krumlov']);
+    host.state.searchRules = { behavior: 'normalized', match: 'starts-with' };
+    m.searchRulesChanged();
+    expect(titles(m)).toEqual([]);
+    host.state.searchRules = { behavior: 'normalized', match: 'word-starts-with' };
+    m.searchRulesChanged();
+    expect(titles(m)).toEqual(['Český Krumlov']);
+    host.state.searchRules = { behavior: 'exact', match: 'contains' };
+    m.setInput('/ces');
+    expect(titles(m)).toEqual(['Český Krumlov']); // matches the trigger /cesky
+    m.setInput('/Čes');
+    expect(titles(m)).toEqual(['Český Krumlov']);
+    m.setInput('/čes');
+    expect(titles(m)).toEqual([]);
   });
 });

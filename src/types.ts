@@ -12,6 +12,9 @@
  */
 import type { ActionEventDetail as CoreActionEventDetail, ActionItem, ComponentContext } from '@keenmate/web-components-core/actions';
 import type { PresentationContext } from '@keenmate/web-components-core';
+import type { SearchBehavior, SearchCallbackContext, SearchEntry, SearchMatch } from '@keenmate/web-components-core/search';
+
+export type { SearchBehavior, SearchMatch };
 
 /**
  * An item icon. Rendered by shape (see `helpers/icons.ts`):
@@ -194,14 +197,23 @@ export interface Selection {
 /** What a search runs against. */
 export type Scope = 'global' | { contextId: string };
 
-/** The ctx of `searchCallback` / `Context.searchCallback`. */
-export interface SearchContext extends PaletteContext {
-  /** `'global'` or `{ contextId }`. */
+/**
+ * The ctx of `searchCallback` / `Context.searchCallback`: core's shared
+ * `SearchCallbackContext` (`term`, `signal`, `entries` — the same shape every Keenmate
+ * component passes, SPEC §12.11) + the palette's `scope` + `controller` / `element`.
+ */
+export interface SearchContext extends SearchCallbackContext<never, string>, PaletteContext {
+  /** `'global'` or `{ contextId }` — which search this is (the palette's extra field). */
   scope: Scope;
-  /** The (non-empty, trimmed) search term. */
+  /** The (non-empty, trimmed) search term, as typed. */
   term: string;
   /** Aborted when the request is superseded or the palette closes. Non-enumerable. */
   readonly signal: AbortSignal;
+  /**
+   * Always empty: the palette has no client-side record list behind a search — the results
+   * come from this callback. Non-enumerable.
+   */
+  readonly entries: ReadonlyArray<SearchEntry<never>>;
 }
 
 export type SearchCallback = (ctx: SearchContext) => MaybePromise<Result[] | null | undefined>;

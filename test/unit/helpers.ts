@@ -1,6 +1,7 @@
 import { vi } from 'vitest';
 import { PaletteEngine, type Effect, type PaletteEngineHost } from '../../src/palette';
 import { UsageStore } from '../../src/usage';
+import type { SearchRules } from '../../src/helpers/filter';
 import { DEFAULT_LABELS, type Command, type Context, type Display, type SearchCallback, type Selection, type StepOptionsCallback, type UsageEntry } from '../../src/types';
 
 /** An effect as the tests compare it: `action` reduced to the command id + selections. */
@@ -54,6 +55,8 @@ interface HostState {
   /** Turn favorites/recents on (in-memory). */
   usage: boolean;
   maxRecentCount: number;
+  /** `search-behavior` / `search-match` (default normalized / contains). */
+  searchRules: SearchRules;
 }
 
 export function harness(over: Partial<HostState> = {}): Harness {
@@ -69,6 +72,7 @@ export function harness(over: Partial<HostState> = {}): Harness {
     debounce: 150,
     usage: false,
     maxRecentCount: 5,
+    searchRules: { behavior: 'normalized', match: 'contains' },
     ...over,
   };
   const saved: UsageEntry[] = [];
@@ -85,6 +89,7 @@ export function harness(over: Partial<HostState> = {}): Harness {
     display: () => state.display,
     pageSize: () => state.pageSize,
     debounceMs: () => state.debounce,
+    searchRules: () => state.searchRules,
     labels: () => DEFAULT_LABELS,
     usage: () => store,
     maxRecentCount: () => state.maxRecentCount,

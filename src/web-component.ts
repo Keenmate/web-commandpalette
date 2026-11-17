@@ -74,6 +74,8 @@ import {
   type SaveUsageCallback,
   type Scope,
   type SearchCallback,
+  type SearchBehavior,
+  type SearchMatch,
   type Selection,
   type ResultSelectEventDetail,
   type StepOptionsCallback,
@@ -90,13 +92,13 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'commands', converter: toObjectArray(), on: 'update', type: 'Command[]',
     description: 'Commands, listed on the home screen and under `/` — core action items: `{ id, trigger, text, aliases?, shortcut?, description?, icon?, steps?, tooltip?, cssClass?, isVisible?, isDisabled?, isDanger?, get*Callback(ctx)?, onClick(detail)? }`. Running one fires the `action` event (`id` = the command id) — immediately without `steps`, after the last answer with them.' },
   { configKey: 'contexts', converter: toObjectArray(), on: 'update', type: 'Context[]',
-    description: 'Search contexts, listed on the home screen and under `:`. `{ id, trigger, text, aliases?, description?, icon?, searchCallback? }`. Entering one locks the input to `"<trigger> "` and searches via `searchCallback({ scope: { contextId }, term, signal })`.' },
+    description: 'Search contexts, listed on the home screen and under `:`. `{ id, trigger, text, aliases?, description?, icon?, searchCallback? }`. Entering one locks the input to `"<trigger> "` and searches via `searchCallback({ scope: { contextId }, term, signal, entries })`.' },
   { configKey: 'labels', converter: toValue({ validate: isPlainObject }), on: 'update', type: 'Partial<Labels>',
     description: 'UI strings (i18n). Partial — unset (`undefined`) keys fall back to English; an empty string renders nothing. Text, escaped (never HTML). `{name}` / `{page}` / `{total}` / `{count}` placeholders are interpolated.' },
 
   // ── Callbacks (property-only, read live on every call) ───────────────────
   { configKey: 'searchCallback', converter: toFunction(), on: 'none', type: '(ctx: SearchContext) => Result[] | Promise<Result[]>',
-    description: "Context + global search. `ctx = { scope, term, signal }` + `controller` / `element`; `scope` is `'global'` or `{ contextId }`. Called only for NON-EMPTY terms, debounced; a superseded call's `signal` is aborted and its late result ignored. A context's own `searchCallback` wins for that context." },
+    description: "Context + global search. `ctx` = core's shared `SearchCallbackContext` (`{ term, signal, entries }`, the same shape as every Keenmate component; `entries` is always empty — the palette has no client-side records behind a search) + `scope` (`'global'` or `{ contextId }`) + `controller` / `element`. Called only for NON-EMPTY terms, debounced; a superseded call's `signal` is aborted and its late result ignored. A context's own `searchCallback` wins for that context." },
   { configKey: 'getStepOptionsCallback', converter: toFunction(), on: 'none', type: '(ctx: StepOptionsContext) => Option[] | Promise<Option[]>',
     description: 'Options for a command step; `ctx = { commandId, stepId, term, selections, signal }` + `controller` / `element`. A static step is fetched ONCE on entry (term `""`) and filtered client-side; an `isLiveSearch: true` step is called per debounced keystroke. A step with its own `getOptionsCallback` uses that instead.' },
   { configKey: 'beforeActionCallback', converter: toFunction(), on: 'none', type: '(detail: ActionEventDetail) => unknown',
@@ -133,6 +135,10 @@ const INPUTS: readonly InputDef[] = [
     description: "Key that toggles the palette together with Ctrl/⌘. Default `k`. Set `''` to disable the global hotkey." },
   { configKey: 'searchDebounce', attribute: 'search-debounce', converter: toInt({ min: 0, default: 150 }), on: 'none',
     description: 'Debounce (ms) before a provider call in global search, context search and `isLiveSearch` steps. Static lists never call a provider.' },
+  { configKey: 'searchBehavior', attribute: 'search-behavior', converter: toEnum(['normalized', 'case-insensitive', 'exact'] as const, { default: 'normalized' }), on: 'update',
+    description: 'How the built-in filter (the `/` and `:` lists, static steps, favorites/recent, the commands/contexts prepended to global search) and the `<mark>` highlight normalize text: `normalized` (default) ignores case and diacritics (`ces` finds `Český`), `case-insensitive` ignores case only, `exact` matches both. Live: re-runs the current search. Not applied to `searchCallback` / `getStepOptionsCallback` (they get the term as typed) or `regex` matching.' },
+  { configKey: 'searchMatch', attribute: 'search-match', converter: toEnum(['contains', 'equals', 'starts-with', 'word-starts-with', 'ends-with', 'word-ends-with', 'regex'] as const, { default: 'contains' }), on: 'update',
+    description: 'Where the built-in filter looks for the term in each text field: `contains` (default), `equals` (the whole value), `starts-with` / `ends-with` (whole value), `word-starts-with` / `word-ends-with` (any word), or `regex` (tested against the raw value; an invalid pattern keeps the last valid result). Live: re-runs the current search.' },
   { configKey: 'isFeedbackShown', attribute: 'show-feedback', converter: toBool('default-true'), on: 'none',
     description: 'After a command ran, collapse the dialog to one line for `feedback-duration` ms showing what ran (✓ `/deploy to Staging branch main` · Done) instead of vanishing. The `action` event fires first; `close` follows when it goes. Any key or click dismisses it. `show-feedback="false"` turns it off.' },
   { configKey: 'feedbackDuration', attribute: 'feedback-duration', converter: toInt({ min: 0, default: 1500 }), on: 'none',
@@ -302,6 +308,10 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
       display: () => (this.config.display as Display) ?? 'inline',
       pageSize: () => (this.config.pageSize as number) ?? 8,
       debounceMs: () => (this.config.searchDebounce as number) ?? 150,
+      searchRules: () => ({
+        behavior: (this.config.searchBehavior as SearchBehavior) ?? 'normalized',
+        match: (this.config.searchMatch as SearchMatch) ?? 'contains',
+      }),
       labels: () => this.#labels,
       usage: () => this.#usage,
       maxRecentCount: () => (this.config.maxRecentCount as number) ?? 3,
@@ -617,6 +627,10 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     if ('commands' in partial || 'contexts' in partial) this.#engine.refresh();
     if ('display' in partial) this.#engine.displayChanged();
     if ('pageSize' in partial) this.#engine.pageSizeChanged();
+    if ('searchBehavior' in partial || 'searchMatch' in partial) {
+      this.#renderer.invalidate();
+      this.#engine.searchRulesChanged();
+    }
     if ('usageStorage' in partial || 'storageKey' in partial || 'loadUsageCallback' in partial || 'loadStateCallback' in partial) this.#applyUsage();
     else if ('maxRecentCount' in partial || 'maxFavoriteCount' in partial) this.#engine.refresh();
     if ('favoriteKey' in partial || 'favoritesKey' in partial || 'recentKey' in partial) {
@@ -900,6 +914,8 @@ export interface CommandPaletteConfig {
   pageSize: number;
   openKey: string;
   searchDebounce: number;
+  searchBehavior: SearchBehavior;
+  searchMatch: SearchMatch;
   isFeedbackShown: boolean;
   feedbackDuration: number;
   usageStorage: 'local' | 'none';

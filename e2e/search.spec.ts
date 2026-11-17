@@ -105,3 +105,77 @@ test('an alias typed without the trailing space only filters the list', async ({
   await expect(p.titles).toHaveText(['Deploy to Environment', 'Reload Data']);
   await expect(p.context).toHaveText('Commands');
 });
+
+test('built-in filter is accent-insensitive (core search): `ces` finds `Český`, highlighted through core', async ({ page }) => {
+  await load(page, 'search');
+  const p = palette(page);
+  await p.host.evaluate((el) => {
+    const pal = el as unknown as { commands: unknown[]; searchCallback: unknown };
+    pal.commands = [...pal.commands, { id: 'cz', trigger: '/krumlov', text: 'Český <Krumlov>' }];
+    pal.searchCallback = null;
+  });
+  await open(page);
+  await page.keyboard.type('/ces');
+  await expect(p.titles).toHaveText(['Český <Krumlov>']);
+  await expect(p.titles.first().locator('mark')).toHaveText('Čes');
+  // Global search prepends it the same way; the title's markup stays escaped text.
+  await p.input.fill('ceSKY');
+  await expect(p.titles).toHaveText(['Český <Krumlov>']);
+  await expect(p.titles.first().locator('mark')).toHaveText('Český');
+  await expect(p.titles.first().locator('krumlov')).toHaveCount(0);
+});
+
+test('search-behavior / search-match: same names + defaults as multiselect, live re-filter', async ({ page }) => {
+  await load(page, 'search');
+  const p = palette(page);
+  expect(await p.host.evaluate((el) => {
+    const pal = el as unknown as { searchBehavior: string; searchMatch: string };
+    return [pal.searchBehavior, pal.searchMatch];
+  })).toEqual(['normalized', 'contains']);
+  await open(page);
+  await page.keyboard.type('/env');
+  await expect(p.titles).toHaveText(['Deploy to Environment']);
+  await p.host.evaluate((el) => el.setAttribute('search-match', 'word-starts-with'));
+  await expect(p.titles).toHaveText(['Deploy to Environment']);
+  await p.input.fill('/iron');
+  await expect(p.empty).toHaveText('No results found');
+  await p.host.evaluate((el) => el.setAttribute('search-match', 'contains'));
+  await expect(p.titles).toHaveText(['Deploy to Environment']);
+  await expect(p.titles.first().locator('mark')).toHaveText('iron');
+  await p.host.evaluate((el) => el.setAttribute('search-behavior', 'exact'));
+  await p.input.fill('/ENV');
+  await expect(p.empty).toHaveText('No results found');
+});
+
+test('searchCallback ctx is core SearchCallbackContext (term, signal, entries) + scope + controller / element', async ({ page }) => {
+  await load(page, 'search');
+  const p = palette(page);
+  await p.host.evaluate((el) => {
+    const w = window as unknown as { ctxShape: unknown };
+    (el as unknown as { searchCallback: unknown }).searchCallback = (ctx: Record<string, unknown>) => {
+      w.ctxShape = {
+        keys: Object.keys(ctx).sort(),
+        term: ctx.term,
+        scope: ctx.scope,
+        hasSignal: ctx.signal instanceof AbortSignal,
+        entries: ctx.entries,
+        isEntriesFrozen: Object.isFrozen(ctx.entries),
+        hasController: typeof ctx.controller === 'object' && ctx.controller !== null,
+        isElement: ctx.element === el,
+      };
+      return [];
+    };
+  });
+  await open(page);
+  await page.keyboard.type(':p ipad');
+  await expect.poll(() => page.evaluate(() => (window as unknown as { ctxShape: unknown }).ctxShape)).toEqual({
+    keys: ['isFullscreen', 'isModal', 'presentation', 'scope', 'term'],
+    term: 'ipad',
+    scope: { contextId: 'products' },
+    hasSignal: true,
+    entries: [],
+    isEntriesFrozen: true,
+    hasController: true,
+    isElement: true,
+  });
+});

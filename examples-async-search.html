@@ -1,5 +1,5 @@
 <meta name="kmwc:title" content="Async Search">
-<meta name="kmwc:subtitle" content="<code>searchCallback({ scope, term, signal })</code> covers scoped and global search, with debounce, AbortSignal cancellation and client-side pages. Every provider call shows up in the log below.">
+<meta name="kmwc:subtitle" content="<code>searchCallback({ scope, term, signal, entries })</code> (core's shared search context) covers scoped and global search, with debounce, AbortSignal cancellation and client-side pages. Every provider call shows up in the log below.">
 <meta name="kmwc:body-class" content="dark-output">
 
 <!-- ============================================================= -->
@@ -86,6 +86,36 @@
     </div>
 </div>
 
+<!-- ============================================================= -->
+<!-- AS05 · Built-in filter (search-behavior / search-match)         -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>AS05 · Built-in Filter: <code>search-behavior</code> &amp; <code>search-match</code></h2>
+    <p>
+        The client-side filter (the <code>/</code> and <code>:</code> lists, static steps, favorites / recent, and the
+        commands prepended to global search) is the standard Keenmate search from core, the same as web-multiselect.
+        By default it ignores case and accents: <code>/ces</code> finds “Český Krumlov tour”, <code>muller</code> finds
+        “Open Müller account”. The highlight follows the same rules. <code>searchCallback</code> gets the term as typed.
+    </p>
+    <div class="controls">
+        <span><code>search-behavior</code>:</span>
+        <label><input type="radio" name="as05-behavior" value="normalized" checked> normalized</label>
+        <label><input type="radio" name="as05-behavior" value="case-insensitive"> case-insensitive</label>
+        <label><input type="radio" name="as05-behavior" value="exact"> exact</label>
+    </div>
+    <div class="controls">
+        <span><code>search-match</code>:</span>
+        <label><input type="radio" name="as05-match" value="contains" checked> contains</label>
+        <label><input type="radio" name="as05-match" value="word-starts-with"> word-starts-with</label>
+        <label><input type="radio" name="as05-match" value="starts-with"> starts-with</label>
+        <label><input type="radio" name="as05-match" value="regex"> regex</label>
+    </div>
+    <div class="demo-area">
+        <button type="button" data-open="/ces">“/ces”</button>
+        <button type="button" class="secondary" data-open="muller">“muller”</button>
+    </div>
+</div>
+
 <!-- One palette per page: it owns the global Ctrl/⌘+K listener. -->
 <web-command-palette id="palette"></web-command-palette>
 
@@ -96,7 +126,11 @@
 
     function wire() {
         const palette = document.getElementById('palette');
-        palette.commands = commands;
+        palette.commands = [
+            ...commands,
+            { id: 'tour-cz', trigger: '/cesky', text: 'Český Krumlov tour', description: 'AS05: accent-insensitive filter', icon: '🏰' },
+            { id: 'muller', trigger: '/muller', text: 'Open Müller account', description: 'AS05: accent-insensitive filter', icon: '👤' },
+        ];
         palette.contexts = contexts;
 
         const log = document.getElementById('as03-log');
@@ -136,6 +170,10 @@
             r.addEventListener('change', (e) => { if (e.target.checked) latency = Number(e.target.value); }));
         document.querySelectorAll('input[name="as04-size"]').forEach((r) =>
             r.addEventListener('change', (e) => { if (e.target.checked) palette.setAttribute('page-size', e.target.value); }));
+        document.querySelectorAll('input[name="as05-behavior"]').forEach((r) =>
+            r.addEventListener('change', (e) => { if (e.target.checked) palette.setAttribute('search-behavior', e.target.value); }));
+        document.querySelectorAll('input[name="as05-match"]').forEach((r) =>
+            r.addEventListener('change', (e) => { if (e.target.checked) palette.setAttribute('search-match', e.target.value); }));
 
         attachControlsPersistence('async-search');
     }

@@ -8,7 +8,19 @@
  * keyboard) and keen `live.ex` (step-back, pagination, global prepend).
  */
 import { resolveActionItem, type ResolvedActionItem } from '@keenmate/web-components-core/actions';
-import { filterCommands, filterContexts, filterOptions, findByTrigger, globalMatches, matchesAny } from './helpers/filter';
+import { createRegexCompiler } from '@keenmate/web-components-core/search';
+import {
+  DEFAULT_SEARCH_RULES,
+  filterCommands,
+  filterContexts,
+  filterOptions,
+  findByTrigger,
+  globalMatches,
+  matchesAny,
+  prepareQuery,
+  type SearchQuery,
+  type SearchRules,
+} from './helpers/filter';
 import { cloneResult, cloneSelections, usageKey, type UsageStore, type UsageTarget } from './usage';
 import type {
   Command,
@@ -48,6 +60,8 @@ export interface PaletteEngineHost {
   display(): Display;
   pageSize(): number;
   debounceMs(): number;
+  /** `search-behavior` / `search-match` for client-side filtering + highlighting (default `normalized` / `contains`). */
+  searchRules?(): SearchRules;
   labels(): Labels;
   /** Favorites/recents store, or null when disabled. */
   usage?(): UsageStore | null;
@@ -215,6 +229,20 @@ function withSignal<T extends object>(fields: T, signal: AbortSignal): T & { rea
   return Object.defineProperty(fields, 'signal', { value: signal, enumerable: false, configurable: true }) as T & { readonly signal: AbortSignal };
 }
 
+/**
+ * The palette has no client-side record list behind a search (results come FROM the
+ * provider), so core's `SearchCallbackContext.entries` is always this empty array.
+ */
+const NO_ENTRIES: ReadonlyArray<never> = Object.freeze([] as never[]);
+
+/**
+ * Core's shared `SearchCallbackContext` (`term`, `signal`, `entries`) + the palette's `scope`.
+ * `signal` / `entries` are non-enumerable, so the LiveView bridge pushes only `{ scope, term }`.
+ */
+function withSearchContext<T extends object>(fields: T, signal: AbortSignal): T {
+  return Object.defineProperty(withSignal(fields, signal), 'entries', { value: NO_ENTRIES, enumerable: false, configurable: true });
+}
+
 const isThenable = <T>(v: unknown): v is PromiseLike<T> =>
   !!v && (typeof v === 'object' || typeof v === 'function') && typeof (v as PromiseLike<T>).then === 'function';
 
@@ -240,7 +268,7 @@ export class PaletteEngine {
   isLoading = false;
   /** Text for the empty state when `items` is empty and nothing is loading. */
   emptyText: string | null = null;
-  /** The query to `<mark>` in titles. */
+  /** The query to `<mark>` in titles (as typed, trimmed). */
   highlight = '';
   page = 1;
   totalPages = 1;
@@ -411,6 +439,37 @@ export class PaletteEngine {
   /** Stop timers and in-flight requests (on close / disconnect). */
   dispose(): void {
     this.#cancel();
+  }
+
+  // ── search rules (core /search, SPEC §12.11) ─────────────────────────────
+
+  /** Compiles `search-match="regex"` terms, keeping this palette's last valid pattern. */
+  #regex = createRegexCompiler();
+  #highlightQuery: { key: string; query: SearchQuery } | null = null;
+
+  #rules(): SearchRules {
+    return this.#host.searchRules?.() ?? DEFAULT_SEARCH_RULES;
+  }
+
+  /** A typed needle prepared under the current `search-behavior` / `search-match`. */
+  #query(needle: string): SearchQuery {
+    return prepareQuery(needle, this.#rules(), this.#regex);
+  }
+
+  /** {@link highlight} prepared for `<mark>`ing titles — same rules as the filter. */
+  get highlightQuery(): SearchQuery {
+    const { behavior, match } = this.#rules();
+    const key = `${behavior}|${match}|${this.highlight}`;
+    if (this.#highlightQuery?.key !== key) this.#highlightQuery = { key, query: this.#query(this.highlight) };
+    return this.#highlightQuery.query;
+  }
+
+  /** `search-behavior` / `search-match` changed — re-run the current search under the new rules. */
+  searchRulesChanged(): void {
+    this.#regex.reset();
+    this.#highlightQuery = null;
+    if (this.mode === 'idle') this.#changed();
+    else this.setInput(this.input);
   }
 
   /** commands/contexts were replaced — refresh views derived from them. */
@@ -615,7 +674,7 @@ export class PaletteEngine {
       : view === 'favorites'
         ? fill(labels.noFavorites, { key: this.#host.starKey?.() ?? 'Ctrl D' })
         : labels.noRecent;
-    this.#setItems(q ? all.filter((i) => matchesAny([i.title, i.meta], q)) : all);
+    this.#setItems(q ? all.filter((i) => matchesAny([i.title, i.meta], this.#query(q))) : all);
   }
 
   // ── favorites ─────────────────────────────────────────────────────────────
@@ -662,7 +721,7 @@ export class PaletteEngine {
     this.highlight = needle;
     this.isLoading = false;
     this.emptyText = this.#host.labels().noResults;
-    this.#setItems(this.#starred(this.#commandItems(filterCommands(this.#commands(), needle))));
+    this.#setItems(this.#starred(this.#commandItems(filterCommands(this.#commands(), this.#query(needle)))));
   }
 
   /** Mark starrable rows with their current star state (only when favorites are on). */
@@ -860,7 +919,7 @@ export class PaletteEngine {
   }
 
   #applyStepFilter(): void {
-    const opts = filterOptions(this.#stepOptions ?? [], this.#stepQuery);
+    const opts = filterOptions(this.#stepOptions ?? [], this.#query(this.#stepQuery));
     this.isLoading = false;
     this.emptyText = this.#host.labels().noResults;
     this.#setItems(this.#stepItems(opts));
@@ -978,7 +1037,7 @@ export class PaletteEngine {
     this.highlight = needle;
     this.isLoading = false;
     this.emptyText = this.#host.labels().noResults;
-    this.#setItems(this.#starred(filterContexts(this.#host.contexts(), needle).map((c) => contextItem(c))));
+    this.#setItems(this.#starred(filterContexts(this.#host.contexts(), this.#query(needle)).map((c) => contextItem(c))));
   }
 
   /** Enter scoped search: the input becomes `"<shortcut> "` (locked) + `query`. */
@@ -1022,9 +1081,10 @@ export class PaletteEngine {
     this.highlight = q;
     // Matching commands/contexts are known locally — show them with zero latency,
     // then append the provider's hits. Works with no searchCallback at all.
+    const query = this.#query(q);
     const local = this.#starred([
-      ...globalMatches(this.#commands(), q).map((c) => globalEntryItem('command', c, this.#resolve(c))),
-      ...globalMatches(this.#host.contexts(), q).map((c) => globalEntryItem('context', c)),
+      ...globalMatches(this.#commands(), query).map((c) => globalEntryItem('command', c, this.#resolve(c))),
+      ...globalMatches(this.#host.contexts(), query).map((c) => globalEntryItem('context', c)),
     ]);
     if (!this.#host.searchCallback()) {
       this.isLoading = false;
@@ -1042,7 +1102,7 @@ export class PaletteEngine {
     const own = scope !== 'global' ? this.#host.contexts().find((c) => c.id === scope.contextId)?.searchCallback : undefined;
     const cb = own ?? this.#host.searchCallback();
     if (!cb) return null;
-    return (signal) => cb(this.#ctx(withSignal({ scope, term: this.#searchQuery }, signal)) as SearchContext);
+    return (signal) => cb(this.#ctx(withSearchContext({ scope, term: this.#searchQuery }, signal)) as SearchContext);
   }
 
   #searchQuery = '';
