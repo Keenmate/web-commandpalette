@@ -223,3 +223,48 @@ test('announcer: the shared core region gets the result count (and the palette h
   // The modal's inert background skips core's region — it stays readable while the palette is open.
   expect(await region.evaluate((el) => el.closest('[inert]') === null && !(el as HTMLElement).inert)).toBe(true);
 });
+
+// ── core createAsyncRunner (SPEC §12.22): latest request wins, the loader only for an async answer ──
+
+test('runner: a fast second search drops the late first answer (it lands after the second)', async ({ page }) => {
+  const p = palette(page);
+  await knobs(page, (w) => { w.delays.late = 500; w.delays.quick = 20; });
+  await p.host.evaluate((el) => el.setAttribute('search-debounce', '0'));
+  await open(page);
+  await p.input.fill(':p late');
+  await expect.poll(() => terms(page)).toEqual(['late']);
+  await p.input.fill(':p quick');
+  await expect(p.titles).toHaveText(['quick hit 0', 'quick hit 1']);
+  // The fixture ignores the signal: the first promise still resolves ~500 ms in — and must not land.
+  await page.waitForTimeout(600);
+  await expect(p.titles).toHaveText(['quick hit 0', 'quick hit 1']);
+  await expect(p.host.locator('.cp__loading')).toHaveCount(0);
+  await expect(p.host.locator('.cp__results')).not.toHaveClass(/--loading/);
+  expect(await aborted(page, 0)).toBe(true);
+});
+
+for (const debounce of ['0', '150']) {
+  test(`runner: a synchronous result applies with no loader at all (search-debounce="${debounce}")`, async ({ page }) => {
+    const p = palette(page);
+    await p.host.evaluate((el, ms) => {
+      el.setAttribute('search-debounce', ms);
+      (el as unknown as { searchCallback: unknown }).searchCallback = ({ term }: { term: string }) =>
+        [0, 1].map((i) => ({ id: `${term}-${i}`, title: `${term} sync ${i}` }));
+    }, debounce);
+    await open(page);
+    // Record every loader / veil that ever appears in the shadow root.
+    await p.host.evaluate((el) => {
+      const w = window as unknown as { loaderSeen: number };
+      w.loaderSeen = 0;
+      const root = el.shadowRoot!;
+      new MutationObserver(() => {
+        if (root.querySelector('.cp__loading, .cp__loader-slot, .cp__results--loading')) w.loaderSeen++;
+      }).observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
+    });
+    await p.input.fill(':p ipad');
+    await expect(p.titles).toHaveText(['ipad sync 0', 'ipad sync 1']);
+    await p.input.fill('zz');
+    await expect(p.titles).toHaveText(['zz sync 0', 'zz sync 1']);
+    expect(await page.evaluate(() => (window as unknown as { loaderSeen: number }).loaderSeen)).toBe(0);
+  });
+}

@@ -391,8 +391,8 @@ export class Renderer {
       s.footer.innerHTML = footer;
     }
     // Core's one page-wide live region (SPEC §12.23) — stays readable while the modal makes the page inert.
-    // Tracked across idle / loading ('') so the same count after a new search is read again.
-    const text = m.mode === 'idle' || m.isLoading ? '' : m.items.length ? labels.text('resultsCount', { count: m.totalResults }) : m.emptyText ?? '';
+    // Silent while a provider call is pending (debounce / loader); tracked across '' so the same count after a new search is read again.
+    const text = m.mode === 'idle' || m.isLoading || m.isPending ? '' : m.items.length ? labels.text('resultsCount', { count: m.totalResults }) : m.emptyText ?? '';
     if (text !== this.#announce) {
       this.#announce = text;
       announce(text);

@@ -336,9 +336,12 @@ describe('context search (:)', () => {
     const search = vi.fn(() => results);
     const { m, effects } = harness({ search });
     m.setInput(':p ipad');
-    expect(m.isLoading).toBe(true);
+    expect(m.isPending).toBe(true); // the debounce: pending, but no loader
+    expect(m.isLoading).toBe(false);
     await vi.advanceTimersByTimeAsync(150);
     expect(search).toHaveBeenCalledTimes(1);
+    expect(m.isLoading).toBe(false); // a synchronous answer never shows the loader
+    expect(m.isPending).toBe(false);
     expect(search.mock.calls[0][0]).toEqual({ scope: { contextId: 'products' }, term: 'ipad' });
     // Core's shared SearchCallbackContext: signal + entries (always empty), both non-enumerable.
     const ctx = search.mock.calls[0][0] as unknown as SearchContext;
@@ -372,12 +375,16 @@ describe('global search', () => {
   });
 
   it('prepends local matches immediately, appends provider results after the debounce', async () => {
-    const search = vi.fn(async () => [{ id: 'u1', title: 'User Goran' }]);
+    let answer!: (r: Result[]) => void;
+    const search = vi.fn(() => new Promise<Result[]>((res) => { answer = res; }));
     const { m } = harness({ search });
     m.setInput('go');
     expect(titles(m)).toEqual(['Go to Page']);
-    expect(m.isLoading).toBe(true);
+    expect(m.isLoading).toBe(false); // no loader during the debounce
     await vi.advanceTimersByTimeAsync(150);
+    expect(m.isLoading).toBe(true); // the async answer is on its way
+    answer([{ id: 'u1', title: 'User Goran' }]);
+    await vi.advanceTimersByTimeAsync(0);
     expect(search.mock.calls[0][0]).toEqual({ scope: 'global', term: 'go' });
     expect(titles(m)).toEqual(['Go to Page', 'User Goran']);
     expect(m.isLoading).toBe(false);

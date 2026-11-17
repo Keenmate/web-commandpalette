@@ -11,6 +11,16 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Changed — provider calls through core `createAsyncRunner` (core SPEC §12.22, 2026-11-17)
+
+- Search (`searchCallback`, a context's own `searchCallback`) and step options (`getStepOptionsCallback`, static
+  and `isLiveSearch`) run through core's one "latest request wins" runner instead of the palette's own debounce,
+  `AbortController` supersede and stale-answer check: same `search-debounce`, a superseded call's signal aborts and
+  its late answer is dropped, a failure still degrades to the local matches.
+- **Changed (visible): the loader starts with the provider call, not with the keystroke** — no loader / veil during
+  the `search-debounce` wait, and a synchronous provider (an array, not a Promise) never shows one. The result-count
+  announcement waits until the answer lands. The engine gains `isPending` (debounce or answer outstanding).
+
 ### Changed — screen-reader announcements through core `announce()` (core SPEC §12.23, 2026-11-17)
 
 - The result count (`labels.resultsCount`, the raw number formatted by core `/locale`), the empty-state text

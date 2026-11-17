@@ -8,6 +8,7 @@
  * keyboard) and keen `live.ex` (step-back, pagination, global prepend).
  */
 import { resolveActionItem, shortcutKeycaps, type ResolvedActionItem } from '@keenmate/web-components-core/actions';
+import { createAsyncRunner, type AsyncRunner } from '@keenmate/web-components-core';
 import { createRegexCompiler } from '@keenmate/web-components-core/search';
 import {
   DEFAULT_SEARCH_RULES,
@@ -300,11 +301,30 @@ export class PaletteEngine {
   /** A static step's full option set (null = not loaded yet). */
   #stepOptions: Option[] | null = null;
   #stepQuery = '';
-  #timer: ReturnType<typeof setTimeout> | null = null;
-  #request: AbortController | null = null;
+  /**
+   * Every provider call (search, live / static step options) goes through core's one "latest request wins"
+   * runner (SPEC §12.22): debounce, AbortSignal supersede, late answers dropped, and the loader only while an
+   * ASYNC task runs — a synchronous answer applies with no loader flash. `#debounce` is set per run.
+   */
+  #runner: AsyncRunner;
+  #debounce = 0;
+  /** The latest run's "failed" handler (the runner reports errors of the latest run only). */
+  #onFail: (() => void) | null = null;
 
   constructor(host: PaletteEngineHost) {
     this.#host = host;
+    this.#runner = createAsyncRunner({
+      debounceMs: () => this.#debounce,
+      onLoadingChange: (isLoading) => {
+        this.isLoading = isLoading;
+        // The loader going off is followed by the result / failure, which re-renders.
+        if (isLoading) this.#changed();
+      },
+      onError: (err) => {
+        this.#host.error?.('provider failed', err);
+        this.#onFail?.();
+      },
+    });
     this.#home();
   }
 
@@ -925,13 +945,8 @@ export class PaletteEngine {
     this.#stepQuery = query;
     this.highlight = query.trim();
     if (this.step?.isLiveSearch) {
-      this.#cancel();
-      this.isLoading = true;
+      this.#fetchStepOptions(query, true, this.#host.debounceMs());
       this.#changed();
-      this.#timer = setTimeout(() => {
-        this.#timer = null;
-        this.#fetchStepOptions(query, true);
-      }, this.#host.debounceMs());
       return;
     }
     if (this.#stepOptions) this.#applyStepFilter();
@@ -946,7 +961,7 @@ export class PaletteEngine {
   }
 
   /** `isLive`: the result IS the list (search step); else it's the full set to filter. */
-  #fetchStepOptions(query: string, isLive: boolean): void {
+  #fetchStepOptions(query: string, isLive: boolean, debounceMs = 0): void {
     const step = this.step!;
     const cb = step.getOptionsCallback ?? this.#host.getStepOptionsCallback();
     const command = this.command!;
@@ -969,6 +984,7 @@ export class PaletteEngine {
           this.#applyStepFilter();
         }
       },
+      debounceMs,
     );
   }
 
@@ -1118,85 +1134,57 @@ export class PaletteEngine {
   // ── search plumbing ───────────────────────────────────────────────────────
 
   /** The provider for `scope`: the context's own `search`, else `searchCallback`. */
-  #searchFor(scope: Scope): ((signal: AbortSignal) => unknown) | null {
+  #searchFor(scope: Scope, term: string): ((signal: AbortSignal) => unknown) | null {
     const own = scope !== 'global' ? this.#host.contexts().find((c) => c.id === scope.contextId)?.searchCallback : undefined;
     const cb = own ?? this.#host.searchCallback();
     if (!cb) return null;
-    return (signal) => cb(this.#ctx(withSearchContext({ scope, term: this.#searchQuery }, signal)) as SearchContext);
-  }
-
-  #searchQuery = '';
-
-  /** Show `prefix` + a loading state now; call the provider after the debounce. */
-  #debouncedSearch(scope: Scope, q: string, prefix: ViewItem[], silent: boolean): void {
-    this.isLoading = true;
-    this.emptyLabel = null;
-    this.#setResults(prefix);
-    if (!silent) this.#changed();
-    this.#timer = setTimeout(() => {
-      this.#timer = null;
-      this.#searchQuery = q;
-      const call = this.#searchFor(scope);
-      if (!call) {
-        this.isLoading = false;
-        this.emptyLabel = { key: 'noResults' };
-        this.#setResults(prefix);
-        this.#changed();
-        return;
-      }
-      this.#run(
-        (signal) => call(signal) as Result[] | PromiseLike<Result[]>,
-        (results) => {
-          this.isLoading = false;
-          this.emptyLabel = { key: 'noResults' };
-          this.#setResults([...prefix, ...this.#starred(((results ?? []) as Result[]).map((r) => resultItem(r, scope)))]);
-        },
-      );
-    }, this.#host.debounceMs());
+    return (signal) => cb(this.#ctx(withSearchContext({ scope, term }, signal)) as SearchContext);
   }
 
   /**
-   * Invoke a provider with a fresh AbortSignal, superseding (aborting) any request
-   * in flight. A late result from a superseded request is dropped — it must never
-   * overwrite live state. Sync returns apply immediately (no loader flash).
+   * Show `prefix` now; call the provider (read when the debounce ends — no provider = just the prefix) after
+   * the debounce. The loader shows only while an async answer is on its way.
    */
-  #run<T>(call: (signal: AbortSignal) => T | PromiseLike<T>, apply: (value: T | null) => void): void {
-    this.#request?.abort();
-    const controller = new AbortController();
-    this.#request = controller;
-    const done = (value: T | null): void => {
-      if (controller.signal.aborted || this.#request !== controller) return;
-      this.#request = null;
+  #debouncedSearch(scope: Scope, q: string, prefix: ViewItem[], silent: boolean): void {
+    this.emptyLabel = null;
+    this.#setResults(prefix);
+    this.#run(
+      (signal) => (this.#searchFor(scope, q)?.(signal) ?? null) as Result[] | null | PromiseLike<Result[] | null>,
+      (results) => {
+        this.isLoading = false;
+        this.emptyLabel = { key: 'noResults' };
+        this.#setResults([...prefix, ...this.#starred(((results ?? []) as Result[]).map((r) => resultItem(r, scope)))]);
+      },
+      this.#host.debounceMs(),
+    );
+    if (!silent) this.#changed();
+  }
+
+  /**
+   * Run a provider through the runner (after `debounceMs`), superseding any request pending or in flight:
+   * only the latest run's answer reaches `apply` (a failure → `apply(null)`, logged through `host.error`).
+   */
+  #run<T>(call: (signal: AbortSignal) => T | PromiseLike<T>, apply: (value: T | null) => void, debounceMs = 0): void {
+    const land = (value: T | null): void => {
+      this.#onFail = null;
       apply(value);
       this.#changed();
     };
-    const fail = (err: unknown): void => {
-      if (controller.signal.aborted) return;
-      this.#host.error?.('provider failed', err);
-      done(null);
-    };
-    let out: T | PromiseLike<T>;
-    try {
-      out = call(controller.signal);
-    } catch (err) {
-      fail(err);
-      return;
-    }
-    if (isThenable<T>(out)) {
-      this.isLoading = true;
-      this.#changed();
-      out.then(done, fail);
-    } else {
-      done(out);
-    }
+    this.#onFail = () => land(null);
+    this.#debounce = debounceMs;
+    this.#runner.run(call, land);
   }
 
+  /** Drop the pending / running provider call (its answer is ignored) and the loader. */
   #cancel(): void {
-    if (this.#timer) clearTimeout(this.#timer);
-    this.#timer = null;
-    this.#request?.abort();
-    this.#request = null;
+    this.#runner.cancel();
+    this.#onFail = null;
     this.isLoading = false;
+  }
+
+  /** A provider call is waiting for its debounce or its answer. */
+  get isPending(): boolean {
+    return this.#runner.isPending;
   }
 
   // ── list / pagination ─────────────────────────────────────────────────────
