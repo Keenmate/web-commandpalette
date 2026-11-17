@@ -125,17 +125,19 @@ test('base-css-variables 2.0: control outline, focus halo, focused cursor row an
   expect(await outline(active)).toEqual(['rgb(7, 8, 9)', 'solid', '2px']);
 });
 
-test('item icons by name draw the shared --base-icon-* glyph; unknown names draw nothing', async ({ page }) => {
+test('own palette glyphs read --cp-icon-*; an item icon by name reads --base-icon-<name> on the host', async ({ page }) => {
   await load(page, 'theming');
   const p = palette(page);
   await p.host.evaluate((el) => {
-    (el as HTMLElement).style.setProperty('--base-icon-search', 'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22/%3E")');
+    (el as HTMLElement).style.setProperty('--base-icon-search', 'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 id=%22base%22/%3E")');
+    (el as HTMLElement).style.setProperty('--cp-icon-star', 'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 id=%22star%22/%3E")');
     const span = document.createElement('span');
-    span.innerHTML = '<span class="cp__icon cp__icon--search"></span><span class="cp__icon cp__icon--no-such-icon"></span>';
+    span.innerHTML = '<span class="km-icon cp__icon cp__icon--star"></span>';
     el.shadowRoot!.appendChild(span);
+    (el as HTMLElement & { commands: unknown[] }).commands = [{ id: 'a', trigger: '/a', text: 'Alpha', icon: 'search' }];
   });
-  const mask = (cls: string) =>
-    p.host.evaluate((el, c) => getComputedStyle(el.shadowRoot!.querySelector(`.cp__icon--${c}`)!).maskImage, cls);
-  expect(await mask('search')).toContain('data:image/svg+xml');
-  expect(await mask('no-such-icon')).toContain('linear-gradient');
+  await open(page);
+  const mask = (sel: string) => p.host.evaluate((el, s) => getComputedStyle(el.shadowRoot!.querySelector(s)!).maskImage, sel);
+  expect(await mask('.cp__item-icon .cp__icon--search')).toContain('base');
+  expect(await mask('span > .cp__icon--star')).toContain('star');
 });

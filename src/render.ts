@@ -7,12 +7,11 @@
  * `createActiveDescendant` (ARIA only — the keys stay the palette's) points
  * `aria-activedescendant` at it and scrolls it into view, so keyboard navigation is pure DOM work.
  */
-import { escapeHtml, renderLoader } from '@keenmate/web-components-core';
+import { escapeHtml, renderIcon, renderLoader } from '@keenmate/web-components-core';
 import { formatShortcut } from '@keenmate/web-components-core/actions';
 import { createActiveDescendant, type ActiveDescendant } from '@keenmate/web-components-core/a11y';
 import { findHighlightRanges, wrapRanges } from '@keenmate/web-components-core/search';
 import { NO_SEARCH_QUERY, type SearchQuery } from './helpers/filter';
-import { renderIcon } from './helpers/icons';
 import { modChord } from './keyboard';
 import type { HomeSection, PaletteEngine, TokenView, UsageView, ViewItem } from './palette';
 import { DEFAULT_PALETTE_KEYS, type CommandPaletteLabels, type PaletteKeys, type PaletteLabels } from './types';
@@ -113,12 +112,12 @@ function starHtml(item: ViewItem, index: number, ctx: RenderContext): string {
   return (
     `<button type="button" class="cp__star${on ? ' cp__star--on' : ''}" tabindex="-1" data-star="${index}"` +
     ` aria-pressed="${on}" aria-label="${escapeHtml(text)}"` +
-    ` title="${escapeHtml(cap ? `${text} (${cap})` : text)}"><span class="cp__icon cp__icon--star${on ? '-filled' : ''}" aria-hidden="true"></span></button>`
+    ` title="${escapeHtml(cap ? `${text} (${cap})` : text)}"><span class="km-icon cp__icon cp__icon--star${on ? '-filled' : ''}" aria-hidden="true"></span></button>`
   );
 }
 
 function itemHtml(item: ViewItem, index: number, active: boolean, query: SearchQuery, ctx: RenderContext): string {
-  const icon = renderIcon(item.icon);
+  const icon = renderIcon(item.icon, { prefix: 'cp' });
   // A remembered answer's badge is `labels.lastUsed`, re-resolved per render (a locale change mid-wizard).
   const badgeText = item.isDefault ? ctx.labels.text('lastUsed') : item.badge;
   const badge = badgeText
@@ -230,7 +229,7 @@ function tokensHtml(tokens: TokenView[] | null, labels: PaletteLabels): string {
           return (
             `<span class="cp__badge"><bdi>${escapeHtml(t.label)}</bdi>` +
             `<button type="button" class="cp__badge-remove" data-token="${t.index}" aria-label="${escapeHtml(labels.text('removeToken', { name: t.label }))}">` +
-            `<span class="cp__icon cp__icon--remove" aria-hidden="true"></span></button></span>`
+            `<span class="km-icon cp__icon cp__icon--remove" aria-hidden="true"></span></button></span>`
           );
       }
     })
@@ -286,7 +285,7 @@ export function confirmationBodyHtml(o: { trigger?: string; text: string; parts:
  */
 export function fillConfirmation(el: HTMLElement, headingHtml: string, duration: number, hasProgress = true): HTMLElement {
   el.innerHTML =
-    `<span class="cp__confirm-check cp__icon cp__icon--check" aria-hidden="true"></span>` +
+    `<span class="cp__confirm-check km-icon cp__icon cp__icon--check" aria-hidden="true"></span>` +
     `<span class="cp__confirm-body" dir="auto"></span>` +
     `<span class="cp__confirm-title">${headingHtml}</span>` +
     (hasProgress ? `<span class="cp__confirm-progress" style="animation-duration: ${Math.max(0, duration)}ms"></span>` : '');

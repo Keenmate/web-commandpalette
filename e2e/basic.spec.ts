@@ -111,20 +111,31 @@ test('the host is a real block box that takes no space (rulebook C-TC-7; was dis
   await expect(p.container).toBeVisible();
 });
 
-test('an item icon given by name draws the contract glyph without a theme; an unknown name draws nothing', async ({ page }) => {
+test('item icons follow core renderIcon: a name draws a masked glyph, emoji stays text, markup goes in raw', async ({ page }) => {
   const p = palette(page);
   await p.host.evaluate((el) => {
+    (el as HTMLElement).style.setProperty('--base-icon-search', 'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22/%3E")');
     (el as HTMLElement & { commands: unknown[] }).commands = [
       { id: 'a', trigger: '/a', text: 'Alpha', icon: 'search' },
       { id: 'b', trigger: '/b', text: 'Beta', icon: 'no-such-glyph' },
+      { id: 'c', trigger: '/c', text: 'Gamma', icon: '🚀' },
+      { id: 'd', trigger: '/d', text: 'Delta', icon: '<svg class="probe" viewBox="0 0 1 1"></svg>' },
+      { id: 'e', trigger: '/e', text: 'Epsilon', icon: '1 < 2 <b>' },
     ];
   });
   await open(page);
+  const icon = (title: string) => p.items.filter({ hasText: title }).locator('.cp__item-icon');
   const mask = (title: string) =>
-    p.items.filter({ hasText: title }).locator('.cp__item-icon .cp__icon').evaluate((el) => {
+    icon(title).locator('.km-icon').evaluate((el) => {
       const cs = getComputedStyle(el) as CSSStyleDeclaration & { webkitMaskImage?: string };
       return cs.maskImage && cs.maskImage !== 'none' ? cs.maskImage : (cs.webkitMaskImage ?? '');
     });
-  expect(await mask('Alpha')).toContain('url(');
+  await expect(icon('Alpha').locator('.km-icon.cp__icon.cp__icon--search')).toHaveCount(1);
+  expect(await mask('Alpha')).toContain('data:image/svg+xml');
   expect(await mask('Beta')).not.toContain('url(');
+  await expect(icon('Gamma')).toHaveText('🚀');
+  await expect(icon('Gamma').locator('.km-icon')).toHaveCount(0);
+  await expect(icon('Delta').locator('svg.probe')).toHaveCount(1);
+  await expect(icon('Epsilon')).toHaveText('1 < 2 <b>');
+  await expect(icon('Epsilon').locator('b')).toHaveCount(0);
 });

@@ -11,6 +11,21 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Changed — item icons through core `renderIcon` (core SPEC §12.33, 2026-11-17)
+
+- **BREAKING (visible): item icons follow core's one icon rule** (`renderIcon(icon, { prefix: 'cp' })` +
+  `ICON_CSS` adopted into the shadow root). Markup (a value starting with `<`) is inserted raw as before.
+  An ASCII name (`search`, `chevron-right`) is a `<span class="km-icon cp__icon cp__icon--NAME">` masked
+  straight from `--base-icon-<name>`: the palette's own inline fallback glyphs and the per-name
+  `--cp-icon-<name>` knobs (`--cp-icon-search`, `--cp-icon-add`, … `--cp-icon-clear`) are gone — load a
+  `:root` theme (`@keenmate/base-css-variables`) or set `--base-icon-<name>` on the element; an unset token
+  draws nothing. The `x` alias of `close` is gone, and a value with other characters (`fa.gear`) is now text
+  (it used to be stripped into a name). Anything else (an emoji, `1 < 2`) is escaped text.
+- **BREAKING: the `renderIcon` export is gone** — import core's
+  (`import { renderIcon } from '@keenmate/web-components-core'`). `src/helpers/icons.ts` is deleted.
+- The palette's own glyphs (☆ / ★, the token ✕, the confirmation ✓) draw through the same `.km-icon` and
+  keep their `--cp-icon-*` knobs; `--cp-icon-size` still sizes them.
+
 ### Changed — shortcuts through core `/actions` (core SPEC §12.12, 2026-11-17)
 
 - **Key handling is core's:** the global keys (Ctrl/⌘+`open-key`, the `g <letter>` sequences of commands and

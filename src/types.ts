@@ -18,10 +18,11 @@ import type { LabelParams, Labels } from '@keenmate/web-components-core/locale';
 export type { SearchBehavior, SearchMatch };
 
 /**
- * An item icon. Rendered by shape (see `helpers/icons.ts`):
+ * An item icon, read by core `renderIcon` (SPEC §12.33):
  *  - starts with `<`              → raw SVG/HTML markup, injected as-is (host-trusted)
- *  - starts with an ASCII letter  → an icon NAME → `<span class="cp__icon cp__icon--NAME">`
- *  - anything else                → text (emoji / glyph)
+ *  - an ASCII name (`search`, `chevron-right`) → a glyph masked from `--base-icon-<name>` in
+ *    `currentColor` (`<span class="km-icon cp__icon cp__icon--NAME">`; nothing drawn when the token is unset)
+ *  - anything else                → escaped text (emoji / glyph)
  */
 export type IconInput = string;
 

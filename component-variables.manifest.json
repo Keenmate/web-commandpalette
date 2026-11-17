@@ -130,114 +130,140 @@
       "usage": "Row hover (the neutral hover overlay)"
     },
     {
+      "name": "base-icon-",
+      "required": false,
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Not a variable: the bundle scan sees core renderIcon's `var(--base-icon-${name})` template. An item icon given by name reads --base-icon-<name> (the entries below list the shared contract's names)"
+    },
+    {
       "name": "base-icon-add",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('add'); override with --cp-icon-add"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('add'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-icon-bell",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('bell'); override with --cp-icon-bell"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('bell'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-icon-caret-down",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('caret-down'); override with --cp-icon-caret-down"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('caret-down'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-icon-caret-up",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('caret-up'); override with --cp-icon-caret-up"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('caret-up'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-icon-check",
       "required": false,
-      "usage": "✓ glyph: the confirmation, `check` icon name (chained by --cp-icon-check)"
+      "usage": "✓ glyph of the confirmation (chained by --cp-icon-check); also the `check` item icon name (core renderIcon)"
     },
     {
       "name": "base-icon-chevron",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('chevron'); override with --cp-icon-chevron"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('chevron'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-icon-clear",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('clear'); override with --cp-icon-clear"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('clear'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-icon-close",
       "required": false,
-      "usage": "✕ glyph: token remove, `close` / `x` icon names (chained by --cp-icon-close); the fullscreen close reads it through core's sheet chrome"
+      "usage": "✕ glyph (chained by --cp-icon-close); also the `close` item icon name (core renderIcon); the fullscreen close reads it through core's sheet chrome"
     },
     {
       "name": "base-icon-collapse",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('collapse'); override with --cp-icon-collapse"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('collapse'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-icon-copy",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('copy'); override with --cp-icon-copy"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('copy'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-icon-danger",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('danger'); override with --cp-icon-danger"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('danger'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-icon-delete",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('delete'); override with --cp-icon-delete"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('delete'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-icon-download",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('download'); override with --cp-icon-download"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('download'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-icon-edit",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('edit'); override with --cp-icon-edit"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('edit'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-icon-ellipsis",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('ellipsis'); override with --cp-icon-ellipsis"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('ellipsis'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-icon-expand",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('expand'); override with --cp-icon-expand"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('expand'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-icon-external-link",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('external-link'); override with --cp-icon-external-link"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('external-link'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-icon-filter",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('filter'); override with --cp-icon-filter"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('filter'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-icon-indeterminate",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('indeterminate'); override with --cp-icon-indeterminate"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('indeterminate'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-icon-info",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('info'); override with --cp-icon-info"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('info'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-icon-link",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('link'); override with --cp-icon-link"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('link'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-icon-refresh",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('refresh'); override with --cp-icon-refresh"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('refresh'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-icon-remove",
@@ -247,32 +273,38 @@
     {
       "name": "base-icon-save",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('save'); override with --cp-icon-save"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('save'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-icon-search",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('search'); override with --cp-icon-search"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('search'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-icon-settings",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('settings'); override with --cp-icon-settings"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('settings'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-icon-success",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('success'); override with --cp-icon-success"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('success'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-icon-user",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('user'); override with --cp-icon-user"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('user'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-icon-warning",
       "required": false,
-      "usage": "Glyph for an item icon given by name ('warning'); override with --cp-icon-warning"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Glyph for an item icon given by name ('warning'), read by core renderIcon (set it on the element or a :root theme; unset = nothing drawn)"
     },
     {
       "name": "base-info-color",
@@ -674,108 +706,16 @@
       "usage": "Neutral hover overlay"
     },
     {
-      "name": "cp-icon-add",
-      "usage": "Glyph for the 'add' item icon name (default --base-icon-add)"
-    },
-    {
-      "name": "cp-icon-bell",
-      "usage": "Glyph for the 'bell' item icon name (default --base-icon-bell)"
-    },
-    {
-      "name": "cp-icon-caret-down",
-      "usage": "Glyph for the 'caret-down' item icon name (default --base-icon-caret-down)"
-    },
-    {
-      "name": "cp-icon-caret-up",
-      "usage": "Glyph for the 'caret-up' item icon name (default --base-icon-caret-up)"
-    },
-    {
       "name": "cp-icon-check",
       "usage": "✓ glyph of the confirmation. Falls back to --base-icon-check, then an inline Lucide SVG"
     },
     {
-      "name": "cp-icon-chevron",
-      "usage": "Glyph for the 'chevron' item icon name (default --base-icon-chevron)"
-    },
-    {
-      "name": "cp-icon-clear",
-      "usage": "Glyph for the 'clear' item icon name (default --base-icon-clear)"
-    },
-    {
       "name": "cp-icon-close",
-      "usage": "✕ glyph (token remove; `close` / `x` / `clear` icon names): any url(...). Falls back to --base-icon-close, then an inline Lucide SVG. The fullscreen close takes --cp-sheet-close-icon"
-    },
-    {
-      "name": "cp-icon-collapse",
-      "usage": "Glyph for the 'collapse' item icon name (default --base-icon-collapse)"
-    },
-    {
-      "name": "cp-icon-copy",
-      "usage": "Glyph for the 'copy' item icon name (default --base-icon-copy)"
-    },
-    {
-      "name": "cp-icon-danger",
-      "usage": "Glyph for the 'danger' item icon name (default --base-icon-danger)"
-    },
-    {
-      "name": "cp-icon-delete",
-      "usage": "Glyph for the 'delete' item icon name (default --base-icon-delete)"
-    },
-    {
-      "name": "cp-icon-download",
-      "usage": "Glyph for the 'download' item icon name (default --base-icon-download)"
-    },
-    {
-      "name": "cp-icon-edit",
-      "usage": "Glyph for the 'edit' item icon name (default --base-icon-edit)"
-    },
-    {
-      "name": "cp-icon-ellipsis",
-      "usage": "Glyph for the 'ellipsis' item icon name (default --base-icon-ellipsis)"
-    },
-    {
-      "name": "cp-icon-expand",
-      "usage": "Glyph for the 'expand' item icon name (default --base-icon-expand)"
-    },
-    {
-      "name": "cp-icon-external-link",
-      "usage": "Glyph for the 'external-link' item icon name (default --base-icon-external-link)"
-    },
-    {
-      "name": "cp-icon-filter",
-      "usage": "Glyph for the 'filter' item icon name (default --base-icon-filter)"
-    },
-    {
-      "name": "cp-icon-indeterminate",
-      "usage": "Glyph for the 'indeterminate' item icon name (default --base-icon-indeterminate)"
-    },
-    {
-      "name": "cp-icon-info",
-      "usage": "Glyph for the 'info' item icon name (default --base-icon-info)"
-    },
-    {
-      "name": "cp-icon-link",
-      "usage": "Glyph for the 'link' item icon name (default --base-icon-link)"
-    },
-    {
-      "name": "cp-icon-refresh",
-      "usage": "Glyph for the 'refresh' item icon name (default --base-icon-refresh)"
+      "usage": "✕ glyph (token remove falls back to it): any url(...). Falls back to --base-icon-close, then an inline Lucide SVG. The fullscreen close takes --cp-sheet-close-icon"
     },
     {
       "name": "cp-icon-remove",
       "usage": "✕ on a command token (default --base-icon-remove)"
-    },
-    {
-      "name": "cp-icon-save",
-      "usage": "Glyph for the 'save' item icon name (default --base-icon-save)"
-    },
-    {
-      "name": "cp-icon-search",
-      "usage": "Glyph for the 'search' item icon name (default --base-icon-search)"
-    },
-    {
-      "name": "cp-icon-settings",
-      "usage": "Glyph for the 'settings' item icon name (default --base-icon-settings)"
     },
     {
       "name": "cp-icon-size",
@@ -788,18 +728,6 @@
     {
       "name": "cp-icon-star-filled",
       "usage": "★ glyph (favorite toggle, starred). Inline Lucide SVG fallback"
-    },
-    {
-      "name": "cp-icon-success",
-      "usage": "Glyph for the 'success' item icon name (default --base-icon-success)"
-    },
-    {
-      "name": "cp-icon-user",
-      "usage": "Glyph for the 'user' item icon name (default --base-icon-user)"
-    },
-    {
-      "name": "cp-icon-warning",
-      "usage": "Glyph for the 'warning' item icon name (default --base-icon-warning)"
     },
     {
       "name": "cp-input-bg",

@@ -393,11 +393,13 @@ the effective direction, also when it changes at runtime.
 
 ## Icons
 
-`icon` is data, rendered by shape:
+`icon` is data, read by core's one icon rule (`renderIcon`, core SPEC §12.33):
 
-- starts with `<` → raw SVG/HTML (**the host vouches for this markup**)
-- starts with an ASCII letter → icon name → `<span class="cp__icon cp__icon--NAME">`
-- anything else → text (emoji)
+- starts with `<` → inserted raw (`<svg>`, `<img>`, `<i class="fa …">`; **the host vouches for this markup**)
+- an ASCII name (`search`, `chevron-right`) → `<span class="km-icon cp__icon cp__icon--NAME">`, a glyph
+  masked from the `--base-icon-<name>` token in `currentColor` — set by a `:root` theme
+  (`@keenmate/base-css-variables`) or on the element; nothing is drawn when the token is unset
+- anything else (an emoji, `1 < 2`) → escaped text
 
 ## Labels
 

@@ -41,8 +41,7 @@
 
 /* A plain ✓ in the accent color, sized to the text (a mask: `color` paints it). */
 .cp__confirm-check {
-  inline-size: 1.1em;
-  block-size: 1.1em;
+  --cp-icon-size: 1.1em;
   color: var(--cp-accent-color);
 }
 

@@ -23,72 +23,31 @@
   font-family: inherit;
 }
 
-/* The masked-icon primitive: a glyph painted in currentColor through a CSS mask.
-   Each glyph is a --cp-icon-* variable (variables.css), so any of them can be
-   replaced with a url(...). A name with no glyph renders nothing (an empty mask),
-   never a solid square. */
-.cp__icon {
-  display: inline-block;
+/* Icons draw through core's one primitive, `.km-icon` (core ICON_CSS, adopted into the shadow root):
+   a glyph masked from --_km-icon in currentColor. An item icon given by NAME (core renderIcon) sets
+   --_km-icon to --base-icon-<name> inline; the palette's own chrome glyphs below map it onto their
+   --cp-icon-* variable (variables.css), so any of them can be replaced with a url(...).
+   `.cp__icon` adds the size knob. */
+.km-icon.cp__icon {
   inline-size: var(--cp-icon-size);
   block-size: var(--cp-icon-size);
-  flex-shrink: 0;
-  background-color: currentColor;
-  -webkit-mask: var(--_cp-icon-src, linear-gradient(transparent, transparent)) no-repeat center / contain;
-          mask: var(--_cp-icon-src, linear-gradient(transparent, transparent)) no-repeat center / contain;
-}
-
-/* ✕ — the `x` / `close` icon names (the fullscreen close is core's sheet chrome). */
-.cp__icon--x,
-.cp__icon--close {
-  --_cp-icon-src: var(--cp-icon-close);
 }
 
 /* ✕ on a command token — take it out of the input. */
 .cp__icon--remove {
-  --_cp-icon-src: var(--cp-icon-remove);
+  --_km-icon: var(--cp-icon-remove);
 }
 
 .cp__icon--check {
-  --_cp-icon-src: var(--cp-icon-check);
+  --_km-icon: var(--cp-icon-check);
 }
 
-/* Item icons given by NAME (`icon: 'search'`) draw --cp-icon-<name>, which reads the
-   shared --base-icon-* glyph of that name (variables.css); set --cp-icon-<name> on the
-   element to override one. Names outside the contract render nothing — pass an inline <svg> or an emoji for those (an icon font's classes can't
-   reach inside the shadow root). */
-.cp__icon--chevron { --_cp-icon-src: var(--cp-icon-chevron); }
-.cp__icon--caret-down { --_cp-icon-src: var(--cp-icon-caret-down); }
-.cp__icon--caret-up { --_cp-icon-src: var(--cp-icon-caret-up); }
-.cp__icon--expand { --_cp-icon-src: var(--cp-icon-expand); }
-.cp__icon--collapse { --_cp-icon-src: var(--cp-icon-collapse); }
-.cp__icon--add { --_cp-icon-src: var(--cp-icon-add); }
-.cp__icon--edit { --_cp-icon-src: var(--cp-icon-edit); }
-.cp__icon--delete { --_cp-icon-src: var(--cp-icon-delete); }
-.cp__icon--search { --_cp-icon-src: var(--cp-icon-search); }
-.cp__icon--filter { --_cp-icon-src: var(--cp-icon-filter); }
-.cp__icon--refresh { --_cp-icon-src: var(--cp-icon-refresh); }
-.cp__icon--indeterminate { --_cp-icon-src: var(--cp-icon-indeterminate); }
-.cp__icon--copy { --_cp-icon-src: var(--cp-icon-copy); }
-.cp__icon--ellipsis { --_cp-icon-src: var(--cp-icon-ellipsis); }
-.cp__icon--save { --_cp-icon-src: var(--cp-icon-save); }
-.cp__icon--settings { --_cp-icon-src: var(--cp-icon-settings); }
-.cp__icon--bell { --_cp-icon-src: var(--cp-icon-bell); }
-.cp__icon--user { --_cp-icon-src: var(--cp-icon-user); }
-.cp__icon--download { --_cp-icon-src: var(--cp-icon-download); }
-.cp__icon--link { --_cp-icon-src: var(--cp-icon-link); }
-.cp__icon--external-link { --_cp-icon-src: var(--cp-icon-external-link); }
-.cp__icon--info { --_cp-icon-src: var(--cp-icon-info); }
-.cp__icon--success { --_cp-icon-src: var(--cp-icon-success); }
-.cp__icon--warning { --_cp-icon-src: var(--cp-icon-warning); }
-.cp__icon--danger { --_cp-icon-src: var(--cp-icon-danger); }
-.cp__icon--clear { --_cp-icon-src: var(--cp-icon-clear); }
-
 .cp__icon--star {
-  --_cp-icon-src: var(--cp-icon-star);
+  --_km-icon: var(--cp-icon-star);
 }
 
 .cp__icon--star-filled {
-  --_cp-icon-src: var(--cp-icon-star-filled);
+  --_km-icon: var(--cp-icon-star-filled);
 }
 
 /* Inline SVG icons handed in as data. */

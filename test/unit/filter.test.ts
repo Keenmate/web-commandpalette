@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { filterOptions, findByTrigger, globalMatches, matchesAny, prepareQuery, type SearchRules } from '../../src/helpers/filter';
 import { bindGlobalKeys, isSequence, modChord } from '../../src/keyboard';
 import { highlight } from '../../src/render';
-import { renderIcon } from '../../src/helpers/icons';
 import { COMMANDS, CONTEXTS } from './helpers';
 
 describe('filter', () => {
@@ -87,12 +86,5 @@ describe('render helpers', () => {
     expect(highlight('İzmir, Smyrna', prepareQuery('smyrna'))).toBe('İzmir, <mark>Smyrna</mark>');
     expect(highlight('a.b (c)', prepareQuery('(c)'))).toBe('a.b <mark>(c)</mark>');
     expect(highlight('Český <b>', prepareQuery('ces'))).toBe('<mark>Čes</mark>ký &lt;b&gt;');
-  });
-
-  it('renderIcon: svg raw, name → cp__icon span, glyph → escaped text', () => {
-    expect(renderIcon('<svg></svg>')).toBe('<svg></svg>');
-    expect(renderIcon('fa-gear')).toBe('<span class="cp__icon cp__icon--fa-gear" aria-hidden="true"></span>');
-    expect(renderIcon('🚀')).toBe('🚀');
-    expect(renderIcon(undefined)).toBe('');
   });
 });

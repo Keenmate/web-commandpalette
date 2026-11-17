@@ -38,7 +38,7 @@ top; the CSS is the component's own (plain CSS in the shadow root).
 
 - **A feedback line instead of a vanishing dialog** — When a command runs, the dialog used to disappear at once, which left users unsure anything had happened. It now shrinks, with an animation, to a one-line summary like ✓ `/deploy to Staging branch main` Done for `feedback-duration` ms (default 1500). The `cp-complete` / `cp-command` event still fires immediately. Turn it off with `show-feedback="false"`, or replace or skip it per run with `renderFeedbackCallback`.
 
-- **Theming on the shared `--base-*` variables, plus its own `--cp-*` knobs** — The CSS is the component's own plain CSS, inlined into the shadow root. It reads only the shared `--base-*` variables (`@keenmate/base-css-variables` 2.0) and the component's `--cp-*` knobs. Font sizes follow `--base-font-size-*` and the font follows `--base-font-family`. Sizing scales with `--base-rem` and `size="sm|lg|xl"`. Icons (check, close, star) and the results scrollbar can be themed through `--cp-icon-*` and `--cp-scrollbar-*`. Shadow parts expose `palette`, `container`, `input`, `results` and `footer`. The examples site has a theme gallery with seven styles and size switches.
+- **Theming on the shared `--base-*` variables, plus its own `--cp-*` knobs** — The CSS is the component's own plain CSS, inlined into the shadow root. It reads only the shared `--base-*` variables (`@keenmate/base-css-variables` 2.0) and the component's `--cp-*` knobs. Font sizes follow `--base-font-size-*` and the font follows `--base-font-family`. Sizing scales with `--base-rem` and `size="sm|lg|xl"`. Its own icons (check, close, star) and the results scrollbar can be themed through `--cp-icon-*` and `--cp-scrollbar-*`; item icons given by name draw the shared `--base-icon-<name>` glyphs (core `renderIcon`). Shadow parts expose `palette`, `container`, `input`, `results` and `footer`. The examples site has a theme gallery with seven styles and size switches.
 
 - **RTL, i18n and a phone sheet** — `dir="rtl"` on the element or any ancestor mirrors the layout, which uses logical CSS throughout. It also swaps ←/→ paging and isolates mixed-direction text, so `/deploy …` keeps its order inside Hebrew or Arabic UI. Every visible and announced string comes from the `labels` map, or page-wide from `window.components.locale` (core `/locale`), with counts formatted for the locale. On touch phones, `mobile-presentation="auto"` turns the dialog into a fullscreen sheet that stays above the on-screen keyboard.
 
@@ -206,7 +206,7 @@ Details — single tests, the CSS pipeline, publishing, the example-site image �
 | Logic | `src/usage.ts` | `UsageStore` — favorites + recents, frecency, pluggable persistence |
 | Render | `src/render.ts` | builds the shadow DOM once and patches it |
 | Service | `src/keyboard.ts` | global hotkeys + input key map |
-| Side | `src/types.ts`, `src/logger.ts`, `src/helpers/`, `src/css/` | public types, logging, pure helpers (`filter.ts` filtering, `icons.ts` icon rendering), shadow-root CSS |
+| Side | `src/types.ts`, `src/logger.ts`, `src/helpers/`, `src/css/` | public types, logging, pure helpers (`filter.ts` filtering), shadow-root CSS |
 
 The palette CSS is plain CSS in `src/css/` (`main.css` imports the layers: variables → component →
 overrides), inlined into the shadow root. It reads only `--cp-*` and `--base-*`.

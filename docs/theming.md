@@ -168,16 +168,16 @@ chains to the shared `--base-icon-*` glyph where one exists, then to an inline L
 
 | Variable | Glyph | Chain |
 |---|---|---|
-| `--cp-icon-close` | ✕ (`close` / `x` icon names; the fullscreen close takes `--cp-sheet-close-icon`) | → `--base-icon-close` → Lucide `x` |
+| `--cp-icon-close` | ✕ (the token remove falls back to it; the fullscreen close takes `--cp-sheet-close-icon`) | → `--base-icon-close` → Lucide `x` |
 | `--cp-icon-remove` | ✕ take a command token out | → `--base-icon-remove` → `--cp-icon-close` |
 | `--cp-icon-check` | ✓ confirmation | → `--base-icon-check` → Lucide `check` |
 | `--cp-icon-star` / `--cp-icon-star-filled` | ☆ / ★ favorite toggle | → Lucide `star` (outline / filled) |
-| `--cp-icon-<name>` | an item `icon: '<name>'` | → `--base-icon-<name>` → the contract's own glyph (search, settings, user, bell, edit, delete, add, copy, save, …; `clear` → `--cp-icon-close`) |
 | `--cp-icon-size` | size of a masked glyph | default `1em` (row icons are 1.8 × `--cp-rem`) |
 
-An item icon given by **name** draws the shared `--base-icon-<name>` glyph, also without a theme
-(the fallback is the contract's default glyph); a name outside the contract draws nothing (icon-font classes can't reach inside the shadow root — pass an inline
-`<svg>` or an emoji instead).
+An item icon given by **name** (`icon: 'search'`) goes through core `renderIcon`: a `.km-icon` masked
+from the shared `--base-icon-<name>` token. Load a `:root` theme (`@keenmate/base-css-variables`) or set
+the token on the element (`web-command-palette { --base-icon-search: url(…) }`); an unset token draws
+nothing (icon-font classes can't reach inside the shadow root — pass an inline `<svg>` or an emoji instead).
 
 ```css
 web-command-palette {

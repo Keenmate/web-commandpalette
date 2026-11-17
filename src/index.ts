@@ -12,7 +12,6 @@ export { PaletteEngine, PAGE_STEP } from './palette';
 export type { PaletteEngineHost, Effect, EffectOutcome, ViewItem, TokenView, NavDirection, HomeSection } from './palette';
 export { UsageStore, usageKey, frecency, MAX_RECENT_ENTRIES } from './usage';
 export type { UsagePersistence, UsageTarget } from './usage';
-export { renderIcon } from './helpers/icons';
 
 export { DEFAULT_LABELS } from './types';
 export type {
