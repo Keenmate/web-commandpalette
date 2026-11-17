@@ -3,10 +3,12 @@
  * match pure-admin-core's canonical `snippets/command-palette.html`.
  *
  * The results list is rebuilt only when the engine replaces its items
- * (`listVersion` changed); moving the active row just toggles a class and scrolls
- * it into view, so keyboard navigation is pure DOM work.
+ * (`listVersion` changed); moving the active row just toggles a class, and core
+ * `createActiveDescendant` (ARIA only — the keys stay the palette's) points
+ * `aria-activedescendant` at it and scrolls it into view, so keyboard navigation is pure DOM work.
  */
-import { escapeHtml, getEnvironment, renderLoader, scrollIntoContainer } from '@keenmate/web-components-core';
+import { escapeHtml, getEnvironment, renderLoader } from '@keenmate/web-components-core';
+import { createActiveDescendant, type ActiveDescendant } from '@keenmate/web-components-core/a11y';
 import { renderIcon } from './helpers/icons';
 import type { HomeSection, PaletteEngine, TokenView, UsageView, ViewItem } from './palette';
 import { DEFAULT_PALETTE_KEYS, type Labels, type PaletteKeys } from './types';
@@ -45,7 +47,7 @@ export function createShell(): Shell {
         <div class="cp__tokens"></div>
         <div class="cp__input-wrapper">
           <input type="text" class="cp__input" part="input" autocomplete="off" spellcheck="false"
-            role="combobox" aria-autocomplete="list" aria-expanded="true" aria-controls="${RESULTS_ID}">
+            role="combobox" aria-autocomplete="list" aria-expanded="true">
           <div class="cp__context" aria-live="polite" dir="auto"></div>
         </div>
       </div>
@@ -292,12 +294,21 @@ export class Renderer {
   #host: HTMLElement | null;
   /** remove() of the loader drawn into the results list, if any. */
   #removeLoader: (() => void) | null = null;
+  /**
+   * `aria-activedescendant`, `aria-controls` and the in-list scroll (core SPEC §12.25). ARIA only:
+   * the palette engine owns the keys and the active index; the render drives `setActive()`.
+   */
+  #activeDescendant: ActiveDescendant;
   /** The Ctrl/⌘ shortcuts, for keycaps (set by the element; call `invalidate()` after changing). */
   keys: PaletteKeys = DEFAULT_PALETTE_KEYS;
 
   constructor(shell: Shell, host?: HTMLElement) {
     this.#shell = shell;
     this.#host = host ?? null;
+    this.#activeDescendant = createActiveDescendant(shell.input, shell.results, {
+      getItems: () => [...shell.results.querySelectorAll<HTMLElement>('[role="option"]')],
+      shouldHandleKeys: false,
+    });
   }
 
   /** Remove the results loader (runs a render hook's cleanup). Idempotent. */
@@ -365,7 +376,6 @@ export class Renderer {
       this.#paintActive(m.activeIndex);
     }
     this.#syncActiveDescendant(m.activeIndex);
-    this.#scrollActive();
 
     // ── footer + announcements ──
     const footer = footerHtml(m, { labels, keys: this.keys });
@@ -413,15 +423,17 @@ export class Renderer {
     }
   }
 
+  /**
+   * Point core's active descendant at row `index` (by element: the home sections render rows out of
+   * index order). Core sets `aria-activedescendant` and scrolls the row into the results list only.
+   */
   #syncActiveDescendant(index: number): void {
-    const input = this.#shell.input;
-    if (index >= 0) input.setAttribute('aria-activedescendant', itemId(index));
-    else input.removeAttribute('aria-activedescendant');
+    const el = index >= 0 ? this.#shell.results.querySelector<HTMLElement>(`#${itemId(index)}`) : null;
+    this.#activeDescendant.setActive(el);
   }
 
-  #scrollActive(): void {
-    const el = this.#shell.results.querySelector('.cp__item--active') as HTMLElement | null;
-    // Scroll the results list only, never the page (core SPEC §12.15).
-    if (el) scrollIntoContainer(el, { container: this.#shell.results });
+  /** Release the active descendant (element `destroy()`). */
+  destroy(): void {
+    this.#activeDescendant.destroy();
   }
 }

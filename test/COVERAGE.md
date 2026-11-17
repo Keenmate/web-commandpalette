@@ -28,6 +28,7 @@ Known bugs are in `test/NOTES.md`.
 | Instant command → `action` + close | ✓ | `basic.spec.ts` | `basic.html` |
 | Row click selects, focus stays in the input | ✓ | `basic.spec.ts` | `basic.html` |
 | a11y wiring (dialog, combobox, listbox, activedescendant) | ✓ | `basic.spec.ts` | `basic.html` |
+| `aria-activedescendant` follows ↑↓ / Home / End, active row in the list's view (core `createActiveDescendant`) | ✓ | `keyboard.spec.ts` | `keyboard.html` |
 
 ## 2. Public API (`el.*` / `el.controller`)
 
@@ -50,7 +51,7 @@ Known bugs are in `test/NOTES.md`.
 | Esc / Backspace step back | ✓ | `keyboard.spec.ts` | `keyboard.html` |
 | Mode-aware footer hints | ✓ | `keyboard.spec.ts` | `keyboard.html` |
 | Tab selects like Enter | ✓ | `keyboard.spec.ts` | `keyboard.html` |
-| Active row scrolls the results list only (core `scrollIntoContainer`, no `scrollIntoView`) | ✓ | `keyboard.spec.ts` | `keyboard.html` |
+| Active row scrolls the results list only (core `createActiveDescendant` / `scrollIntoContainer`, no `scrollIntoView`) | ✓ | `keyboard.spec.ts` | `keyboard.html` |
 | `open-key` remap / `''` disables | ✓ | `hotkeys.spec.ts` | `hotkeys.html` |
 | `favorite-key` / `favorites-key` / `recent-key` remap | ✓ | `hotkeys.spec.ts`, `usage.spec.ts` | `hotkeys.html`, `usage.html` |
 | `favorites-hotkey` / `recent-hotkey` sequences (+ `''`, command shortcut wins) | ✓ | `hotkeys.spec.ts`, `usage.spec.ts` | `hotkeys.html`, `usage.html` |

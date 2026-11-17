@@ -18,6 +18,37 @@ test('↑↓ wrap, PgUp/PgDn clamp, Home/End jump', async ({ page }) => {
   expect(await activeTitle(page)).toBe('Deploy to Environment');
 });
 
+test('aria-activedescendant follows the arrows (core createActiveDescendant): it names the active row, which is scrolled into the list', async ({ page }) => {
+  const p = palette(page);
+  await open(page);
+  await expect(p.input).toHaveAttribute('aria-controls', 'cp-results');
+  const followsActive = async (): Promise<void> => {
+    const id = await p.active.getAttribute('id');
+    expect(id).toBeTruthy();
+    await expect(p.input).toHaveAttribute('aria-activedescendant', id!);
+    await expect(p.active).toHaveAttribute('aria-selected', 'true');
+  };
+  await followsActive();
+  for (const key of ['ArrowDown', 'ArrowDown', 'ArrowUp', 'ArrowUp', 'End', 'Home']) {
+    await page.keyboard.press(key);
+    await followsActive();
+  }
+  // A long list: the active row is moved into the results' viewport, the page doesn't scroll.
+  await p.input.fill('many');
+  await expect(p.pagination).toBeVisible();
+  for (let i = 0; i < 7; i++) await page.keyboard.press('ArrowDown');
+  await followsActive();
+  const box = await p.active.evaluate((row) => {
+    const list = row.closest('.cp__results') as HTMLElement;
+    const r = row.getBoundingClientRect();
+    const l = list.getBoundingClientRect();
+    return { isInView: r.top >= l.top - 1 && r.bottom <= l.bottom + 1, scrollTop: list.scrollTop };
+  });
+  expect(box.isInView).toBe(true);
+  expect(box.scrollTop).toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+});
+
 test('navigation never calls a provider', async ({ page }) => {
   const p = palette(page);
   await open(page);

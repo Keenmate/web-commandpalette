@@ -683,6 +683,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   }
 
   protected override destroyCallback(): void {
+    this.#renderer.destroy();
     this.#customStyles?.destroy();
     this.#customStyles = null;
   }

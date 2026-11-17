@@ -11,6 +11,13 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Changed — active row through core `createActiveDescendant` (core SPEC §12.25, rulebook C-CA-25, 2026-11-17)
+
+- Internal, no visible change: `aria-activedescendant`, `aria-controls` and the in-list scroll of the
+  active row now come from core `/a11y` `createActiveDescendant` (ARIA only, `shouldHandleKeys: false` —
+  the keys, the roles and the `cp__item--active` highlight stay the palette's). Needs
+  `@keenmate/web-components-core` `^1.0.0-rc25`. The results list gets `tabindex="-1"` (not a tab stop of its own).
+
 ### Changed — motion: closing animation, countdown bar follows the motion level (core SPEC §12.16, 2026-11-15)
 
 Needs core's `animateOut`: needs `@keenmate/web-components-core` `^1.0.0-rc24`.
