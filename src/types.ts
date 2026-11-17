@@ -339,8 +339,8 @@ export type BeforeActionCallback = (detail: ActionEventDetail) => unknown;
 /**
  * Every visible string, resolved per key through core `/locale` (`createLabels`): the instance
  * `labels` → the page-wide `window.components.locale.labels['web-command-palette']` → the English
- * default. `{name}`, `{key}`, `{page}`, `{total}`, `{count}` are placeholders (numbers formatted
- * for the locale — `12 345` in Czech); a page-wide `formatLabelCallback` (ICU / i18next) formats
+ * default. `{name}`, `{key}`, `{page}`, `{total}`, `{count}` are placeholders (numbers passed raw;
+ * core formats them for the locale — `12 345` in Czech, a `formatLabelCallback` gets the number); a page-wide `formatLabelCallback` (ICU / i18next) formats
  * every label. A label drawn as content (headings, hints, empty / loading / page text, the
  * feedback heading) is an HTML template whose `{…}` values are escaped; one used as an
  * attribute, placeholder, badge or announcement is plain text. `window.components.security =

@@ -422,9 +422,9 @@ window.components.locale = {
 };
 ```
 
-**Numbers** filled into `{count}`, `{page}` and `{total}` are formatted for the resolved locale
-(core `formatNumber`: the page-wide `locale` / `thousandsSeparator`, else the browser language) —
-`12 345` in Czech, `12,345` in English. A `formatLabelCallback` receives them already formatted.
+**Numbers** filled into `{count}`, `{page}` and `{total}` are passed as numbers; core formats them for
+the resolved locale (the page-wide `locale` / `thousandsSeparator`, else the browser language) —
+`12 345` in Czech, `12,345` in English. A `formatLabelCallback` receives the raw numbers (for plurals).
 
 **HTML or text.** A label drawn as content — section headings, footer hints, the empty / loading /
 pagination text, `showAll`, the feedback heading `done` — is an HTML template: markup in it renders,

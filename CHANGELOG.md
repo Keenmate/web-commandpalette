@@ -19,9 +19,10 @@ callback and item API below is breaking.
   wizard answers kept). A page-wide `formatLabelCallback` (ICU / i18next) and
   `window.components.security.shouldEscapeLabels` apply. The own `resolveLabels` and `{name}` templating
   are gone.
-- **BREAKING (visible): counts are locale-formatted.** `{count}`, `{page}` and `{total}` (`pageOf`,
-  `resultsCount`, `showAll`) go through core `formatNumber` — `12 345` in Czech, `12,345` in English (was
-  `12345` everywhere). A `formatLabelCallback` gets the formatted strings.
+- **BREAKING (visible): counts are locale-formatted.** The palette passes `{count}`, `{page}` and `{total}`
+  (`pageOf`, `resultsCount`, `showAll`) as numbers and core `createLabels` formats them for the resolved
+  locale — `12 345` in Czech, `12,345` in English (was `12345` everywhere). A `formatLabelCallback` gets
+  the raw numbers (ICU / i18next plurals).
 - **BREAKING (labels are HTML where drawn as content):** headings, footer hints, the empty / loading /
   pagination text, `showAll` and the feedback heading `done` are now HTML templates (the `{…}` values stay
   escaped), the core label standard; attribute / placeholder / pill / badge / announcement labels stay

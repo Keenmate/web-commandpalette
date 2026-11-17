@@ -111,4 +111,26 @@ test.describe('page-wide locale', () => {
     await page.evaluate(() => { (window as any).components.locale = { locale: 'en-US' }; });
     await expect(p.pagination).toHaveText('Page 1 of 1,544 · 12,345 results');
   });
+
+  test('a page-wide formatLabelCallback gets the raw numbers', async ({ page }) => {
+    const p = palette(page);
+    await p.host.evaluate((el: any) => {
+      el.searchCallback = () => Array.from({ length: 12345 }, (_, i) => ({ id: `r${i}`, title: `Row ${i}` }));
+    });
+    await page.evaluate(() => {
+      (window as any).seen = [];
+      (window as any).components.locale = {
+        locale: 'cs',
+        formatLabelCallback: ({ key, params }: any) => {
+          if (key === 'pageOf') (window as any).seen.push(params);
+          return key === 'pageOf' ? `typeof ${typeof params.count} ${params.count}` : undefined;
+        },
+      };
+    });
+    await open(page);
+    await p.input.fill(':p row');
+    await expect(p.pagination).toHaveText('typeof number 12345');
+    const seen = await page.evaluate(() => (window as any).seen.at(-1));
+    expect(seen).toEqual({ page: 1, total: 1544, count: 12345 });
+  });
 });

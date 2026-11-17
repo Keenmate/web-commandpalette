@@ -12,7 +12,7 @@ import { createActiveDescendant, type ActiveDescendant } from '@keenmate/web-com
 import { findHighlightRanges, wrapRanges } from '@keenmate/web-components-core/search';
 import { NO_SEARCH_QUERY, type SearchQuery } from './helpers/filter';
 import { renderIcon } from './helpers/icons';
-import { formatCount, type HomeSection, type PaletteEngine, type TokenView, type UsageView, type ViewItem } from './palette';
+import type { HomeSection, PaletteEngine, TokenView, UsageView, ViewItem } from './palette';
 import { DEFAULT_PALETTE_KEYS, type CommandPaletteLabels, type PaletteKeys, type PaletteLabels } from './types';
 
 export interface Shell {
@@ -170,7 +170,7 @@ function sectionHtml(heading: Heading, rows: string, more = ''): string {
 /** "+2 · Ctrl F" on a capped home section: click/tap (or the chord) opens the full list. */
 function moreHtml(view: UsageView, hidden: number, heading: string, ctx: RenderContext): string {
   const cap = chordKeycap(view === 'favorites' ? ctx.keys.favorites : ctx.keys.recent);
-  const count = hidden > 0 ? ctx.labels.html('showAll', { count: formatCount(hidden) }) : '';
+  const count = hidden > 0 ? ctx.labels.html('showAll', { count: hidden }) : '';
   if (!count && !cap) return '';
   return (
     `<button type="button" class="cp__more" tabindex="-1" data-view="${view}" aria-label="${escapeHtml(heading)}${cap ? ` (${escapeHtml(cap)})` : ''}">` +
@@ -396,7 +396,7 @@ export class Renderer {
       this.#footer = footer;
       s.footer.innerHTML = footer;
     }
-    const announce = m.mode === 'idle' || m.isLoading ? '' : m.items.length ? labels.text('resultsCount', { count: formatCount(m.totalResults) }) : m.emptyText ?? '';
+    const announce = m.mode === 'idle' || m.isLoading ? '' : m.items.length ? labels.text('resultsCount', { count: m.totalResults }) : m.emptyText ?? '';
     if (announce !== this.#announce) {
       this.#announce = announce;
       s.live.textContent = announce;

@@ -9,7 +9,6 @@
  */
 import { resolveActionItem, type ResolvedActionItem } from '@keenmate/web-components-core/actions';
 import { createRegexCompiler } from '@keenmate/web-components-core/search';
-import { formatNumber } from '@keenmate/web-components-core/locale';
 import {
   DEFAULT_SEARCH_RULES,
   filterCommands,
@@ -146,8 +145,6 @@ export type TokenView =
 
 export type NavDirection = 'up' | 'down' | 'pageUp' | 'pageDown' | 'home' | 'end';
 
-/** A count for a label's `{count}` / `{page}` / `{total}`: locale-formatted (core `formatNumber`, `12 345` in Czech). */
-export const formatCount = (n: number): string => formatNumber(n);
 
 /** Split a hotkey into keycaps: `"g d"` → `[g, d]`, `"Ctrl+K"` → `[Ctrl, K]`. */
 export const hotkeyKeys = (hotkey: string): string[] => hotkey.split(/[+\s]+/).filter(Boolean);
@@ -427,12 +424,12 @@ export class PaletteEngine {
     return this.emptyLabel ? this.#host.labels().text(this.emptyLabel.key, this.emptyLabel.params) : null;
   }
 
-  /** The pagination row's label (`pageOf`, locale-formatted numbers), or null on a single page. */
+  /** The pagination row's label (`pageOf`; raw numbers — core `createLabels` formats them for display), or null on a single page. */
   get pageLabel(): LabelRef | null {
     if (this.totalPages <= 1) return null;
     return {
       key: 'pageOf',
-      params: { page: formatCount(this.page), total: formatCount(this.totalPages), count: formatCount(this.totalResults) },
+      params: { page: this.page, total: this.totalPages, count: this.totalResults }, // numbers: core formats them
     };
   }
 
