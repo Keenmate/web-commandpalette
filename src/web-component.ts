@@ -15,6 +15,7 @@ import {
   type SaveStateCallback,
   BlissElement,
   adoptStyles,
+  announce,
   animateOut,
   SHEET_CHROME_CSS,
   ICON_CSS,
@@ -468,7 +469,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
 
     // The dialog collapses to this one line (CSS hides the search row, results and
     // footer under `.cp--confirming`); the line takes focus so any key dismisses it.
-    const { confirm, live, root } = this.#shell;
+    const { confirm, root } = this.#shell;
     // The countdown bar shows the timer — decorative, so it goes when motion is off (SPEC §12.16);
     // the timer itself keeps `feedback-duration`.
     const body = fillConfirmation(confirm, this.#labels.html('done'), duration, !isMotionOff(this));
@@ -497,7 +498,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     }
     confirm.focus();
     const doneText = this.#labels.text('done');
-    live.textContent = doneText ? `${doneText}: ${ctx.sentence}` : ctx.sentence;
+    announce(doneText ? `${doneText}: ${ctx.sentence}` : ctx.sentence); // core's page-wide live region (SPEC §12.23)
     this.log.UI.debug('feedback', ctx);
     this.#feedbackTimer = setTimeout(() => this.close(), duration);
     return true;

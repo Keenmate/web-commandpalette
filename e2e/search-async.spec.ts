@@ -208,3 +208,18 @@ test('loader: the instance renderLoadingCallback beats the page hook', async ({ 
   await expect(p.host.locator('.page-dots')).toHaveCount(0);
   await expect(p.host.locator('.cp__loader')).toHaveCount(0);
 });
+
+// ── Announcements (core announce(), SPEC §12.23): the page-wide live region, not a palette-local one ──
+
+test('announcer: the shared core region gets the result count (and the palette has no own live region)', async ({ page }) => {
+  const p = palette(page);
+  await open(page);
+  await p.input.fill(':p ipad');
+  await expect(p.titles).toHaveText(['ipad hit 0', 'ipad hit 1']);
+  const region = page.locator('body > [data-km-announcer="polite"]');
+  await expect(region).toHaveText('2 results');
+  await expect(region).toHaveAttribute('role', 'status');
+  await expect(p.host.locator('.cp__sr-only')).toHaveCount(0);
+  // The modal's inert background skips core's region — it stays readable while the palette is open.
+  expect(await region.evaluate((el) => el.closest('[inert]') === null && !(el as HTMLElement).inert)).toBe(true);
+});

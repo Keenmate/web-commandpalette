@@ -11,6 +11,14 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Changed — screen-reader announcements through core `announce()` (core SPEC §12.23, 2026-11-17)
+
+- The result count (`labels.resultsCount`, the raw number formatted by core `/locale`), the empty-state text
+  and "Done: …" after a command go to core's one page-wide live region (`body > [data-km-announcer]`, shared by
+  every component and readable while the modal makes the page inert). **BREAKING (DOM):** the palette's own
+  `.cp__sr-only` live region is gone. The visible context pill (`.cp__context`, `aria-live="polite"`) stays — it is
+  visible status text, not an announcement.
+
 ### Changed — `renderFeedbackCallback` through core `renderSlot` (core SPEC §12.35, 2026-11-17)
 
 - The feedback callback's result is read by core's one render-callback contract: a string = HTML, a Node

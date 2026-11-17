@@ -6,8 +6,8 @@
   `aria-controls` → the results `listbox`). The highlighted row is exposed via
   `aria-activedescendant`; rows are `role="option"` with `aria-selected`.
 - Home-screen sections are `role="group"` with the section heading as their label.
-- A visually hidden live region announces the result count (`labels.resultsCount`) or the
-  empty-state text; the context pill (e.g. "Searching in Products") is `aria-live="polite"`.
+- Core's page-wide live region (`announce()`, shared by every component, readable while the modal makes the page inert) announces the result count (`labels.resultsCount`), the
+  empty-state text and "Done: …" after a command; the visible context pill (e.g. "Searching in Products") is `aria-live="polite"`.
 - **Focus**: opening focuses the input; closing returns focus to the element that had it. Focus
   stays inside the dialog — <kbd>Tab</kbd> in the input selects (one wizard step at a time),
   <kbd>Shift</kbd>+<kbd>Tab</kbd> steps back, and from

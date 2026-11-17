@@ -7,7 +7,7 @@
  * `createActiveDescendant` (ARIA only — the keys stay the palette's) points
  * `aria-activedescendant` at it and scrolls it into view, so keyboard navigation is pure DOM work.
  */
-import { escapeHtml, renderIcon, renderLoader } from '@keenmate/web-components-core';
+import { announce, escapeHtml, renderIcon, renderLoader } from '@keenmate/web-components-core';
 import { formatShortcut } from '@keenmate/web-components-core/actions';
 import { createActiveDescendant, type ActiveDescendant } from '@keenmate/web-components-core/a11y';
 import { findHighlightRanges, wrapRanges } from '@keenmate/web-components-core/search';
@@ -27,7 +27,6 @@ export interface Shell {
   context: HTMLDivElement;
   results: HTMLDivElement;
   footer: HTMLDivElement;
-  live: HTMLDivElement;
   /** The one-line confirmation shown (alone) after a command ran. */
   confirm: HTMLDivElement;
 }
@@ -57,7 +56,6 @@ export function createShell(): Shell {
       <div class="cp__results" part="results" id="${RESULTS_ID}" role="listbox"></div>
       <div class="cp__footer" part="footer"></div>
       <div class="cp__confirm" role="status" tabindex="-1" hidden></div>
-      <div class="cp__sr-only" aria-live="polite" aria-atomic="true"></div>
     </div>`;
   const q = <T extends Element>(sel: string): T => root.querySelector(sel) as T;
   return {
@@ -71,7 +69,6 @@ export function createShell(): Shell {
     context: q('.cp__context'),
     results: q('.cp__results'),
     footer: q('.cp__footer'),
-    live: q('.cp__sr-only'),
     confirm: q('.cp__confirm'),
   };
 }
@@ -393,10 +390,12 @@ export class Renderer {
       this.#footer = footer;
       s.footer.innerHTML = footer;
     }
-    const announce = m.mode === 'idle' || m.isLoading ? '' : m.items.length ? labels.text('resultsCount', { count: m.totalResults }) : m.emptyText ?? '';
-    if (announce !== this.#announce) {
-      this.#announce = announce;
-      s.live.textContent = announce;
+    // Core's one page-wide live region (SPEC §12.23) — stays readable while the modal makes the page inert.
+    // Tracked across idle / loading ('') so the same count after a new search is read again.
+    const text = m.mode === 'idle' || m.isLoading ? '' : m.items.length ? labels.text('resultsCount', { count: m.totalResults }) : m.emptyText ?? '';
+    if (text !== this.#announce) {
+      this.#announce = text;
+      announce(text);
     }
   }
 

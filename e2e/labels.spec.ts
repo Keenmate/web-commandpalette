@@ -106,7 +106,7 @@ test.describe('page-wide locale', () => {
     await open(page);
     await p.input.fill(':p row');
     await expect(p.pagination).toHaveText(/^Page 1 of 1\s544 · 12\s345 results$/);
-    await expect(p.host.locator('.cp__sr-only')).toHaveText(/^12\s345 results$/);
+    await expect(page.locator('[data-km-announcer="polite"]')).toHaveText(/^12\s345 results$/);
 
     await page.evaluate(() => { (window as any).components.locale = { locale: 'en-US' }; });
     await expect(p.pagination).toHaveText('Page 1 of 1,544 · 12,345 results');
