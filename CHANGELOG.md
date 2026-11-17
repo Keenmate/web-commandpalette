@@ -11,6 +11,13 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Changed — `renderFeedbackCallback` through core `renderSlot` (core SPEC §12.35, 2026-11-17)
+
+- The feedback callback's result is read by core's one render-callback contract: a string = HTML, a Node
+  (element, fragment — any `Node` now, it was `HTMLElement` only) = mounted, `null` / `undefined` = the built-in
+  line, `false` = hidden (no feedback, the palette closes right away). No change in what `null` / `false` do: a
+  search-result selection still has no built-in line, so `null` there still means no feedback.
+
 ### Changed — item icons through core `renderIcon` (core SPEC §12.33, 2026-11-17)
 
 - **BREAKING (visible): item icons follow core's one icon rule** (`renderIcon(icon, { prefix: 'cp' })` +

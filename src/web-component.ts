@@ -18,6 +18,7 @@ import {
   animateOut,
   SHEET_CHROME_CSS,
   ICON_CSS,
+  renderSlot,
   createControllerFacade,
   createCustomStyles,
   createPresentationContext,
@@ -109,8 +110,8 @@ const INPUTS: readonly InputDef[] = [
     description: 'Runs before a search result fires `result-select` (`ctx = { result, scope }`). Return `false` (async OK) to cancel: no event, nothing recorded, the palette stays open. Other return values continue.' },
   { configKey: 'loadUsageCallback', converter: toFunction(), on: 'update', type: '(ctx: PaletteContext) => UsageEntry[] | Promise<UsageEntry[]>',
     description: 'Per-entry host API for favorites/recents (e.g. per user, from the server): returns the whole list. Set → the palette uses it and `saveUsageCallback` instead of the state store (`storage-key`, `loadStateCallback` / `saveStateCallback`). Called on connect and when this or `storage-key` changes.' },
-  { configKey: 'renderFeedbackCallback', converter: toFunction(), on: 'none', type: '(ctx: FeedbackContext) => string | HTMLElement | null | false',
-    description: 'Render the text of the one-line feedback shown after a command ran (the ✓, "Done" and countdown stay). `ctx = { type, commandId?, commandText?, selections?, sentence, result?, scope?, duration }` + `controller` / `element`; `type` is `action` or `select`. Return markup / an element to replace the default, `null` for the default, or `false` to skip it this time. Search-result selections (`type: "select"`) get no feedback unless this returns content.' },
+  { configKey: 'renderFeedbackCallback', converter: toFunction(), on: 'none', type: '(ctx: FeedbackContext) => string | Node | null | false',
+    description: 'Render the text of the one-line feedback shown after a command ran (the ✓, "Done" and countdown stay). `ctx = { type, commandId?, commandText?, selections?, sentence, result?, scope?, duration }` + `controller` / `element`; `type` is `action` or `select`. Read by core `renderSlot`: a string = HTML, a Node (element, fragment) = mounted, `null` / `undefined` = the built-in line, `false` = hidden (no feedback this time, the palette closes right away). Search-result selections (`type: "select"`) have no built-in line, so they get feedback only when this returns content.' },
   { configKey: 'renderLoadingCallback', converter: toFunction(), on: 'none', type: '(ctx: LoaderRenderContext) => void | (() => void)',
     description: 'Draw the searching loader yourself (shared loader, core SPEC §12.14). `ctx = { component, context, containerElement, element, label }`; `context` is `search` (a search / step-options request in flight, `labels.searching`). Fill `containerElement` (already `role="status"` + `aria-label`); optionally return a cleanup. Beats the page-wide `window.components.renderLoadingCallback`; unset = the default `.cp__loader` (`--cp-loader-*` tokens).' },
   { configKey: 'saveUsageCallback', converter: toFunction(), on: 'none', type: '(ctx: { entry: UsageEntry }) => void | Promise<void>',
@@ -451,6 +452,8 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
           },
     );
 
+    // The hook runs once, up front: `false` (hidden) skips the panel, and a search result has no
+    // built-in line, so `null` / `undefined` skips it there too (core renderSlot reads the rest).
     let custom: ReturnType<RenderFeedbackCallback> = null;
     const cb = this.config.renderFeedbackCallback as RenderFeedbackCallback | null;
     if (cb) {
@@ -469,15 +472,16 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     // The countdown bar shows the timer — decorative, so it goes when motion is off (SPEC §12.16);
     // the timer itself keeps `feedback-duration`.
     const body = fillConfirmation(confirm, this.#labels.html('done'), duration, !isMotionOff(this));
-    if (custom instanceof HTMLElement) body.appendChild(custom);
-    else if (typeof custom === 'string') body.innerHTML = custom;
-    else {
-      body.innerHTML = confirmationBodyHtml({
-        trigger: command?.trigger,
-        text: command?.text ?? ctx.sentence,
-        parts: done.type === 'action' ? done.parts : [],
-      });
-    }
+    // Core's one render-callback contract (SPEC §12.35): string = HTML, Node = mounted, null = built-in.
+    renderSlot(body, custom, {
+      renderDefault: (el) => {
+        el.innerHTML = confirmationBodyHtml({
+          trigger: command?.trigger,
+          text: command?.text ?? ctx.sentence,
+          parts: done.type === 'action' ? done.parts : [],
+        });
+      },
+    });
     // Shrink from the dialog's current height to the feedback's (min-height)
     // height with a transition, rather than snapping. The phone sheet is full-height
     // anyway — the line just centres in it.

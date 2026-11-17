@@ -73,6 +73,43 @@ test('renderFeedbackCallback: custom content, or false to skip', async ({ page }
   await expect(p.root).not.toHaveClass(/--active/, { timeout: 300 });
 });
 
+test('renderFeedbackCallback follows core renderSlot: null draws the built-in line, false hides it, a Node is mounted', async ({ page }) => {
+  const p = palette(page);
+  await p.host.evaluate((el) => {
+    (el as unknown as { renderFeedbackCallback: unknown }).renderFeedbackCallback = (ctx: { commandId?: string }) => {
+      if (ctx.commandId === 'reload') return false;
+      return null;
+    };
+  });
+  await open(page);
+  await page.keyboard.type('/go us');
+  await page.keyboard.press('Enter');
+  await expect(panel(page).locator('.cp__confirm-body')).toHaveText('/go Users');
+  await expect(panel(page).locator('.cp__confirm-answer')).toHaveText(['Users']);
+
+  await page.keyboard.press('Escape');
+  await open(page);
+  await page.keyboard.type('/reload');
+  await page.keyboard.press('Enter');
+  await expect(p.root).not.toHaveClass(/--active/, { timeout: 300 });
+  await expect(panel(page)).toBeHidden();
+
+  await p.host.evaluate((el) => {
+    (el as unknown as { renderFeedbackCallback: unknown }).renderFeedbackCallback = () => {
+      const frag = document.createDocumentFragment();
+      const node = document.createElement('i');
+      node.className = 'mounted';
+      node.textContent = 'node';
+      frag.append(node);
+      return frag;
+    };
+  });
+  await open(page);
+  await page.keyboard.type('/reload');
+  await page.keyboard.press('Enter');
+  await expect(panel(page).locator('.cp__confirm-body .mounted')).toHaveText('node');
+});
+
 test('feedback-duration="0" closes right away; a custom duration holds the line that long', async ({ page }) => {
   const p = palette(page);
   await p.host.evaluate((el) => el.setAttribute('feedback-duration', '0'));

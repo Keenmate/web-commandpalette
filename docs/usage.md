@@ -80,7 +80,7 @@ Objects and functions are **properties only** — set them from JS (or a framewo
 | `storageKey` | `string` | Key of the persisted favorites/recents (attribute `storage-key`): `localStorage` `km-state:web-command-palette:<key>`, or `ctx.key` of the state callbacks. Default `'web-commandpalette:usage'` — put the user id in it. |
 | `maxFavoriteCount` / `maxRecentCount` | `number` | Rows each home section shows. Default `3`; `0` hides the section. |
 | `favoriteKey` / `favoritesKey` / `recentKey` | `string` | Ctrl/⌘ + key while open: star the active row / show all favorites / show all recent. Defaults `d` / `f` / `r`; `''` disables. |
-| `renderFeedbackCallback` | `(ctx) => string \| HTMLElement \| null \| false` | Custom feedback content; `false` skips it. See [Feedback](#feedback). |
+| `renderFeedbackCallback` | `(ctx) => string \| Node \| null \| false` | Custom feedback content: string = HTML, Node = mounted, `null` = built-in, `false` = hidden (skipped). See [Feedback](#feedback). |
 | `renderLoadingCallback` | `(ctx) => void \| (() => void)` | Draw the searching loader yourself — `ctx = { component, context: 'search', containerElement, element, label }`; fill `containerElement` (already `role="status"` + `aria-label` = `labels.searching`), optionally return a cleanup. Beats the page-wide `window.components.renderLoadingCallback` (one hook for every Keenmate component); unset = the default `.cp__loader` (`--cp-loader-icon` / `-rotate` / `-duration` / `-size` / `-color`, chained to `--base-loader-*`). |
 | `customStyles` / `getCustomStylesCallback` | `string \| null` / `(ctx) => string \| null \| undefined` | Extra CSS for this palette's shadow root (attribute `custom-styles`), after the component CSS and after the page-wide `window.components['web-command-palette'].customStyles` / `.getCustomStylesCallback`, so the instance wins. The callback wins over `customStyles`. See [Theming → Custom CSS](theming.md#custom-css-shadow-root). |
 | `isFeedbackShown` | `boolean` | Show the one-line feedback after a command ran. Default `true` (attribute `show-feedback`). |
@@ -376,8 +376,13 @@ palette.renderFeedbackCallback = (ctx) => {
 };
 ```
 
-Return an HTML string or an element to replace the line's text (the ✓, **Done** and the countdown
-stay), `null` for the default, or `false` to close right away.
+The result is read by core's one render-callback contract (`renderSlot`, core SPEC §12.35); it
+replaces the line's text (the ✓, **Done** and the countdown stay):
+
+- a **string** → HTML (escape data you put in it);
+- a **Node** (element, fragment) → mounted;
+- **`null` / `undefined`** → the built-in line (a search result has none, so no panel);
+- **`false`** → hidden: no feedback this time, the palette closes right away.
 
 ## Right-to-left
 

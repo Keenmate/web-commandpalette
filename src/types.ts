@@ -316,10 +316,15 @@ export interface FeedbackContext extends PaletteContext {
 }
 
 /**
- * Render the feedback panel. Return markup or an element to replace the default,
- * `null`/`undefined` for the default, or `false` to skip the feedback this time.
+ * Render the text of the feedback line (the ✓, **Done** and the countdown stay). Read by core
+ * `renderSlot` (SPEC §12.35):
+ *  - a `string` → HTML (the callback is code, like a template — escape data you put in it);
+ *  - a `Node` (element, fragment) → mounted as the line's content;
+ *  - `null` / `undefined` → the built-in line (`/deploy to Staging branch main`); a search
+ *    result (`type: 'select'`) has none, so it gets no feedback;
+ *  - `false` → hidden: no feedback this time, the palette closes right away.
  */
-export type RenderFeedbackCallback = (ctx: FeedbackContext) => string | HTMLElement | null | undefined | false;
+export type RenderFeedbackCallback = (ctx: FeedbackContext) => string | Node | null | undefined | false;
 
 // ── before-hooks ────────────────────────────────────────────────────────────
 
