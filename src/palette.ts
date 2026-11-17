@@ -9,6 +9,7 @@
  */
 import { resolveActionItem, type ResolvedActionItem } from '@keenmate/web-components-core/actions';
 import { createRegexCompiler } from '@keenmate/web-components-core/search';
+import { formatNumber } from '@keenmate/web-components-core/locale';
 import {
   DEFAULT_SEARCH_RULES,
   filterCommands,
@@ -27,9 +28,10 @@ import type {
   CommandContext,
   Context,
   Display,
-  Labels,
+  LabelRef,
   Mode,
   Option,
+  PaletteLabels,
   Result,
   Scope,
   SearchCallback,
@@ -62,7 +64,8 @@ export interface PaletteEngineHost {
   debounceMs(): number;
   /** `search-behavior` / `search-match` for client-side filtering + highlighting (default `normalized` / `contains`). */
   searchRules?(): SearchRules;
-  labels(): Labels;
+  /** The palette's labels (core `createLabels`; a standalone host can pass its own `createLabels(...)`). */
+  labels(): PaletteLabels;
   /** Favorites/recents store, or null when disabled. */
   usage?(): UsageStore | null;
   /** How many recent entries the home screen shows. */
@@ -143,8 +146,8 @@ export type TokenView =
 
 export type NavDirection = 'up' | 'down' | 'pageUp' | 'pageDown' | 'home' | 'end';
 
-const fill = (template: string, values: Record<string, string | number>): string =>
-  template.replace(/\{(\w+)\}/g, (m, k: string) => (k in values ? String(values[k]) : m));
+/** A count for a label's `{count}` / `{page}` / `{total}`: locale-formatted (core `formatNumber`, `12 345` in Czech). */
+export const formatCount = (n: number): string => formatNumber(n);
 
 /** Split a hotkey into keycaps: `"g d"` → `[g, d]`, `"Ctrl+K"` → `[Ctrl, K]`. */
 export const hotkeyKeys = (hotkey: string): string[] => hotkey.split(/[+\s]+/).filter(Boolean);
@@ -266,8 +269,8 @@ export class PaletteEngine {
   /** Bumped whenever `items` is replaced (vs. just the active row moving). */
   listVersion = 0;
   isLoading = false;
-  /** Text for the empty state when `items` is empty and nothing is loading. */
-  emptyText: string | null = null;
+  /** The empty-state label when `items` is empty and nothing is loading (resolved when drawn). */
+  emptyLabel: LabelRef | null = null;
   /** The query to `<mark>` in titles (as typed, trimmed). */
   highlight = '';
   page = 1;
@@ -369,21 +372,21 @@ export class PaletteEngine {
   get contextText(): string | null {
     const labels = this.#host.labels();
     switch (this.mode) {
-      case 'command-list': return labels.commands;
-      case 'context-list': return labels.searchContexts;
+      case 'command-list': return labels.text('commands');
+      case 'context-list': return labels.text('searchContexts');
       case 'command-step': return this.command ? this.#resolve(this.command).text : null;
-      case 'context-search': return this.context ? fill(labels.searchingIn, { name: this.context.text }) : null;
-      case 'favorites-list': return labels.favorites;
-      case 'recent-list': return labels.recent;
+      case 'context-search': return this.context ? labels.text('searchingIn', { name: this.context.text }) : null;
+      case 'favorites-list': return labels.text('favorites');
+      case 'recent-list': return labels.text('recent');
       default: return null;
     }
   }
 
   get placeholder(): string {
     const labels = this.#host.labels();
-    if (this.mode === 'command-step') return this.step?.placeholder || labels.filterPlaceholder;
-    if (this.usageView) return labels.filterPlaceholder;
-    return labels.placeholder;
+    if (this.mode === 'command-step') return this.step?.placeholder || labels.text('filterPlaceholder');
+    if (this.usageView) return labels.text('filterPlaceholder');
+    return labels.text('placeholder');
   }
 
   /** Tokens-display fragments, or null when the tokens row is not in use. */
@@ -419,9 +422,24 @@ export class PaletteEngine {
     return this.#sentence();
   }
 
-  get pageText(): string | null {
+  /** The empty-state text (`emptyLabel` resolved as plain text), or null. */
+  get emptyText(): string | null {
+    return this.emptyLabel ? this.#host.labels().text(this.emptyLabel.key, this.emptyLabel.params) : null;
+  }
+
+  /** The pagination row's label (`pageOf`, locale-formatted numbers), or null on a single page. */
+  get pageLabel(): LabelRef | null {
     if (this.totalPages <= 1) return null;
-    return fill(this.#host.labels().pageOf, { page: this.page, total: this.totalPages, count: this.totalResults });
+    return {
+      key: 'pageOf',
+      params: { page: formatCount(this.page), total: formatCount(this.totalPages), count: formatCount(this.totalResults) },
+    };
+  }
+
+  /** The pagination row as plain text, or null on a single page. */
+  get pageText(): string | null {
+    const ref = this.pageLabel;
+    return ref ? this.#host.labels().text(ref.key, ref.params) : null;
   }
 
   // ── lifecycle ─────────────────────────────────────────────────────────────
@@ -591,7 +609,7 @@ export class PaletteEngine {
     this.lockedLength = 0;
     this.highlight = '';
     this.isLoading = false;
-    this.emptyText = null;
+    this.emptyLabel = null;
     const store = this.#host.usage?.() ?? null;
     // Home rows are capped and one-line; the full lists live behind Ctrl/⌘+F / R.
     const capped = (view: UsageView, limit: number): ViewItem[] => {
@@ -668,12 +686,11 @@ export class PaletteEngine {
     this.highlight = q;
     this.isLoading = false;
     const all = this.#usageItems(view, false);
-    const labels = this.#host.labels();
-    this.emptyText = all.length
-      ? labels.noResults
+    this.emptyLabel = all.length
+      ? { key: 'noResults' }
       : view === 'favorites'
-        ? fill(labels.noFavorites, { key: this.#host.starKey?.() ?? 'Ctrl D' })
-        : labels.noRecent;
+        ? { key: 'noFavorites', params: { key: this.#host.starKey?.() ?? 'Ctrl D' } }
+        : { key: 'noRecent' };
     this.#setItems(q ? all.filter((i) => matchesAny([i.title, i.meta], this.#query(q))) : all);
   }
 
@@ -720,7 +737,7 @@ export class PaletteEngine {
     this.mode = 'command-list';
     this.highlight = needle;
     this.isLoading = false;
-    this.emptyText = this.#host.labels().noResults;
+    this.emptyLabel = { key: 'noResults' };
     this.#setItems(this.#starred(this.#commandItems(filterCommands(this.#commands(), this.#query(needle)))));
   }
 
@@ -870,7 +887,7 @@ export class PaletteEngine {
   #stepItems(options: Option[]): ViewItem[] {
     const def = this.#defaultFor(this.step);
     if (!def || this.#stepQuery.trim()) return options.map(optionItem);
-    const badge = this.#host.labels().lastUsed;
+    const badge = this.#host.labels().text('lastUsed');
     const at = options.findIndex((o) => matchesSelection(o, def));
     if (at >= 0) {
       const rest = options.filter((_, i) => i !== at);
@@ -887,7 +904,7 @@ export class PaletteEngine {
     this.#stepQuery = query;
     this.highlight = query.trim();
     this.#layStepInput(query);
-    this.emptyText = null;
+    this.emptyLabel = null;
     this.#setItems(this.#stepItems([]));
     const step = this.step!;
     if (step.isLiveSearch) {
@@ -921,7 +938,7 @@ export class PaletteEngine {
   #applyStepFilter(): void {
     const opts = filterOptions(this.#stepOptions ?? [], this.#query(this.#stepQuery));
     this.isLoading = false;
-    this.emptyText = this.#host.labels().noResults;
+    this.emptyLabel = { key: 'noResults' };
     this.#setItems(this.#stepItems(opts));
   }
 
@@ -942,7 +959,7 @@ export class PaletteEngine {
         const list = (options ?? []) as Option[];
         if (isLive) {
           this.isLoading = false;
-          this.emptyText = this.#host.labels().noResults;
+          this.emptyLabel = { key: 'noResults' };
           this.#setItems(this.#stepItems(list));
         } else {
           this.#stepOptions = list;
@@ -1036,7 +1053,7 @@ export class PaletteEngine {
     this.mode = 'context-list';
     this.highlight = needle;
     this.isLoading = false;
-    this.emptyText = this.#host.labels().noResults;
+    this.emptyLabel = { key: 'noResults' };
     this.#setItems(this.#starred(filterContexts(this.#host.contexts(), this.#query(needle)).map((c) => contextItem(c))));
   }
 
@@ -1066,7 +1083,7 @@ export class PaletteEngine {
       // The rule that started this project: an empty context query NEVER hits the
       // provider — prompt instead of dumping "top N" results.
       this.isLoading = false;
-      this.emptyText = fill(this.#host.labels().typeToSearch, { name: this.context!.text });
+      this.emptyLabel = { key: 'typeToSearch', params: { name: this.context!.text } };
       this.#setResults([]);
       if (!isEntry) this.#changed();
       return;
@@ -1088,7 +1105,7 @@ export class PaletteEngine {
     ]);
     if (!this.#host.searchCallback()) {
       this.isLoading = false;
-      this.emptyText = this.#host.labels().noResults;
+      this.emptyLabel = { key: 'noResults' };
       this.#setResults(local);
       return;
     }
@@ -1110,7 +1127,7 @@ export class PaletteEngine {
   /** Show `prefix` + a loading state now; call the provider after the debounce. */
   #debouncedSearch(scope: Scope, q: string, prefix: ViewItem[], silent: boolean): void {
     this.isLoading = true;
-    this.emptyText = null;
+    this.emptyLabel = null;
     this.#setResults(prefix);
     if (!silent) this.#changed();
     this.#timer = setTimeout(() => {
@@ -1119,7 +1136,7 @@ export class PaletteEngine {
       const call = this.#searchFor(scope);
       if (!call) {
         this.isLoading = false;
-        this.emptyText = this.#host.labels().noResults;
+        this.emptyLabel = { key: 'noResults' };
         this.#setResults(prefix);
         this.#changed();
         return;
@@ -1128,7 +1145,7 @@ export class PaletteEngine {
         (signal) => call(signal) as Result[] | PromiseLike<Result[]>,
         (results) => {
           this.isLoading = false;
-          this.emptyText = this.#host.labels().noResults;
+          this.emptyLabel = { key: 'noResults' };
           this.#setResults([...prefix, ...this.#starred(((results ?? []) as Result[]).map((r) => resultItem(r, scope)))]);
         },
       );

@@ -13,6 +13,7 @@
 import type { ActionEventDetail as CoreActionEventDetail, ActionItem, ComponentContext } from '@keenmate/web-components-core/actions';
 import type { PresentationContext } from '@keenmate/web-components-core';
 import type { SearchBehavior, SearchCallbackContext, SearchEntry, SearchMatch } from '@keenmate/web-components-core/search';
+import type { LabelParams, Labels } from '@keenmate/web-components-core/locale';
 
 export type { SearchBehavior, SearchMatch };
 
@@ -336,11 +337,17 @@ export type BeforeResultSelectCallback = (ctx: ResultSelectEventDetail) => unkno
 export type BeforeActionCallback = (detail: ActionEventDetail) => unknown;
 
 /**
- * Every visible string. `{name}`, `{page}`, `{total}`, `{count}` are placeholders.
- * All labels are text (escaped on insertion, never parsed as HTML). `''` = deliberately
- * empty (render nothing); a missing / `undefined` key = the English default.
+ * Every visible string, resolved per key through core `/locale` (`createLabels`): the instance
+ * `labels` → the page-wide `window.components.locale.labels['web-command-palette']` → the English
+ * default. `{name}`, `{key}`, `{page}`, `{total}`, `{count}` are placeholders (numbers formatted
+ * for the locale — `12 345` in Czech); a page-wide `formatLabelCallback` (ICU / i18next) formats
+ * every label. A label drawn as content (headings, hints, empty / loading / page text, the
+ * feedback heading) is an HTML template whose `{…}` values are escaped; one used as an
+ * attribute, placeholder, badge or announcement is plain text. `window.components.security =
+ * { shouldEscapeLabels: true }` makes every label plain text. `''` = deliberately empty (render
+ * nothing); a missing / `undefined` key = the next layer.
  */
-export interface Labels {
+export interface CommandPaletteLabels {
   /** Idle input placeholder. */
   placeholder: string;
   /** Step input placeholder when the step defines none. */
@@ -398,7 +405,7 @@ export interface Labels {
   done: string;
 }
 
-export const DEFAULT_LABELS: Labels = {
+export const DEFAULT_LABELS: CommandPaletteLabels = {
   placeholder: 'Type / for commands, : to search, or just start typing…',
   filterPlaceholder: 'Type to filter…',
   noResults: 'No results found',
@@ -431,19 +438,13 @@ export const DEFAULT_LABELS: Labels = {
   done: 'Done',
 };
 
-/**
- * The one label resolver (the future seam for core `/locale`): defaults, overlaid by the
- * given keys. `''` is kept (deliberately empty); `undefined` / `null` falls back to the default.
- */
-export function resolveLabels(custom: Partial<Labels> | null | undefined): Labels {
-  const out: Labels = { ...DEFAULT_LABELS };
-  if (custom) {
-    for (const key of Object.keys(custom) as (keyof Labels)[]) {
-      const v = custom[key];
-      if (typeof v === 'string') out[key] = v;
-    }
-  }
-  return out;
+/** One palette's resolved labels (core `createLabels`): `.text(key, params)` / `.html(key, params)`. */
+export type PaletteLabels = Labels<CommandPaletteLabels>;
+
+/** A label key + its placeholder values, resolved when drawn (`.text()` for text, `.html()` for markup). */
+export interface LabelRef {
+  key: keyof CommandPaletteLabels & string;
+  params?: LabelParams;
 }
 
 /** Palette modes (IMPLEMENTATION_PLAN §10). */

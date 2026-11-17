@@ -51,3 +51,64 @@ test("'' renders nothing; undefined keeps the English default", async ({ page })
   await expect(p.empty).toHaveCount(0);
   await expect(p.footer.locator('.cp__hint', { hasText: '↑↓' })).toHaveCount(0);
 });
+
+/**
+ * Page-wide labels (core /locale): `window.components.locale.labels['web-command-palette']` sits
+ * between the instance `labels` and English; assigning the page object re-renders the open palette
+ * in place (core `localeChanged()`), and `{count}` / `{page}` / `{total}` are locale-formatted.
+ */
+test.describe('page-wide locale', () => {
+  test.afterEach(async ({ page }) => {
+    await page.evaluate(() => { (window as any).components.locale = null; });
+  });
+
+  test('a page-wide label fills the gaps; the instance labels win', async ({ page }) => {
+    await page.evaluate(() => {
+      (window as any).components.locale = {
+        labels: { 'web-command-palette': { searchContexts: 'Kontexte', commands: 'Page commands', navigate: 'Navigieren' } },
+      };
+    });
+    const p = palette(page);
+    await open(page);
+    expect(await headings(page)).toEqual(['Befehle', 'Suche']); // instance `commands` beats the page
+    await expect(p.footer.locator('.cp__hint', { hasText: '↑↓' })).toContainText('Navigieren');
+    await p.input.fill(':');
+    await expect(p.context).toHaveText('Kontexte');
+  });
+
+  test('assigning window.components.locale re-renders the open palette (localeChanged), state kept', async ({ page }) => {
+    const p = palette(page);
+    await open(page);
+    await p.input.fill(':p ');
+    await expect(p.empty).toHaveText('Suche in Products');
+    await expect(p.context).toHaveText('Searching in Products');
+
+    await page.evaluate(() => {
+      (window as any).components.locale = {
+        labels: { 'web-command-palette': { searchingIn: 'Hledám v {name}', close: 'Zavřít', fullscreenTitle: 'Hledat' } },
+      };
+    });
+    await expect(p.context).toHaveText('Hledám v Products');
+    await expect(p.empty).toHaveText('Suche in Products'); // the instance key still wins
+    await expect(p.input).toHaveValue(':products '); // mode + query kept
+    await expect(p.host.locator('.cp__close')).toHaveAttribute('aria-label', 'Zavřít');
+
+    await page.evaluate(() => { (window as any).components.locale = null; });
+    await expect(p.context).toHaveText('Searching in Products');
+  });
+
+  test('counts in labels are locale-formatted (formatNumber)', async ({ page }) => {
+    const p = palette(page);
+    await p.host.evaluate((el: any) => {
+      el.searchCallback = () => Array.from({ length: 12345 }, (_, i) => ({ id: `r${i}`, title: `Row ${i}` }));
+    });
+    await page.evaluate(() => { (window as any).components.locale = { locale: 'cs' }; });
+    await open(page);
+    await p.input.fill(':p row');
+    await expect(p.pagination).toHaveText(/^Page 1 of 1\s544 · 12\s345 results$/);
+    await expect(p.host.locator('.cp__sr-only')).toHaveText(/^12\s345 results$/);
+
+    await page.evaluate(() => { (window as any).components.locale = { locale: 'en-US' }; });
+    await expect(p.pagination).toHaveText('Page 1 of 1,544 · 12,345 results');
+  });
+});

@@ -11,6 +11,27 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Changed — labels through core `/locale`: page-wide labels, locale-formatted counts (core SPEC §12.24, 2026-11-17)
+
+- **Page-wide labels:** every UI string resolves through core `createLabels` — the instance `labels` → the
+  page-wide `window.components.locale.labels['web-command-palette']` → English. Assigning
+  `window.components.locale` re-renders an open palette in place (core `localeChanged()`; mode, query and
+  wizard answers kept). A page-wide `formatLabelCallback` (ICU / i18next) and
+  `window.components.security.shouldEscapeLabels` apply. The own `resolveLabels` and `{name}` templating
+  are gone.
+- **BREAKING (visible): counts are locale-formatted.** `{count}`, `{page}` and `{total}` (`pageOf`,
+  `resultsCount`, `showAll`) go through core `formatNumber` — `12 345` in Czech, `12,345` in English (was
+  `12345` everywhere). A `formatLabelCallback` gets the formatted strings.
+- **BREAKING (labels are HTML where drawn as content):** headings, footer hints, the empty / loading /
+  pagination text, `showAll` and the feedback heading `done` are now HTML templates (the `{…}` values stay
+  escaped), the core label standard; attribute / placeholder / pill / badge / announcement labels stay
+  plain text. A label holding a literal `<` or `&` there must escape it, or set
+  `window.components.security = { shouldEscapeLabels: true }`.
+- **BREAKING (types):** the `Labels` type is renamed `CommandPaletteLabels` (the core `/locale` `Labels`
+  is the resolver API); `PaletteEngineHost.labels()` returns core's resolver (`createLabels(...)`), not a
+  resolved string map. New exports: `PaletteLabels`, `LabelRef`; `PaletteEngine.emptyText` is now a getter
+  over `emptyLabel`, plus `pageLabel`.
+
 ### Changed — standard Keenmate search: accent-insensitive filter, `search-behavior` / `search-match`, core `SearchCallbackContext` (core SPEC §12.11, 2026-11-17)
 
 - **Accent-insensitive filtering (visible change):** the client-side filter (the `/` and `:` lists, static

@@ -61,7 +61,7 @@ Objects and functions are **properties only** — set them from JS (or a framewo
 | `saveUsageCallback` | `({ entry }) => void \| Promise<void>` | Upsert one entry (by `entry.key`) on every use / star toggle (with `loadUsageCallback`). |
 | `loadStateCallback` | `LoadStateCallback<PaletteUsageState>` | Core state store (SPEC §12.17): `({ key }) => { entries } \| null` (async OK) — the page keeps the whole list. Set both state callbacks; either one alone switches `localStorage` off. |
 | `saveStateCallback` | `SaveStateCallback<PaletteUsageState>` | `({ key, state })`, `state` = the WHOLE `{ entries }` on every use / star toggle. |
-| `labels` | `Partial<Labels>` | UI strings; unset keys fall back to English. |
+| `labels` | `Partial<CommandPaletteLabels>` | UI strings (core `/locale`); unset keys fall back to the page-wide labels, then English. See [Labels](#labels). |
 | `display` | `'inline' \| 'tokens'` | Wizard display. Default `inline`. |
 | `size` | `'sm' \| 'lg' \| 'xl' \| null` | Width/height preset. |
 | `pageSize` | `number` | Search results per page. Default `8`. |
@@ -403,15 +403,37 @@ palette.labels = { placeholder: 'Hledat…', typeToSearch: 'Začněte psát pro 
 Keys: `placeholder`, `filterPlaceholder`, `noResults`, `searching`, `searchingIn` `{name}`,
 `typeToSearch` `{name}`, `commands`, `search`, `searchContexts`, `pageOf` `{page} {total} {count}`,
 `navigate`, `select`, `back`, `close`, `pages`, `fullscreenTitle`, `dialogLabel`,
-`removeToken` `{name}`, `resultsCount` `{count}`.
+`removeToken` `{name}`, `resultsCount` `{count}`, `favorites`, `recent`, `addFavorite`,
+`removeFavorite`, `next`, `run`, `lastUsed`, `showAll` `{count}`, `noFavorites` `{key}`,
+`noRecent`, `done` (type `CommandPaletteLabels`, defaults in the exported `DEFAULT_LABELS`).
 
 `noResults` = a search / filter matched nothing (the favorites / recent lists use `noFavorites`
 `{key}` / `noRecent` while nothing is starred / used yet).
 
-All labels are **text**: they are escaped on insertion (never parsed as HTML), and so are the
-`{name}` / `{count}` … values filled into them. A key set to `''` is deliberately empty — the
-string is not rendered (an `''` footer hint label hides that hint; an `''` aria label removes
-the attribute). A missing / `undefined` key falls back to the English default.
+Labels resolve per key through core `/locale` (`createLabels`): the instance `labels` → the page-wide
+`window.components.locale.labels['web-command-palette']` → the English default. Assigning
+`window.components.locale` re-renders an open palette in place (mode, query and wizard answers kept);
+a page-wide `formatLabelCallback` (ICU / i18next) formats every label.
+
+```js
+window.components.locale = {
+  locale: 'cs',
+  labels: { 'web-command-palette': { noResults: 'Nic nenalezeno', pageOf: 'Strana {page} z {total} · {count} výsledků' } },
+};
+```
+
+**Numbers** filled into `{count}`, `{page}` and `{total}` are formatted for the resolved locale
+(core `formatNumber`: the page-wide `locale` / `thousandsSeparator`, else the browser language) —
+`12 345` in Czech, `12,345` in English. A `formatLabelCallback` receives them already formatted.
+
+**HTML or text.** A label drawn as content — section headings, footer hints, the empty / loading /
+pagination text, `showAll`, the feedback heading `done` — is an HTML template: markup in it renders,
+the `{name}` / `{key}` values filled into it are escaped (they are data). A label used as an
+attribute, the input placeholder, the context pill, the `lastUsed` badge or a screen-reader
+announcement is plain text. `window.components.security = { shouldEscapeLabels: true }` makes every
+label plain text. A key set to `''` is deliberately empty — the string is not rendered (an `''`
+footer hint label hides that hint; an `''` aria label removes the attribute). A missing /
+`undefined` key falls through to the page-wide label, then English.
 
 ## Logging
 

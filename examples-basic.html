@@ -86,6 +86,32 @@ palette.searchCallback = async ({ scope, term, signal }) =&gt; fetchResults(scop
     </div>
 </div>
 
+<!-- ============================================================= -->
+<!-- BU05 · Page-wide labels (window.components.locale)             -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>BU05 · Page-wide labels — <code>window.components.locale</code></h2>
+    <p>
+        Every UI string goes through core <code>/locale</code>: the instance <code>labels</code> (BU04) win, then the
+        page-wide <code>window.components.locale.labels['web-command-palette']</code>, then English. Assigning the
+        page object re-renders an open palette in place — try it with the palette open. The numbers in
+        <code>{count}</code>, <code>{page}</code> and <code>{total}</code> are formatted for the locale: the
+        <em>Numbers</em> context returns 12,345 rows, so the pagination reads <code>12 345</code> in Czech.
+    </p>
+    <div class="controls">
+        <span><code>window.components.locale</code>:</span>
+        <label><input type="radio" name="bu05-lang" value="en" checked> unset (English)</label>
+        <label><input type="radio" name="bu05-lang" value="cs"> Czech, page-wide</label>
+    </div>
+    <div class="demo-area">
+        <button type="button" data-open=":n 1">Open the Numbers context</button>
+    </div>
+    <div class="code-block" data-language="js"><pre><code>window.components.locale = {
+    locale: 'cs',
+    labels: { 'web-command-palette': { pageOf: 'Strana {page} z {total} · {count} výsledků', … } },
+};</code></pre></div>
+</div>
+
 <!-- One palette per page: it owns the global Ctrl/⌘+K listener. -->
 <web-command-palette id="palette"></web-command-palette>
 
@@ -111,7 +137,11 @@ palette.searchCallback = async ({ scope, term, signal }) =&gt; fetchResults(scop
             { id: 'theme', trigger: '/theme', text: 'Switch theme', description: 'One-step wizard', icon: '🎨',
               steps: [{ id: 'theme', options: [{ text: 'Light', value: 'light', icon: '☀️' }, { text: 'Dark', value: 'dark', icon: '🌑' }] }] },
         ];
-        palette.contexts = [{ id: 'people', trigger: ':people', aliases: [':p'], text: 'People', description: 'Search people', icon: '👥' }];
+        palette.contexts = [
+            { id: 'people', trigger: ':people', aliases: [':p'], text: 'People', description: 'Search people', icon: '👥' },
+            { id: 'numbers', trigger: ':numbers', aliases: [':n'], text: 'Numbers', description: '12,345 rows — formatted counts', icon: '🔢',
+              searchCallback: () => Array.from({ length: 12345 }, (_, i) => ({ id: `n${i}`, title: `Row ${i + 1}` })) },
+        ];
         palette.searchCallback = async ({ scope, term }) =>
             ['Ada Lovelace', 'Alan Turing', 'Grace Hopper', 'Linus Torvalds', 'Margaret Hamilton']
                 .filter((n) => n.toLowerCase().includes(term.toLowerCase()))
@@ -122,6 +152,17 @@ palette.searchCallback = async ({ scope, term, signal }) =&gt; fetchResults(scop
 
         document.querySelectorAll('input[name="bu02-key"]').forEach((r) =>
             r.addEventListener('change', (e) => { if (e.target.checked) palette.setAttribute('open-key', e.target.value); }));
+
+        const PAGE_CS = {
+            locale: 'cs',
+            labels: { 'web-command-palette': {
+                ...CS,
+                favorites: 'Oblíbené', recent: 'Nedávné', resultsCount: '{count} výsledků', done: 'Hotovo',
+            } },
+        };
+        document.querySelectorAll('input[name="bu05-lang"]').forEach((r) =>
+            r.addEventListener('change', (e) => { if (e.target.checked) window.components.locale = e.target.value === 'cs' ? PAGE_CS : null; }));
+        window.addEventListener('pagehide', () => { window.components.locale = null; });
 
         document.querySelectorAll('input[name="bu04-lang"]').forEach((r) =>
             r.addEventListener('change', (e) => { if (e.target.checked) palette.labels = e.target.value === 'cs' ? CS : {}; }));

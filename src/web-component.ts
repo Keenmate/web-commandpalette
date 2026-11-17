@@ -48,13 +48,13 @@ import {
   type ResponsiveMap,
 } from '@keenmate/web-components-core';
 import { runAction } from '@keenmate/web-components-core/actions';
+import { createLabels } from '@keenmate/web-components-core/locale';
 import { PaletteEngine, type Effect, type EffectOutcome, type PaletteEngineHost, type TokenView } from './palette';
 import { Renderer, chordKeycap, confirmationBodyHtml, createShell, fillConfirmation, type Shell } from './render';
 import { GlobalKeys, handleInputKeydown, sequenceLetter } from './keyboard';
 import { UsageStore, stateStorePersistence, type UsagePersistence } from './usage';
 import {
   DEFAULT_LABELS,
-  resolveLabels,
   type ActionEventDetail,
   type BeforeActionCallback,
   type BeforeResultSelectCallback,
@@ -63,7 +63,8 @@ import {
   type FeedbackContext,
   type Context,
   type Display,
-  type Labels,
+  type CommandPaletteLabels,
+  type PaletteLabels,
   type PaletteKeys,
   type LoadUsageCallback,
   type PaletteContext,
@@ -93,8 +94,8 @@ const INPUTS: readonly InputDef[] = [
     description: 'Commands, listed on the home screen and under `/` — core action items: `{ id, trigger, text, aliases?, shortcut?, description?, icon?, steps?, tooltip?, cssClass?, isVisible?, isDisabled?, isDanger?, get*Callback(ctx)?, onClick(detail)? }`. Running one fires the `action` event (`id` = the command id) — immediately without `steps`, after the last answer with them.' },
   { configKey: 'contexts', converter: toObjectArray(), on: 'update', type: 'Context[]',
     description: 'Search contexts, listed on the home screen and under `:`. `{ id, trigger, text, aliases?, description?, icon?, searchCallback? }`. Entering one locks the input to `"<trigger> "` and searches via `searchCallback({ scope: { contextId }, term, signal, entries })`.' },
-  { configKey: 'labels', converter: toValue({ validate: isPlainObject }), on: 'update', type: 'Partial<Labels>',
-    description: 'UI strings (i18n). Partial — unset (`undefined`) keys fall back to English; an empty string renders nothing. Text, escaped (never HTML). `{name}` / `{page}` / `{total}` / `{count}` placeholders are interpolated.' },
+  { configKey: 'labels', converter: toValue({ validate: isPlainObject }), on: 'update', type: 'Partial<CommandPaletteLabels>',
+    description: 'UI strings (core `/locale`). Partial, per key: these → the page-wide `window.components.locale.labels[\'web-command-palette\']` → English; an empty string renders nothing. Content labels (headings, hints, empty / loading / page text) are HTML templates with escaped `{…}` values; attribute / placeholder / announcement labels are plain text. `{name}` / `{key}` / `{page}` / `{total}` / `{count}` are interpolated (numbers locale-formatted); a page-wide `formatLabelCallback` formats every label.' },
 
   // ── Callbacks (property-only, read live on every call) ───────────────────
   { configKey: 'searchCallback', converter: toFunction(), on: 'none', type: '(ctx: SearchContext) => Result[] | Promise<Result[]>',
@@ -233,7 +234,10 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   #usage: UsageStore | null = null;
   #isOpen = false;
   #isFullscreen = false;
-  #labels: Labels = DEFAULT_LABELS;
+  /** UI strings (core `/locale`, rulebook D-NC-24): instance `labels` → page-wide `window.components.locale.labels['web-command-palette']` → English. */
+  #labels: PaletteLabels = createLabels(this, DEFAULT_LABELS, () => this.config.labels as Partial<CommandPaletteLabels> | undefined, {
+    tag: 'web-command-palette',
+  });
   /** The open dialog's core modal session (SPEC §12.19): trap, inert page, backdrop, Escape, Back, scroll lock. */
   #modal: ModalSession | null = null;
   /** What had focus when the palette opened (focus returns there on close). */
@@ -461,7 +465,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     const { confirm, live, root } = this.#shell;
     // The countdown bar shows the timer — decorative, so it goes when motion is off (SPEC §12.16);
     // the timer itself keeps `feedback-duration`.
-    const body = fillConfirmation(confirm, this.#labels.done, duration, !isMotionOff(this));
+    const body = fillConfirmation(confirm, this.#labels.html('done'), duration, !isMotionOff(this));
     if (custom instanceof HTMLElement) body.appendChild(custom);
     else if (typeof custom === 'string') body.innerHTML = custom;
     else {
@@ -485,7 +489,8 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
       container.style.height = `${to}px`;
     }
     confirm.focus();
-    live.textContent = this.#labels.done ? `${this.#labels.done}: ${ctx.sentence}` : ctx.sentence;
+    const doneText = this.#labels.text('done');
+    live.textContent = doneText ? `${doneText}: ${ctx.sentence}` : ctx.sentence;
     this.log.UI.debug('feedback', ctx);
     this.#feedbackTimer = setTimeout(() => this.close(), duration);
     return true;
@@ -640,6 +645,14 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.#render();
   }
 
+  /** The page-wide `window.components.locale` changed (core `/locale`): re-resolve every label and
+   *  locale-formatted count in place — the open palette keeps its mode, query and wizard answers. */
+  protected override localeChanged(): void {
+    this.#applyLabels();
+    this.#renderer.invalidate();
+    this.#render();
+  }
+
   protected override connect(): void {
     connected.add(this);
     if (!keyOwner) {
@@ -705,13 +718,12 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     return createPresentationContext(this.#isFullscreen ? 'fullscreen' : 'floating');
   }
 
+  /** The shell's own strings (dialog name, close button, sheet title); the rest re-resolve on render. */
   #applyLabels(): void {
-    const custom = this.config.labels as Partial<Labels> | undefined;
-    this.#labels = resolveLabels(custom);
     const { container, closeButton, fullscreenTitle } = this.#shell;
-    setOrRemove(container, 'aria-label', this.#labels.dialogLabel);
-    setOrRemove(closeButton, 'aria-label', this.#labels.close);
-    fullscreenTitle.textContent = this.#labels.fullscreenTitle;
+    setOrRemove(container, 'aria-label', this.#labels.text('dialogLabel'));
+    setOrRemove(closeButton, 'aria-label', this.#labels.text('close'));
+    fullscreenTitle.textContent = this.#labels.text('fullscreenTitle');
   }
 
   #applySize(): void {
@@ -893,7 +905,7 @@ export interface CommandPaletteConfig {
   // data
   commands: Command[];
   contexts: Context[];
-  labels: Partial<Labels> | undefined;
+  labels: Partial<CommandPaletteLabels> | undefined;
   // callbacks
   searchCallback: SearchCallback | null;
   getStepOptionsCallback: StepOptionsCallback | null;

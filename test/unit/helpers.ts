@@ -1,8 +1,12 @@
 import { vi } from 'vitest';
 import { PaletteEngine, type Effect, type PaletteEngineHost } from '../../src/palette';
 import { UsageStore } from '../../src/usage';
+import { createLabels } from '@keenmate/web-components-core/locale';
 import type { SearchRules } from '../../src/helpers/filter';
 import { DEFAULT_LABELS, type Command, type Context, type Display, type SearchCallback, type Selection, type StepOptionsCallback, type UsageEntry } from '../../src/types';
+
+/** The engine's labels, as the element builds them (core `/locale`; no instance overrides). */
+const labels = createLabels(document.createElement('div'), DEFAULT_LABELS, () => undefined, { tag: 'web-command-palette' });
 
 /** An effect as the tests compare it: `action` reduced to the command id + selections. */
 export type TestEffect =
@@ -90,7 +94,7 @@ export function harness(over: Partial<HostState> = {}): Harness {
     pageSize: () => state.pageSize,
     debounceMs: () => state.debounce,
     searchRules: () => state.searchRules,
-    labels: () => DEFAULT_LABELS,
+    labels: () => labels,
     usage: () => store,
     maxRecentCount: () => state.maxRecentCount,
     changed: () => changed(),
