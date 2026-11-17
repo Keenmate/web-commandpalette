@@ -11,6 +11,24 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Changed — the palette is a core modal: modal tier, modal session, phone Back (core SPEC §12.18 / §12.19, 2026-11-17)
+
+Needs `@keenmate/web-components-core` `^1.0.0-rc25`.
+
+- **BREAKING (stacking):** `--cp-z-index` is now the modal tier, `var(--base-z-modal, 7000)` (was one step
+  above popovers, `calc(var(--base-z-popover, 7600) + 1)` = 7601). The palette now sits **below** page
+  dropdowns / popovers (7500 / 7600), toasts and tooltips, like every core dialog and sheet; the page behind
+  is inert while it's open. To keep the old stacking, set `--cp-z-index: 7601` on the element.
+- **The phone Back gesture** (and the browser Back button) now works on the open palette, exactly like Esc:
+  it steps back first (wizard step → previous answer / command list, context search → context list, the full
+  favorites / recent list → home), then closes. Previously Back left the page with the palette open.
+- Focus trap, backdrop click, focus capture / return, page scroll lock and the full-screen sheet's keyboard
+  inset go through core `startModalSession` instead of the palette's own wiring; the page behind is `inert`
+  while open. Esc keeps "step back, then close" (core `beforeEscapeCallback`); Tab in the input stays "select".
+  Tab from a token's remove button now moves to the next tabbable control in the dialog (wrapping at the
+  edges) instead of jumping straight to the input. A palette open while another KM page dropdown opens is
+  no longer dismissed by it (modals coordinate among themselves only).
+
 ### Changed — more plumbing through core helpers (2026-11-17)
 
 Internal, no visible change. Needs `@keenmate/web-components-core` `^1.0.0-rc25`.

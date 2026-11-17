@@ -460,9 +460,19 @@
       "usage": "warning badge background"
     },
     {
-      "name": "base-z-popover",
+      "name": "base-z-modal",
       "required": false,
-      "usage": "Stacking: the palette sits one step above popovers"
+      "usage": "Stacking: the palette sits on the modal tier"
+    },
+    {
+      "name": "base-z-modal-backdrop",
+      "required": false,
+      "usage": "Stacking of core's modal backdrop (startModalSession; the palette passes its own backdrop)"
+    },
+    {
+      "name": "base-elevated-bg",
+      "required": false,
+      "usage": "Phone fullscreen sheet bar background (core SHEET_CHROME_CSS)"
     },
     {
       "name": "base-loader-icon",
@@ -1001,7 +1011,7 @@
     },
     {
       "name": "cp-z-index",
-      "usage": "Stacking of the overlay: one step above --base-z-popover (7601 without the base layer)"
+      "usage": "Stacking of the overlay: the modal tier --base-z-modal (7000 without the base layer); dropdowns / popovers / tooltips stack above it"
     },
     {
       "name": "cp-sheet-header-gap",

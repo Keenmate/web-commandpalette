@@ -22,13 +22,11 @@ import {
   createPresentationContext,
   getEnvironment,
   isMotionOff,
-  lockBodyScroll,
   onTextInput,
-  observeKeyboardInset,
-  registerOverlay,
   dismissAllOverlays,
   deepActiveElement,
   resolvePresentation,
+  startModalSession,
   runBeforeCallbackEager,
   toBool,
   toEnum,
@@ -44,7 +42,7 @@ import {
   type EnvironmentSnapshot,
   type InputDef,
   type Presentation,
-  type OverlayHandle,
+  type ModalSession,
   type RenderLoaderCallback,
   type ResponsiveCallback,
   type ResponsiveMap,
@@ -230,10 +228,10 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   #isOpen = false;
   #isFullscreen = false;
   #labels: Labels = DEFAULT_LABELS;
-  #overlay: OverlayHandle | null = null;
-  #releaseScroll: (() => void) | null = null;
-  #releaseInset: (() => void) | null = null;
-  #returnFocus: Element | null = null;
+  /** The open dialog's core modal session (SPEC §12.19): trap, inert page, backdrop, Escape, Back, scroll lock. */
+  #modal: ModalSession | null = null;
+  /** What had focus when the palette opened (focus returns there on close). */
+  #openedFrom: Element | null = null;
   /** Set while the one-line feedback is showing. */
   #feedbackTimer: ReturnType<typeof setTimeout> | null = null;
   /** The closing animation in flight (core `animateOut`); the dialog leaves the DOM when it ends. */
@@ -540,7 +538,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   }
 
   #wireDom(): void {
-    const { input, results, tokens, backdrop, closeButton, container } = this.#shell;
+    const { input, results, tokens, closeButton, container } = this.#shell;
 
     // Committed text only (SPEC §12.30): no half-typed IME syllables, no Firefox duplicate.
     onTextInput(input, (value) => this.#engine.setInput(value));
@@ -577,11 +575,10 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
       this.#engine.removeToken(Number(btn.dataset.token));
       input.focus();
     });
-    backdrop.addEventListener('click', () => this.close());
     closeButton.addEventListener('click', () => this.close());
 
-    // Focus trap: Tab inside the input selects (handled above); from anywhere else
-    // in the dialog (the fullscreen close button) Tab returns to the input.
+    // Tab / Escape / the backdrop go through the core modal session (#startModal); Tab in the
+    // input is "select" (handled above — preventDefault, so the session's trap leaves it alone).
     // The one-line feedback holds focus: any plain key or a click dismisses it.
     // Chords (Ctrl/⌘+K…) and lone modifiers pass through to the global toggle.
     this.#shell.confirm.addEventListener('click', () => this.close());
@@ -590,14 +587,6 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
       // from the input when the feedback appears — it must not dismiss it.
       if (this.#feedbackTimer && e.target !== input) {
         if (e.ctrlKey || e.metaKey || e.altKey || ['Shift', 'Control', 'Meta', 'Alt'].includes(e.key)) return;
-        e.preventDefault();
-        this.close();
-        return;
-      }
-      if (e.key === 'Tab' && e.target !== input) {
-        e.preventDefault();
-        input.focus();
-      } else if (e.key === 'Escape' && e.target !== input) {
         e.preventDefault();
         this.close();
       }
@@ -645,14 +634,11 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     } else if (keyOwner !== this) {
       this.log.INIT.warn('more than one <web-command-palette> is connected; only the first owns the global hotkeys');
     }
-    this.#overlay = registerOverlay(() => this.close());
   }
 
   protected override disconnect(): void {
     this.close();
     this.#finishClosingNow();
-    this.#overlay?.destroy();
-    this.#overlay = null;
     connected.delete(this);
     if (keyOwner === this) {
       this.#globalKeys.uninstall();
@@ -727,16 +713,40 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.#isFullscreen = isFullscreen;
     this.#shell.root.classList.toggle('cp--fullscreen', isFullscreen);
     this.log.UI.debug('presentation', isFullscreen ? 'fullscreen' : 'floating');
-    if (this.#isOpen) this.#syncKeyboardInset();
+    // The keyboard inset is per sheet kind: restart the session (the Back entry is re-claimed, focus stays).
+    if (this.#isOpen && this.#modal) {
+      this.#modal.end({ shouldReturnFocus: false });
+      this.#startModal(false);
+    }
   }
 
-  #syncKeyboardInset(): void {
-    if (this.#isOpen && this.#isFullscreen) {
-      this.#releaseInset ??= observeKeyboardInset(this.#shell.container);
-    } else {
-      this.#releaseInset?.();
-      this.#releaseInset = null;
-    }
+  /**
+   * The core modal session (SPEC §12.19) for the open dialog. Escape and the phone Back gesture
+   * step back first (wizard step, context search, full favorites / recent list), then close; the
+   * feedback line and a focused close button close at once.
+   */
+  #startModal(shouldFocusInput: boolean): void {
+    const { container, backdrop, input } = this.#shell;
+    const canStepBack = (): boolean => !this.#feedbackTimer && this.#engine.canStepBack;
+    this.#modal = startModalSession(container, {
+      backdrop,
+      trigger: this.#openedFrom,
+      initialFocus: shouldFocusInput ? input : false,
+      shouldObserveKeyboardInset: this.#isFullscreen,
+      beforeEscapeCallback: () => {
+        if (!canStepBack() || deepActiveElement() !== input) return true;
+        this.#engine.back();
+        return false;
+      },
+      onDismiss: (reason) => {
+        if (reason === 'back' && canStepBack()) {
+          this.#engine.back();
+          this.#modal?.rearmBack();
+          return;
+        }
+        this.close();
+      },
+    });
   }
 
   // ── public API (also on `el.controller`) ──────────────────────────────────
@@ -756,17 +766,14 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.flush();
     // One overlay at a time: dismiss any open KM popovers (closed palette ignores its own dismiss).
     dismissAllOverlays();
-    this.#overlay?.activate();
     this.#isOpen = true;
-    this.#returnFocus = deepActiveElement();
+    this.#openedFrom = deepActiveElement();
     this.#engine.reset();
     this.#shell.root.classList.add('cp--active');
     this.toggleAttribute('open', true);
-    this.#releaseScroll = lockBodyScroll();
-    this.#syncKeyboardInset();
     this.#renderer.invalidate();
     this.#render();
-    this.#shell.input.focus();
+    this.#startModal(true);
     this.log.UI.debug('open');
     this.emit('open');
   }
@@ -785,16 +792,13 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.#engine.dispose();
     this.#engine.reset();
     this.toggleAttribute('open', false);
-    this.#overlay?.deactivate();
-    this.#releaseScroll?.();
-    this.#releaseScroll = null;
-    this.#syncKeyboardInset();
-    const back = this.#returnFocus;
-    this.#returnFocus = null;
     // Blur first: when focus came from <body> (not focusable), it would otherwise stay
     // in the hidden input — and `g <letter>` sequences ignore keys while typing.
     this.#shell.input.blur();
-    if ((back instanceof HTMLElement || back instanceof SVGElement) && back.isConnected) back.focus();
+    // Focus goes back to what had it on open; the page leaves `inert`, scroll unlocks, Back is released.
+    this.#modal?.end();
+    this.#modal = null;
+    this.#openedFrom = null;
     // Started before the event, so a `close` listener that re-opens cancels it.
     this.#animateClose();
     this.log.UI.debug('close');

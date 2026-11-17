@@ -18,6 +18,21 @@ test('touch phone: opens as a fullscreen sheet with a close button', async ({ pa
   await expect(p.root).not.toHaveClass(/--active/);
 });
 
+test('the phone Back gesture steps back like Esc (step → command list), then closes the sheet', async ({ page }) => {
+  await load(page, 'mobile');
+  const p = palette(page);
+  await page.locator('#opener').tap();
+  await expect(p.root).toHaveClass(/cp--fullscreen/);
+  await p.input.fill('/deploy ');
+  await expect(p.input).toHaveValue('/deploy to ');
+  await page.evaluate(() => history.back());
+  await expect(p.input).toHaveValue('/');
+  await expect(p.root).toHaveClass(/cp--active/);
+  await page.evaluate(() => history.back()); // the entry was re-armed: Back again closes
+  await expect(p.root).not.toHaveClass(/--active/);
+  expect(await p.host.evaluate((el: any) => el.isOpen)).toBe(false);
+});
+
 test('presentation="floating" forces the dialog', async ({ page }) => {
   await load(page, 'mobile');
   const p = palette(page);

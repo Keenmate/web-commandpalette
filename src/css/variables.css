@@ -97,10 +97,10 @@
   /* ==========================================================================
      DIALOG
      ========================================================================== */
-  /* Stacking follows the shared --base-z-* scale: one step above popovers (7600), so the
-     palette covers open dropdowns / popovers; toasts (8000) and tooltips (9000) stay above
-     it. Override per element. */
-  --cp-z-index: calc(var(--base-z-popover, 7600) + 1);
+  /* Stacking follows the shared --base-z-* scale (core SPEC §12.18): the palette is a modal,
+     so it sits on the modal tier (7000); dropdowns / popovers / toasts / tooltips stack above
+     it (the page behind is inert while it's open). Override per element. */
+  --cp-z-index: var(--base-z-modal, 7000);
   --cp-width: calc(60.8 * var(--cp-rem));
   --cp-results-max-height: calc(38.4 * var(--cp-rem));
   --cp-offset-top: calc(12.8 * var(--cp-rem));
