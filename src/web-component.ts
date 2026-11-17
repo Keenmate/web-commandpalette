@@ -21,6 +21,7 @@ import {
   createPresentationContext,
   getEnvironment,
   lockBodyScroll,
+  onTextInput,
   observeKeyboardInset,
   registerOverlay,
   dismissAllOverlays,
@@ -549,17 +550,8 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   #wireDom(): void {
     const { input, results, tokens, backdrop, closeButton, container } = this.#shell;
 
-    // Route the typed value once: skip the `input` events of an IME composition (its
-    // `compositionend` routes the result), and a value that already went through —
-    // Firefox fires `compositionend` and `input` for the same edit, which would re-route
-    // the term and restart the search.
-    const route = (): void => {
-      if (input.value !== this.#engine.input) this.#engine.setInput(input.value);
-    };
-    input.addEventListener('input', (e) => {
-      if (!(e as InputEvent).isComposing) route();
-    });
-    input.addEventListener('compositionend', route);
+    // Committed text only (SPEC §12.30): no half-typed IME syllables, no Firefox duplicate.
+    onTextInput(input, (value) => this.#engine.setInput(value));
     input.addEventListener('keydown', (e) => {
       this.#withTrigger({ event: e, element: this.#activeRow() }, () => {
         if (handleInputKeydown(e, this.#engine, input, this.#keys(), this.isRtl)) this.log.INTERACTION.trace('key', e.key);

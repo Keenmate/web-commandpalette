@@ -11,6 +11,13 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Changed — more plumbing through core helpers (2026-11-17)
+
+Internal, no visible change. Needs `@keenmate/web-components-core` `^1.0.0-rc25`.
+
+- Typed text through core `onTextInput` (committed text only — IME syllables and Firefox's duplicate
+  `input` skipped) and the input keydown returns on `isImeEnter(e)` (also Safari's `keyCode` 229 Enter) (core SPEC §12.30).
+
 ### Changed — active row through core `createActiveDescendant` (core SPEC §12.25, rulebook C-CA-25, 2026-11-17)
 
 - Internal, no visible change: `aria-activedescendant`, `aria-controls` and the in-list scroll of the

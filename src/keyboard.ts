@@ -11,6 +11,7 @@
  *    back-or-close, Backspace at the locked prefix steps back, Ctrl/⌘+D star the
  *    active row. Navigation never awaits a provider.
  */
+import { isImeEnter } from '@keenmate/web-components-core';
 import type { PaletteEngine } from './palette';
 import { DEFAULT_PALETTE_KEYS, type Command, type PaletteKeys } from './types';
 
@@ -126,7 +127,7 @@ export function handleInputKeydown(
   /** Right-to-left: ←/→ paging swaps so "previous" is the arrow toward the inline start. */
   isRTL = false,
 ): boolean {
-  if (e.isComposing) return false;
+  if (isImeEnter(e)) return false;
   // Ctrl/⌘ + letter: palette shortcuts (they shadow the browser's find/reload/bookmark while open).
   if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.length === 1) {
     const k = e.key.toLowerCase();
