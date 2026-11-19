@@ -81,7 +81,7 @@ Objects and functions are **properties only** — set them from JS (or a framewo
 | `maxFavoriteCount` / `maxRecentCount` | `number` | Rows each home section shows. Default `3`; `0` hides the section. |
 | `favoriteKey` / `favoritesKey` / `recentKey` | `string` | Ctrl/⌘ + key while open: star the active row / show all favorites / show all recent. Defaults `d` / `f` / `r`; `''` disables. |
 | `renderFeedbackCallback` | `(ctx) => string \| Node \| null \| false` | Custom feedback content: string = HTML, Node = mounted, `null` = built-in, `false` = hidden (skipped). See [Feedback](#feedback). |
-| `renderLoadingCallback` | `(ctx) => void \| (() => void)` | Draw the searching loader yourself — `ctx = { component, context: 'search', containerElement, element, label }`; fill `containerElement` (already `role="status"` + `aria-label` = `labels.searching`), optionally return a cleanup. Beats the page-wide `window.components.renderLoadingCallback` (one hook for every Keenmate component); unset = the default `.cp__loader` (`--cp-loader-icon` / `-rotate` / `-duration` / `-size` / `-color`, chained to `--base-loader-*`). |
+| `renderLoadingCallback` | `(ctx) => void \| (() => void)` | Draw the searching loader yourself — `ctx = { component, context: 'search', containerElement, element, label }`; fill `containerElement` (already `role="status"` + `aria-label` = the `ariaLabels.searching` label), optionally return a cleanup. Beats the page-wide `window.components.renderLoadingCallback` (one hook for every Keenmate component); unset = the default `.cp__loader` (`--cp-loader-icon` / `-rotate` / `-duration` / `-size` / `-color`, chained to `--base-loader-*`). |
 | `customStyles` / `getCustomStylesCallback` | `string \| null` / `(ctx) => string \| null \| undefined` | Extra CSS for this palette's shadow root (attribute `custom-styles`), after the component CSS and after the page-wide `window.components['web-command-palette'].customStyles` / `.getCustomStylesCallback`, so the instance wins. The callback wins over `customStyles`. See [Theming → Custom CSS](theming.md#custom-css-shadow-root). |
 | `isFeedbackShown` | `boolean` | Show the one-line feedback after a command ran. Default `true` (attribute `show-feedback`). |
 | `feedbackDuration` | `number` | How long it stays (ms). Default `1500`; `0` = off. |
@@ -409,39 +409,73 @@ the effective direction, also when it changes at runtime.
 ## Labels
 
 ```js
-palette.labels = { placeholder: 'Hledat…', typeToSearch: 'Začněte psát pro hledání v {name}', favorites: 'Oblíbené', recent: 'Nedávné' };
+palette.labels = {
+  'placeholders.idle': 'Hledat…',
+  'messages.typeToSearch': 'Začněte psát pro hledání v {name}',
+  'headers.favorites': 'Oblíbené',
+  'headers.recent': 'Nedávné',
+};
 ```
 
-Keys: `placeholder`, `filterPlaceholder`, `noResults`, `searching`, `searchingIn` `{name}`,
-`typeToSearch` `{name}`, `commands`, `search`, `searchContexts`, `pageOf` `{page} {total} {count}`,
-`navigate`, `select`, `back`, `close`, `pages`, `fullscreenTitle`, `dialogLabel`,
-`removeToken` `{name}`, `resultsCount` `{count}`, `favorites`, `recent`, `addFavorite`,
-`removeFavorite`, `next`, `run`, `lastUsed`, `showAll` `{count}`, `noFavorites` `{key}`,
-`noRecent`, `done` (type `CommandPaletteLabels`, defaults in the exported `DEFAULT_LABELS`).
+Keys are flat `<elementType>.<name>` (type `CommandPaletteLabels`, defaults in the exported
+`DEFAULT_LABELS`). One key per surface: a text shown in two places (a home heading and the context
+pill, a footer hint and the star button's name / tooltip) has one key per place.
 
-`noResults` = a search / filter matched nothing (the favorites / recent lists use `noFavorites`
-`{key}` / `noRecent` while nothing is starred / used yet).
+| Key | Default | Where |
+|---|---|---|
+| `placeholders.idle` | Type / for commands, : to search, or just start typing… | Input placeholder on the home screen |
+| `placeholders.filter` | Type to filter… | Input placeholder in a step (when the step sets none) and the favorites / recent lists |
+| `headers.favorites` / `headers.recent` / `headers.commands` / `headers.search` | Favorites / Recent / Commands / Search | Home section headings (also the section group's accessible name) |
+| `headers.fullscreen` | Search | Title of the phone fullscreen sheet |
+| `headers.done` | Done | Feedback panel heading after a command ran |
+| `labels.scopeCommands` / `labels.scopeContexts` | Commands / Search contexts | Context pill under `/` / `:` |
+| `labels.scopeSearchingIn` | Searching in {name} | Context pill in a context search |
+| `labels.scopeFavorites` / `labels.scopeRecent` | Favorites / Recent | Context pill in the full favorites / recent list |
+| `labels.pageOf` | Page {page} of {total} · {count} results | Pagination row |
+| `labels.lastUsed` | Last used | Badge on a replayed step's remembered answer |
+| `labels.navigate` / `labels.pages` / `labels.next` / `labels.run` / `labels.select` / `labels.back` / `labels.close` | Navigate / Pages / Next / Run / Select / Back / Close | Footer hints |
+| `labels.addFavorite` / `labels.removeFavorite` | Add to favorites / Remove from favorites | Footer hint for the star chord |
+| `buttons.showAll` | +{count} | Home heading link to the full favorites / recent list |
+| `tooltips.addFavorite` / `tooltips.removeFavorite` | Add to favorites / Remove from favorites | Star button tooltip (the chord is appended) |
+| `ariaLabels.addFavorite` / `ariaLabels.removeFavorite` | Add to favorites / Remove from favorites | Star button accessible name |
+| `ariaLabels.dialog` | Command palette | Dialog accessible name |
+| `ariaLabels.input` | Command palette | Search input accessible name |
+| `ariaLabels.close` | Close | Close button (fullscreen sheet) |
+| `ariaLabels.removeToken` | Remove {name} | A token's remove button |
+| `ariaLabels.searching` | Searching… | Loader accessible name |
+| `ariaLabels.resultsCount` | {count} results | Live-region announcement of the result count |
+| `ariaLabels.done` | Done | Live-region announcement prefix after a command ran (`Done: …`) |
+| `messages.noResults` | No results found | A search / filter matched nothing |
+| `messages.searching` | Searching… | Loader text |
+| `messages.typeToSearch` | Type to search {name} | Empty query in a context search |
+| `messages.noFavorites` | No favorites yet — star a row with {key} | Favorites list with nothing starred |
+| `messages.noRecent` | Nothing used yet | Recent list with nothing used yet |
 
-Labels resolve per key through core `/locale` (`createLabels`): the instance `labels` → the page-wide
-`window.components.locale.labels['web-command-palette']` → the English default. Assigning
-`window.components.locale` re-renders an open palette in place (mode, query and wizard answers kept);
-a page-wide `formatLabelCallback` (ICU / i18next) formats every label.
+Labels resolve per key through core `/locale` (`createLabels`, tag `web-command-palette`): the instance
+`labels` (short `messages.noResults` or full `web-command-palette.messages.noResults` keys) → the
+page-wide flat dictionary `window.components.locale.labels['web-command-palette.<key>']` → the English
+default. Assigning `window.components.locale` re-renders an open palette in place (mode, query and
+wizard answers kept); a page-wide `translateCallback({ component, key, template, params, locale })`
+(ICU / i18next) translates every label (`key` is the full key; return `null` / `undefined` to pass).
 
 ```js
 window.components.locale = {
   locale: 'cs',
-  labels: { 'web-command-palette': { noResults: 'Nic nenalezeno', pageOf: 'Strana {page} z {total} · {count} výsledků' } },
+  labels: {
+    'web-command-palette.messages.noResults': 'Nic nenalezeno',
+    'web-command-palette.labels.pageOf': 'Strana {page} z {total} · {count} výsledků',
+  },
 };
 ```
 
 **Numbers** filled into `{count}`, `{page}` and `{total}` are passed as numbers; core formats them for
 the resolved locale (the page-wide `locale` / `thousandsSeparator`, else the browser language) —
-`12 345` in Czech, `12,345` in English. A `formatLabelCallback` receives the raw numbers (for plurals).
+`12 345` in Czech, `12,345` in English. A `translateCallback` receives the raw numbers (for plurals).
 
-**HTML or text.** A label drawn as content — section headings, footer hints, the empty / loading /
-pagination text, `showAll`, the feedback heading `done` — is an HTML template: markup in it renders,
+**HTML or text.** A label drawn as content — `headers.*`, footer hints, the `messages.*` empty /
+loading text, `labels.pageOf`, `buttons.showAll` — is an HTML template: markup in it renders,
 the `{name}` / `{key}` values filled into it are escaped (they are data). A label used as an
-attribute, the input placeholder, the context pill, the `lastUsed` badge or a screen-reader
+attribute (`ariaLabels.*`, `tooltips.*`), the input placeholder, the context pill, the `labels.lastUsed` badge or a screen-reader
 announcement is plain text. `window.components.security = { shouldEscapeLabels: true }` makes every
 label plain text. A key set to `''` is deliberately empty — the string is not rendered (an `''`
 footer hint label hides that hint; an `''` aria label removes the attribute). A missing /

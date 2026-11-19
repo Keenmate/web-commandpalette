@@ -128,7 +128,7 @@ test('search-debounce="0" calls per keystroke; "500" once after typing stops', a
 // ── Shared loader (core SPEC §12.14): instance renderLoadingCallback >
 //    window.components.renderLoadingCallback > the default .cp__loader ──
 
-test('loader: default .cp__loader with role=status + labels.searching, removed when results land', async ({ page }) => {
+test('loader: default .cp__loader with role=status + ariaLabels.searching, removed when results land', async ({ page }) => {
   const p = palette(page);
   await knobs(page, (w) => { w.delays.wait = 800; });
   await open(page);
@@ -149,10 +149,10 @@ test('loader: default .cp__loader with role=status + labels.searching, removed w
   await expect(p.host.locator('.cp__loader')).toHaveCount(0);
 });
 
-test('loader: aria-label follows labels.searching', async ({ page }) => {
+test('loader: aria-label follows ariaLabels.searching', async ({ page }) => {
   const p = palette(page);
   await knobs(page, (w) => { w.delays.wait = 800; });
-  await p.host.evaluate((el) => { (el as unknown as { labels: object }).labels = { searching: 'Hledám…' }; });
+  await p.host.evaluate((el) => { (el as unknown as { labels: object }).labels = { 'ariaLabels.searching': 'Hledám…' }; });
   await open(page);
   await p.input.fill('wait');
   await expect(p.host.locator('.cp__loader-slot')).toHaveAttribute('aria-label', 'Hledám…');

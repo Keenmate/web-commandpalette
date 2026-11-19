@@ -64,7 +64,7 @@ export interface PaletteEngineHost {
   debounceMs(): number;
   /** `search-behavior` / `search-match` for client-side filtering + highlighting (default `normalized` / `contains`). */
   searchRules?(): SearchRules;
-  /** The palette's labels (core `createLabels`; a standalone host can pass its own `createLabels(...)`). */
+  /** The palette's labels (core `createLabels`; a standalone host can pass its own core `createLabels` resolver). */
   labels(): PaletteLabels;
   /** Favorites/recents store, or null when disabled. */
   usage?(): UsageStore | null;
@@ -395,21 +395,21 @@ export class PaletteEngine {
   get contextText(): string | null {
     const labels = this.#host.labels();
     switch (this.mode) {
-      case 'command-list': return labels.text('commands');
-      case 'context-list': return labels.text('searchContexts');
+      case 'command-list': return labels.text('labels.scopeCommands');
+      case 'context-list': return labels.text('labels.scopeContexts');
       case 'command-step': return this.command ? this.#resolve(this.command).text : null;
-      case 'context-search': return this.context ? labels.text('searchingIn', { name: this.context.text }) : null;
-      case 'favorites-list': return labels.text('favorites');
-      case 'recent-list': return labels.text('recent');
+      case 'context-search': return this.context ? labels.text('labels.scopeSearchingIn', { name: this.context.text }) : null;
+      case 'favorites-list': return labels.text('labels.scopeFavorites');
+      case 'recent-list': return labels.text('labels.scopeRecent');
       default: return null;
     }
   }
 
   get placeholder(): string {
     const labels = this.#host.labels();
-    if (this.mode === 'command-step') return this.step?.placeholder || labels.text('filterPlaceholder');
-    if (this.usageView) return labels.text('filterPlaceholder');
-    return labels.text('placeholder');
+    if (this.mode === 'command-step') return this.step?.placeholder || labels.text('placeholders.filter');
+    if (this.usageView) return labels.text('placeholders.filter');
+    return labels.text('placeholders.idle');
   }
 
   /** Tokens-display fragments, or null when the tokens row is not in use. */
@@ -450,11 +450,11 @@ export class PaletteEngine {
     return this.emptyLabel ? this.#host.labels().text(this.emptyLabel.key, this.emptyLabel.params) : null;
   }
 
-  /** The pagination row's label (`pageOf`; raw numbers — core `createLabels` formats them for display), or null on a single page. */
+  /** The pagination row's label (`labels.pageOf`; raw numbers — core `createLabels` formats them for display), or null on a single page. */
   get pageLabel(): LabelRef | null {
     if (this.totalPages <= 1) return null;
     return {
-      key: 'pageOf',
+      key: 'labels.pageOf',
       params: { page: this.page, total: this.totalPages, count: this.totalResults }, // numbers: core formats them
     };
   }
@@ -710,10 +710,10 @@ export class PaletteEngine {
     this.isLoading = false;
     const all = this.#usageItems(view, false);
     this.emptyLabel = all.length
-      ? { key: 'noResults' }
+      ? { key: 'messages.noResults' }
       : view === 'favorites'
-        ? { key: 'noFavorites', params: { key: this.#host.starKey?.() ?? 'Ctrl+D' } }
-        : { key: 'noRecent' };
+        ? { key: 'messages.noFavorites', params: { key: this.#host.starKey?.() ?? 'Ctrl+D' } }
+        : { key: 'messages.noRecent' };
     this.#setItems(q ? all.filter((i) => matchesAny([i.title, i.meta], this.#query(q))) : all);
   }
 
@@ -760,7 +760,7 @@ export class PaletteEngine {
     this.mode = 'command-list';
     this.highlight = needle;
     this.isLoading = false;
-    this.emptyLabel = { key: 'noResults' };
+    this.emptyLabel = { key: 'messages.noResults' };
     this.#setItems(this.#starred(this.#commandItems(filterCommands(this.#commands(), this.#query(needle)))));
   }
 
@@ -910,7 +910,7 @@ export class PaletteEngine {
   #stepItems(options: Option[]): ViewItem[] {
     const def = this.#defaultFor(this.step);
     if (!def || this.#stepQuery.trim()) return options.map(optionItem);
-    const badge = this.#host.labels().text('lastUsed');
+    const badge = this.#host.labels().text('labels.lastUsed');
     const at = options.findIndex((o) => matchesSelection(o, def));
     if (at >= 0) {
       const rest = options.filter((_, i) => i !== at);
@@ -956,7 +956,7 @@ export class PaletteEngine {
   #applyStepFilter(): void {
     const opts = filterOptions(this.#stepOptions ?? [], this.#query(this.#stepQuery));
     this.isLoading = false;
-    this.emptyLabel = { key: 'noResults' };
+    this.emptyLabel = { key: 'messages.noResults' };
     this.#setItems(this.#stepItems(opts));
   }
 
@@ -977,7 +977,7 @@ export class PaletteEngine {
         const list = (options ?? []) as Option[];
         if (isLive) {
           this.isLoading = false;
-          this.emptyLabel = { key: 'noResults' };
+          this.emptyLabel = { key: 'messages.noResults' };
           this.#setItems(this.#stepItems(list));
         } else {
           this.#stepOptions = list;
@@ -1072,7 +1072,7 @@ export class PaletteEngine {
     this.mode = 'context-list';
     this.highlight = needle;
     this.isLoading = false;
-    this.emptyLabel = { key: 'noResults' };
+    this.emptyLabel = { key: 'messages.noResults' };
     this.#setItems(this.#starred(filterContexts(this.#host.contexts(), this.#query(needle)).map((c) => contextItem(c))));
   }
 
@@ -1102,7 +1102,7 @@ export class PaletteEngine {
       // The rule that started this project: an empty context query NEVER hits the
       // provider — prompt instead of dumping "top N" results.
       this.isLoading = false;
-      this.emptyLabel = { key: 'typeToSearch', params: { name: this.context!.text } };
+      this.emptyLabel = { key: 'messages.typeToSearch', params: { name: this.context!.text } };
       this.#setResults([]);
       if (!isEntry) this.#changed();
       return;
@@ -1124,7 +1124,7 @@ export class PaletteEngine {
     ]);
     if (!this.#host.searchCallback()) {
       this.isLoading = false;
-      this.emptyLabel = { key: 'noResults' };
+      this.emptyLabel = { key: 'messages.noResults' };
       this.#setResults(local);
       return;
     }
@@ -1152,7 +1152,7 @@ export class PaletteEngine {
       (signal) => (this.#searchFor(scope, q)?.(signal) ?? null) as Result[] | null | PromiseLike<Result[] | null>,
       (results) => {
         this.isLoading = false;
-        this.emptyLabel = { key: 'noResults' };
+        this.emptyLabel = { key: 'messages.noResults' };
         this.#setResults([...prefix, ...this.#starred(((results ?? []) as Result[]).map((r) => resultItem(r, scope)))]);
       },
       this.#host.debounceMs(),

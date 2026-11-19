@@ -93,7 +93,9 @@ palette.searchCallback = async ({ scope, term, signal }) =&gt; fetchResults(scop
     <h2>BU05 · Page-wide labels — <code>window.components.locale</code></h2>
     <p>
         Every UI string goes through core <code>/locale</code>: the instance <code>labels</code> (BU04) win, then the
-        page-wide <code>window.components.locale.labels['web-command-palette']</code>, then English. Assigning the
+        page-wide flat dictionary <code>window.components.locale.labels['web-command-palette.&lt;key&gt;']</code>, then
+        English. Keys are <code>&lt;elementType&gt;.&lt;name&gt;</code> (<code>placeholders.idle</code>,
+        <code>messages.noResults</code>, <code>labels.pageOf</code>, …). Assigning the
         page object re-renders an open palette in place — try it with the palette open. The numbers in
         <code>{count}</code>, <code>{page}</code> and <code>{total}</code> are formatted for the locale: the
         <em>Numbers</em> context returns 12,345 rows, so the pagination reads <code>12 345</code> in Czech.
@@ -108,7 +110,11 @@ palette.searchCallback = async ({ scope, term, signal }) =&gt; fetchResults(scop
     </div>
     <div class="code-block" data-language="js"><pre><code>window.components.locale = {
     locale: 'cs',
-    labels: { 'web-command-palette': { pageOf: 'Strana {page} z {total} · {count} výsledků', … } },
+    labels: {
+        'web-command-palette.labels.pageOf': 'Strana {page} z {total} · {count} výsledků',
+        'web-command-palette.messages.noResults': 'Nic nenalezeno',
+        …
+    },
 };</code></pre></div>
 </div>
 
@@ -120,15 +126,18 @@ palette.searchCallback = async ({ scope, term, signal }) =&gt; fetchResults(scop
     import { attachControlsPersistence } from '@keenmate/web-components-devkit/examples';
 
     const CS = {
-        placeholder: 'Napište / pro příkazy, : pro hledání, nebo cokoli…',
-        noResults: 'Nic nenalezeno',
-        searching: 'Hledám…',
-        searchingIn: 'Hledání v: {name}',
-        typeToSearch: 'Začněte psát pro hledání v: {name}',
-        commands: 'Příkazy', search: 'Hledání', searchContexts: 'Oblasti hledání',
-        navigate: 'Pohyb', select: 'Vybrat', back: 'Zpět', close: 'Zavřít', pages: 'Stránky',
-        pageOf: 'Strana {page} z {total} · {count} výsledků',
+        'placeholders.idle': 'Napište / pro příkazy, : pro hledání, nebo cokoli…',
+        'messages.noResults': 'Nic nenalezeno',
+        'messages.searching': 'Hledám…', 'ariaLabels.searching': 'Hledám…',
+        'labels.scopeSearchingIn': 'Hledání v: {name}',
+        'messages.typeToSearch': 'Začněte psát pro hledání v: {name}',
+        'headers.commands': 'Příkazy', 'headers.search': 'Hledání',
+        'labels.scopeCommands': 'Příkazy', 'labels.scopeContexts': 'Oblasti hledání',
+        'labels.navigate': 'Pohyb', 'labels.select': 'Vybrat', 'labels.back': 'Zpět', 'labels.close': 'Zavřít', 'labels.pages': 'Stránky',
+        'labels.pageOf': 'Strana {page} z {total} · {count} výsledků',
     };
+    /** The same Czech strings as full keys, for the page-wide flat dictionary. */
+    const toFullKeys = (map) => Object.fromEntries(Object.entries(map).map(([k, v]) => [`web-command-palette.${k}`, v]));
 
     function wire() {
         const palette = document.getElementById('palette');
@@ -155,10 +164,11 @@ palette.searchCallback = async ({ scope, term, signal }) =&gt; fetchResults(scop
 
         const PAGE_CS = {
             locale: 'cs',
-            labels: { 'web-command-palette': {
+            labels: toFullKeys({
                 ...CS,
-                favorites: 'Oblíbené', recent: 'Nedávné', resultsCount: '{count} výsledků', done: 'Hotovo',
-            } },
+                'headers.favorites': 'Oblíbené', 'headers.recent': 'Nedávné',
+                'ariaLabels.resultsCount': '{count} výsledků', 'headers.done': 'Hotovo', 'ariaLabels.done': 'Hotovo',
+            }),
         };
         document.querySelectorAll('input[name="bu05-lang"]').forEach((r) =>
             r.addEventListener('change', (e) => { if (e.target.checked) window.components.locale = e.target.value === 'cs' ? PAGE_CS : null; }));

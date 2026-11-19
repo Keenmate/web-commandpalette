@@ -122,7 +122,7 @@ and then to core's `--base-*` default.
 | Variable | Purpose |
 |---|---|
 | `--cp-sheet-header-bg` / `-header-border` / `-header-min-height` / `-header-gap` / `-header-padding-block` / `-header-padding-inline` | The bar |
-| `--cp-sheet-title-color` / `-title-font-size` / `-title-font-weight` | The title (`labels.fullscreenTitle`) |
+| `--cp-sheet-title-color` / `-title-font-size` / `-title-font-weight` | The title (`labels['headers.fullscreen']`) |
 | `--cp-sheet-close-size` / `-close-icon-size` / `-close-icon` / `-close-color` | The ✕ chip and its glyph (any `url(...)`) |
 | `--cp-sheet-close-bg` / `-close-bg-hover` / `-close-border` / `-close-border-radius` / `-close-focus-color` / `-close-edge-nudge` | Chip surface, focus ring, and how far it slides toward the edge |
 

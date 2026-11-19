@@ -98,7 +98,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'contexts', converter: toObjectArray(), on: 'update', type: 'Context[]',
     description: 'Search contexts, listed on the home screen and under `:`. `{ id, trigger, text, aliases?, description?, icon?, searchCallback? }`. Entering one locks the input to `"<trigger> "` and searches via `searchCallback({ scope: { contextId }, term, signal, entries })`.' },
   { configKey: 'labels', converter: toValue({ validate: isPlainObject }), on: 'update', type: 'Partial<CommandPaletteLabels>',
-    description: 'UI strings (core `/locale`). Partial, per key: these → the page-wide `window.components.locale.labels[\'web-command-palette\']` → English; an empty string renders nothing. Content labels (headings, hints, empty / loading / page text) are HTML templates with escaped `{…}` values; attribute / placeholder / announcement labels are plain text. `{name}` / `{key}` / `{page}` / `{total}` / `{count}` are interpolated (numbers locale-formatted); a page-wide `formatLabelCallback` formats every label.' },
+    description: 'UI strings (core `/locale`), flat `<elementType>.<name>` keys (`placeholders.filter`, `ariaLabels.dialog`, `headers.fullscreen`, …). Partial, per key: these (short or full `web-command-palette.<key>` keys) → the page-wide flat `window.components.locale.labels[\'web-command-palette.<key>\']` → English; an empty string renders nothing. Content labels (headings, hints, empty / loading / page text) are HTML templates with escaped `{…}` values; attribute / placeholder / announcement labels are plain text. `{name}` / `{key}` / `{page}` / `{total}` / `{count}` are interpolated (numbers locale-formatted); a page-wide `translateCallback` translates every label.' },
 
   // ── Callbacks (property-only, read live on every call) ───────────────────
   { configKey: 'searchCallback', converter: toFunction(), on: 'none', type: '(ctx: SearchContext) => Result[] | Promise<Result[]>',
@@ -114,7 +114,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'renderFeedbackCallback', converter: toFunction(), on: 'none', type: '(ctx: FeedbackContext) => string | Node | null | false',
     description: 'Render the text of the one-line feedback shown after a command ran (the ✓, "Done" and countdown stay). `ctx = { type, commandId?, commandText?, selections?, sentence, result?, scope?, duration }` + `controller` / `element`; `type` is `action` or `select`. Read by core `renderSlot`: a string = HTML, a Node (element, fragment) = mounted, `null` / `undefined` = the built-in line, `false` = hidden (no feedback this time, the palette closes right away). Search-result selections (`type: "select"`) have no built-in line, so they get feedback only when this returns content.' },
   { configKey: 'renderLoadingCallback', converter: toFunction(), on: 'none', type: '(ctx: LoaderRenderContext) => void | (() => void)',
-    description: 'Draw the searching loader yourself (shared loader, core SPEC §12.14). `ctx = { component, context, containerElement, element, label }`; `context` is `search` (a search / step-options request in flight, `labels.searching`). Fill `containerElement` (already `role="status"` + `aria-label`); optionally return a cleanup. Beats the page-wide `window.components.renderLoadingCallback`; unset = the default `.cp__loader` (`--cp-loader-*` tokens).' },
+    description: 'Draw the searching loader yourself (shared loader, core SPEC §12.14). `ctx = { component, context, containerElement, element, label }`; `context` is `search` (a search / step-options request in flight, label `ariaLabels.searching`). Fill `containerElement` (already `role="status"` + `aria-label`); optionally return a cleanup. Beats the page-wide `window.components.renderLoadingCallback`; unset = the default `.cp__loader` (`--cp-loader-*` tokens).' },
   { configKey: 'saveUsageCallback', converter: toFunction(), on: 'none', type: '(ctx: { entry: UsageEntry }) => void | Promise<void>',
     description: 'Upsert one favorite/recent entry (`ctx.entry`, by `entry.key`) — called on every use and every star toggle when `loadUsageCallback` is set.' },
   { configKey: 'loadStateCallback', converter: toFunction(), on: 'update', type: 'LoadStateCallback<PaletteUsageState>',
@@ -239,7 +239,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   #usage: UsageStore | null = null;
   #isOpen = false;
   #isFullscreen = false;
-  /** UI strings (core `/locale`, rulebook D-NC-24): instance `labels` → page-wide `window.components.locale.labels['web-command-palette']` → English. */
+  /** UI strings (core `/locale`, rulebook D-NC-24): instance `labels` → page-wide flat `window.components.locale.labels['web-command-palette.<key>']` → English. */
   #labels: PaletteLabels = createLabels(this, DEFAULT_LABELS, () => this.config.labels as Partial<CommandPaletteLabels> | undefined, {
     tag: 'web-command-palette',
   });
@@ -472,7 +472,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     const { confirm, root } = this.#shell;
     // The countdown bar shows the timer — decorative, so it goes when motion is off (SPEC §12.16);
     // the timer itself keeps `feedback-duration`.
-    const body = fillConfirmation(confirm, this.#labels.html('done'), duration, !isMotionOff(this));
+    const body = fillConfirmation(confirm, this.#labels.html('headers.done'), duration, !isMotionOff(this));
     // Core's one render-callback contract (SPEC §12.35): string = HTML, Node = mounted, null = built-in.
     renderSlot(body, custom, {
       renderDefault: (el) => {
@@ -497,7 +497,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
       container.style.height = `${to}px`;
     }
     confirm.focus();
-    const doneText = this.#labels.text('done');
+    const doneText = this.#labels.text('ariaLabels.done');
     announce(doneText ? `${doneText}: ${ctx.sentence}` : ctx.sentence); // core's page-wide live region (SPEC §12.23)
     this.log.UI.debug('feedback', ctx);
     this.#feedbackTimer = setTimeout(() => this.close(), duration);
@@ -730,9 +730,9 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   /** The shell's own strings (dialog name, close button, sheet title); the rest re-resolve on render. */
   #applyLabels(): void {
     const { container, closeButton, fullscreenTitle } = this.#shell;
-    setOrRemove(container, 'aria-label', this.#labels.text('dialogLabel'));
-    setOrRemove(closeButton, 'aria-label', this.#labels.text('close'));
-    fullscreenTitle.textContent = this.#labels.text('fullscreenTitle');
+    setOrRemove(container, 'aria-label', this.#labels.text('ariaLabels.dialog'));
+    setOrRemove(closeButton, 'aria-label', this.#labels.text('ariaLabels.close'));
+    fullscreenTitle.textContent = this.#labels.text('headers.fullscreen');
   }
 
   #applySize(): void {

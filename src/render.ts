@@ -104,19 +104,20 @@ export interface RenderContext {
 function starHtml(item: ViewItem, index: number, ctx: RenderContext): string {
   if (item.favorite === undefined) return '';
   const on = item.favorite;
-  const text = ctx.labels.text(on ? 'removeFavorite' : 'addFavorite');
+  const name = ctx.labels.text(on ? 'ariaLabels.removeFavorite' : 'ariaLabels.addFavorite');
+  const tip = ctx.labels.text(on ? 'tooltips.removeFavorite' : 'tooltips.addFavorite');
   const cap = chordKeycap(ctx.keys.favorite);
   return (
     `<button type="button" class="cp__star${on ? ' cp__star--on' : ''}" tabindex="-1" data-star="${index}"` +
-    ` aria-pressed="${on}" aria-label="${escapeHtml(text)}"` +
-    ` title="${escapeHtml(cap ? `${text} (${cap})` : text)}"><span class="km-icon cp__icon cp__icon--star${on ? '-filled' : ''}" aria-hidden="true"></span></button>`
+    ` aria-pressed="${on}"${name ? ` aria-label="${escapeHtml(name)}"` : ''}` +
+    `${tip || cap ? ` title="${escapeHtml(tip && cap ? `${tip} (${cap})` : tip || cap)}"` : ''}><span class="km-icon cp__icon cp__icon--star${on ? '-filled' : ''}" aria-hidden="true"></span></button>`
   );
 }
 
 function itemHtml(item: ViewItem, index: number, active: boolean, query: SearchQuery, ctx: RenderContext): string {
   const icon = renderIcon(item.icon, { prefix: 'cp' });
-  // A remembered answer's badge is `labels.lastUsed`, re-resolved per render (a locale change mid-wizard).
-  const badgeText = item.isDefault ? ctx.labels.text('lastUsed') : item.badge;
+  // A remembered answer's badge is `labels['labels.lastUsed']`, re-resolved per render (a locale change mid-wizard).
+  const badgeText = item.isDefault ? ctx.labels.text('labels.lastUsed') : item.badge;
   const badge = badgeText
     ? `<span class="cp__badge${item.badgeVariant ? ` cp__badge--${escapeHtml(item.badgeVariant)}` : ''}"><bdi>${escapeHtml(badgeText)}</bdi></span>`
     : '';
@@ -164,7 +165,7 @@ function sectionHtml(heading: Heading, rows: string, more = ''): string {
 /** "+2 · Ctrl+F" on a capped home section: click/tap (or the chord) opens the full list. */
 function moreHtml(view: UsageView, hidden: number, heading: string, ctx: RenderContext): string {
   const cap = chordKeycap(view === 'favorites' ? ctx.keys.favorites : ctx.keys.recent);
-  const count = hidden > 0 ? ctx.labels.html('showAll', { count: hidden }) : '';
+  const count = hidden > 0 ? ctx.labels.html('buttons.showAll', { count: hidden }) : '';
   if (!count && !cap) return '';
   return (
     `<button type="button" class="cp__more" tabindex="-1" data-view="${view}" aria-label="${escapeHtml(heading)}${cap ? ` (${escapeHtml(cap)})` : ''}">` +
@@ -177,10 +178,10 @@ function moreHtml(view: UsageView, hidden: number, heading: string, ctx: RenderC
 function homeHtml(m: PaletteEngine, ctx: RenderContext): string {
   const { labels } = ctx;
   const headings: Record<HomeSection, Heading> = {
-    favorites: labelHeading(labels, 'favorites'),
-    recent: labelHeading(labels, 'recent'),
-    commands: labelHeading(labels, 'commands'),
-    contexts: labelHeading(labels, 'search'),
+    favorites: labelHeading(labels, 'headers.favorites'),
+    recent: labelHeading(labels, 'headers.recent'),
+    commands: labelHeading(labels, 'headers.commands'),
+    contexts: labelHeading(labels, 'headers.search'),
   };
   const section = (key: HomeSection): string => {
     const rows = m.items
@@ -225,7 +226,7 @@ function tokensHtml(tokens: TokenView[] | null, labels: PaletteLabels): string {
         case 'selection':
           return (
             `<span class="cp__badge"><bdi>${escapeHtml(t.label)}</bdi>` +
-            `<button type="button" class="cp__badge-remove" data-token="${t.index}" aria-label="${escapeHtml(labels.text('removeToken', { name: t.label }))}">` +
+            `<button type="button" class="cp__badge-remove" data-token="${t.index}" aria-label="${escapeHtml(labels.text('ariaLabels.removeToken', { name: t.label }))}">` +
             `<span class="km-icon cp__icon cp__icon--remove" aria-hidden="true"></span></button></span>`
           );
       }
@@ -247,13 +248,13 @@ function footerHtml(m: PaletteEngine, ctx: RenderContext): string {
   const fav = m.activeFavorite;
   const starCap = chordKeycap(ctx.keys.favorite);
   return [
-    hint('↑↓', 'navigate'),
-    m.isPaginated ? hint('←→', 'pages') : '',
-    isStep ? hint('Tab', 'next') : '',
-    hint('↵', m.canRun ? 'run' : 'select'),
-    m.canStepBack ? hint('⌫', 'back') : '',
-    hint('Esc', m.canStepBack ? 'back' : 'close'),
-    fav !== undefined && starCap ? hint(starCap, fav ? 'removeFavorite' : 'addFavorite') : '',
+    hint('↑↓', 'labels.navigate'),
+    m.isPaginated ? hint('←→', 'labels.pages') : '',
+    isStep ? hint('Tab', 'labels.next') : '',
+    hint('↵', m.canRun ? 'labels.run' : 'labels.select'),
+    m.canStepBack ? hint('⌫', 'labels.back') : '',
+    hint('Esc', m.canStepBack ? 'labels.back' : 'labels.close'),
+    fav !== undefined && starCap ? hint(starCap, fav ? 'labels.removeFavorite' : 'labels.addFavorite') : '',
   ].join('');
 }
 
@@ -277,7 +278,7 @@ export function confirmationBodyHtml(o: { trigger?: string; text: string; parts:
 /**
  * Fill the one-line confirmation: ✓, a body slot, the heading at the end, and a
  * countdown bar whose animation lasts `duration` ms. Returns the body slot.
- * `headingHtml` is markup (`labels.html('done')`). `hasProgress: false` leaves the bar out
+ * `headingHtml` is markup (`labels.html('headers.done')`). `hasProgress: false` leaves the bar out
  * (motion off — the bar is decorative, SPEC §12.16).
  */
 export function fillConfirmation(el: HTMLElement, headingHtml: string, duration: number, hasProgress = true): HTMLElement {
@@ -337,7 +338,7 @@ export class Renderer {
     const host = this.#host ?? ((this.#shell.root.getRootNode() as ShadowRoot).host as HTMLElement | undefined) ?? this.#shell.root;
     this.#removeLoader = renderLoader(host, slot, slot.dataset.cpLoader || 'search', {
       prefix: 'cp',
-      label: labels.text('searching'),
+      label: labels.text('ariaLabels.searching'),
     });
   }
 
@@ -359,7 +360,7 @@ export class Renderer {
       try { s.input.setSelectionRange(end, end); } catch { /* not focusable yet */ }
     }
     s.input.placeholder = m.placeholder;
-    s.input.setAttribute('aria-label', labels.text('dialogLabel'));
+    s.input.setAttribute('aria-label', labels.text('ariaLabels.input'));
     const ctx = m.contextText;
     s.context.textContent = ctx ?? '';
     s.context.classList.toggle('cp__context--visible', !!ctx);
@@ -392,7 +393,7 @@ export class Renderer {
     }
     // Core's one page-wide live region (SPEC §12.23) — stays readable while the modal makes the page inert.
     // Silent while a provider call is pending (debounce / loader); tracked across '' so the same count after a new search is read again.
-    const text = m.mode === 'idle' || m.isLoading || m.isPending ? '' : m.items.length ? labels.text('resultsCount', { count: m.totalResults }) : m.emptyText ?? '';
+    const text = m.mode === 'idle' || m.isLoading || m.isPending ? '' : m.items.length ? labels.text('ariaLabels.resultsCount', { count: m.totalResults }) : m.emptyText ?? '';
     if (text !== this.#announce) {
       this.#announce = text;
       announce(text);
@@ -413,7 +414,7 @@ export class Renderer {
         // The slot carries role="status" + aria-label (renderLoader), so the text is aria-hidden.
         `<div class="cp__loading">` +
         `<span class="cp__loader-slot" data-cp-loader="search"></span>` +
-        `<span aria-hidden="true">${labels.html('searching')}</span></div>`
+        `<span aria-hidden="true">${labels.html('messages.searching')}</span></div>`
       );
     }
     const empty = m.emptyLabel ? labels.html(m.emptyLabel.key, m.emptyLabel.params) : '';

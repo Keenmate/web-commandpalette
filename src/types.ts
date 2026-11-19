@@ -343,105 +343,147 @@ export type BeforeResultSelectCallback = (ctx: ResultSelectEventDetail) => unkno
 export type BeforeActionCallback = (detail: ActionEventDetail) => unknown;
 
 /**
- * Every visible string, resolved per key through core `/locale` (`createLabels`): the instance
- * `labels` → the page-wide `window.components.locale.labels['web-command-palette']` → the English
- * default. `{name}`, `{key}`, `{page}`, `{total}`, `{count}` are placeholders (numbers passed raw;
- * core formats them for the locale — `12 345` in Czech, a `formatLabelCallback` gets the number); a page-wide `formatLabelCallback` (ICU / i18next) formats
- * every label. A label drawn as content (headings, hints, empty / loading / page text, the
- * feedback heading) is an HTML template whose `{…}` values are escaped; one used as an
- * attribute, placeholder, badge or announcement is plain text. `window.components.security =
- * { shouldEscapeLabels: true }` makes every label plain text. `''` = deliberately empty (render
- * nothing); a missing / `undefined` key = the next layer.
+ * Every visible string, resolved per key through core `/locale` (`createLabels`, tag
+ * `web-command-palette`). Keys are flat `<elementType>.<name>` (rulebook D-NC-24): `buttons`,
+ * `tooltips`, `ariaLabels`, `placeholders`, `headers`, `labels`, `messages`. Order: the instance
+ * `labels` (short `placeholders.filter` or full `web-command-palette.placeholders.filter` keys) →
+ * the page-wide flat dictionary `window.components.locale.labels['web-command-palette.<key>']` →
+ * the English default. `{name}`, `{key}`, `{page}`, `{total}`, `{count}` are placeholders (numbers
+ * passed raw; core formats them for the locale — `12 345` in Czech, a `translateCallback` gets the
+ * number); a page-wide `translateCallback` (ICU / i18next) translates every label. A label drawn
+ * as content (headings, hints, empty / loading / page text, the feedback heading) is an HTML
+ * template whose `{…}` values are escaped; one used as an attribute, placeholder, badge or
+ * announcement is plain text. `window.components.security = { shouldEscapeLabels: true }` makes
+ * every label plain text. `''` = deliberately empty (render nothing); a missing / `undefined` key
+ * = the next layer.
  */
 export interface CommandPaletteLabels {
   /** Idle input placeholder. */
-  placeholder: string;
-  /** Step input placeholder when the step defines none. */
-  filterPlaceholder: string;
-  /** A search / filter matched nothing. */
-  noResults: string;
-  /** Loader text. */
-  searching: string;
-  /** Context pill in context search; `{name}`. */
-  searchingIn: string;
-  /** Empty-query prompt in context search; `{name}`. */
-  typeToSearch: string;
-  /** Home heading for commands, and the context pill under `/`. */
-  commands: string;
-  /** Home heading for contexts. */
-  search: string;
-  /** Context pill under `:`. */
-  searchContexts: string;
-  /** Pagination row; `{page}`, `{total}`, `{count}`. */
-  pageOf: string;
-  navigate: string;
-  select: string;
-  back: string;
-  close: string;
-  pages: string;
+  'placeholders.idle': string;
+  /** Step / favorites / recent input placeholder when the step defines none. */
+  'placeholders.filter': string;
+  /** Home section heading for starred items (also the section group's accessible name). */
+  'headers.favorites': string;
+  /** Home section heading for recently / frequently used items. */
+  'headers.recent': string;
+  /** Home section heading for commands. */
+  'headers.commands': string;
+  /** Home section heading for contexts. */
+  'headers.search': string;
   /** Title of the phone fullscreen sheet. */
-  fullscreenTitle: string;
-  /** Accessible name of the dialog. */
-  dialogLabel: string;
-  /** Accessible name of a token's remove button; `{name}`. */
-  removeToken: string;
-  /** Live-region announcement of the result count; `{count}`. */
-  resultsCount: string;
-  /** Home heading for starred items. */
-  favorites: string;
-  /** Home heading for recently / frequently used items. */
-  recent: string;
-  /** Star button / footer hint, when the active row is not starred. */
-  addFavorite: string;
-  /** Star button, when the active row is starred. */
-  removeFavorite: string;
-  /** Footer hint for Tab in a wizard (accept and go to the next step). */
-  next: string;
-  /** Footer hint for Enter when remembered answers can finish the wizard. */
-  run: string;
-  /** Badge on a replayed step's remembered answer. */
-  lastUsed: string;
-  /** Home section-heading link to the full list; `{count}` = rows not shown on the home screen. */
-  showAll: string;
-  /** Favorites list with nothing starred; `{key}` = the star shortcut. */
-  noFavorites: string;
-  /** Recent list with nothing used yet. */
-  noRecent: string;
+  'headers.fullscreen': string;
   /** Feedback panel heading after a command ran. */
-  done: string;
+  'headers.done': string;
+  /** Context pill under `/`. */
+  'labels.scopeCommands': string;
+  /** Context pill under `:`. */
+  'labels.scopeContexts': string;
+  /** Context pill in context search; `{name}`. */
+  'labels.scopeSearchingIn': string;
+  /** Context pill in the full favorites list. */
+  'labels.scopeFavorites': string;
+  /** Context pill in the full recent list. */
+  'labels.scopeRecent': string;
+  /** Pagination row; `{page}`, `{total}`, `{count}`. */
+  'labels.pageOf': string;
+  /** Badge on a replayed step's remembered answer. */
+  'labels.lastUsed': string;
+  /** Footer hint for ↑↓. */
+  'labels.navigate': string;
+  /** Footer hint for ←→ (paginated results). */
+  'labels.pages': string;
+  /** Footer hint for Tab in a wizard (accept and go to the next step). */
+  'labels.next': string;
+  /** Footer hint for Enter when remembered answers can finish the wizard. */
+  'labels.run': string;
+  /** Footer hint for Enter. */
+  'labels.select': string;
+  /** Footer hint for ⌫ / Esc when they step back. */
+  'labels.back': string;
+  /** Footer hint for Esc when it closes. */
+  'labels.close': string;
+  /** Footer hint for the star chord, when the active row is not starred. */
+  'labels.addFavorite': string;
+  /** Footer hint for the star chord, when the active row is starred. */
+  'labels.removeFavorite': string;
+  /** Home section-heading link to the full list; `{count}` = rows not shown on the home screen. */
+  'buttons.showAll': string;
+  /** Star button tooltip (the chord is appended), when the row is not starred. */
+  'tooltips.addFavorite': string;
+  /** Star button tooltip (the chord is appended), when the row is starred. */
+  'tooltips.removeFavorite': string;
+  /** Accessible name of the dialog. */
+  'ariaLabels.dialog': string;
+  /** Accessible name of the search input. */
+  'ariaLabels.input': string;
+  /** Accessible name of the close button (fullscreen sheet). */
+  'ariaLabels.close': string;
+  /** Accessible name of a token's remove button; `{name}`. */
+  'ariaLabels.removeToken': string;
+  /** Accessible name of the star button, when the row is not starred. */
+  'ariaLabels.addFavorite': string;
+  /** Accessible name of the star button, when the row is starred. */
+  'ariaLabels.removeFavorite': string;
+  /** Accessible name of the loader. */
+  'ariaLabels.searching': string;
+  /** Live-region announcement of the result count; `{count}`. */
+  'ariaLabels.resultsCount': string;
+  /** Live-region announcement prefix after a command ran (`Done: /deploy …`). */
+  'ariaLabels.done': string;
+  /** A search / filter matched nothing. */
+  'messages.noResults': string;
+  /** Loader text. */
+  'messages.searching': string;
+  /** Empty-query prompt in context search; `{name}`. */
+  'messages.typeToSearch': string;
+  /** Favorites list with nothing starred; `{key}` = the star shortcut. */
+  'messages.noFavorites': string;
+  /** Recent list with nothing used yet. */
+  'messages.noRecent': string;
 }
 
 export const DEFAULT_LABELS: CommandPaletteLabels = {
-  placeholder: 'Type / for commands, : to search, or just start typing…',
-  filterPlaceholder: 'Type to filter…',
-  noResults: 'No results found',
-  searching: 'Searching…',
-  searchingIn: 'Searching in {name}',
-  typeToSearch: 'Type to search {name}',
-  commands: 'Commands',
-  search: 'Search',
-  searchContexts: 'Search contexts',
-  pageOf: 'Page {page} of {total} · {count} results',
-  navigate: 'Navigate',
-  select: 'Select',
-  back: 'Back',
-  close: 'Close',
-  pages: 'Pages',
-  fullscreenTitle: 'Search',
-  dialogLabel: 'Command palette',
-  removeToken: 'Remove {name}',
-  resultsCount: '{count} results',
-  favorites: 'Favorites',
-  recent: 'Recent',
-  addFavorite: 'Add to favorites',
-  removeFavorite: 'Remove from favorites',
-  next: 'Next',
-  run: 'Run',
-  lastUsed: 'Last used',
-  showAll: '+{count}',
-  noFavorites: 'No favorites yet — star a row with {key}',
-  noRecent: 'Nothing used yet',
-  done: 'Done',
+  'placeholders.idle': 'Type / for commands, : to search, or just start typing…',
+  'placeholders.filter': 'Type to filter…',
+  'headers.favorites': 'Favorites',
+  'headers.recent': 'Recent',
+  'headers.commands': 'Commands',
+  'headers.search': 'Search',
+  'headers.fullscreen': 'Search',
+  'headers.done': 'Done',
+  'labels.scopeCommands': 'Commands',
+  'labels.scopeContexts': 'Search contexts',
+  'labels.scopeSearchingIn': 'Searching in {name}',
+  'labels.scopeFavorites': 'Favorites',
+  'labels.scopeRecent': 'Recent',
+  'labels.pageOf': 'Page {page} of {total} · {count} results',
+  'labels.lastUsed': 'Last used',
+  'labels.navigate': 'Navigate',
+  'labels.pages': 'Pages',
+  'labels.next': 'Next',
+  'labels.run': 'Run',
+  'labels.select': 'Select',
+  'labels.back': 'Back',
+  'labels.close': 'Close',
+  'labels.addFavorite': 'Add to favorites',
+  'labels.removeFavorite': 'Remove from favorites',
+  'buttons.showAll': '+{count}',
+  'tooltips.addFavorite': 'Add to favorites',
+  'tooltips.removeFavorite': 'Remove from favorites',
+  'ariaLabels.dialog': 'Command palette',
+  'ariaLabels.input': 'Command palette',
+  'ariaLabels.close': 'Close',
+  'ariaLabels.removeToken': 'Remove {name}',
+  'ariaLabels.addFavorite': 'Add to favorites',
+  'ariaLabels.removeFavorite': 'Remove from favorites',
+  'ariaLabels.searching': 'Searching…',
+  'ariaLabels.resultsCount': '{count} results',
+  'ariaLabels.done': 'Done',
+  'messages.noResults': 'No results found',
+  'messages.searching': 'Searching…',
+  'messages.typeToSearch': 'Type to search {name}',
+  'messages.noFavorites': 'No favorites yet — star a row with {key}',
+  'messages.noRecent': 'Nothing used yet',
 };
 
 /** One palette's resolved labels (core `createLabels`): `.text(key, params)` / `.html(key, params)`. */

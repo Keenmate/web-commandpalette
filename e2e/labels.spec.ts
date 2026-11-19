@@ -18,7 +18,7 @@ test('custom labels render; unset keys fall back to English', async ({ page }) =
   await expect(p.container).toHaveAttribute('aria-label', 'Befehlspalette');
   await p.input.fill(':p ');
   await expect(p.empty).toHaveText('Suche in Products'); // {name} interpolated
-  // An unset key (searchContexts) keeps the English default.
+  // An unset key (labels.scopeContexts) keeps the English default.
   await p.input.fill(':');
   await expect(p.context).toHaveText('Search contexts');
   await p.input.fill('/zzz'); // a list mode with no match
@@ -30,7 +30,7 @@ test('reassigning labels while open updates the UI', async ({ page }) => {
   await open(page);
   expect(await headings(page)).toEqual(['Befehle', 'Suche']);
   await p.host.evaluate((el) => {
-    (el as unknown as { labels: unknown }).labels = { commands: 'Příkazy', search: 'Hledat', dialogLabel: 'Paleta' };
+    (el as unknown as { labels: unknown }).labels = { 'headers.commands': 'Příkazy', 'headers.search': 'Hledat', 'ariaLabels.dialog': 'Paleta' };
   });
   await expect.poll(() => headings(page)).toEqual(['Příkazy', 'Hledat']);
   await expect(p.container).toHaveAttribute('aria-label', 'Paleta');
@@ -42,7 +42,7 @@ test("'' renders nothing; undefined keeps the English default", async ({ page })
   const p = palette(page);
   await open(page);
   await p.host.evaluate((el) => {
-    (el as unknown as { labels: unknown }).labels = { navigate: '', noResults: '', dialogLabel: '', placeholder: undefined };
+    (el as unknown as { labels: unknown }).labels = { 'labels.navigate': '', 'messages.noResults': '', 'ariaLabels.dialog': '', 'placeholders.idle': undefined };
   });
   await expect(p.input).toHaveAttribute('placeholder', /Type \/ for commands/);
   await expect(p.container).not.toHaveAttribute('aria-label');
@@ -53,7 +53,7 @@ test("'' renders nothing; undefined keeps the English default", async ({ page })
 });
 
 /**
- * Page-wide labels (core /locale): `window.components.locale.labels['web-command-palette']` sits
+ * Page-wide labels (core /locale): the flat `window.components.locale.labels['web-command-palette.<key>']` sits
  * between the instance `labels` and English; assigning the page object re-renders the open palette
  * in place (core `localeChanged()`), and `{count}` / `{page}` / `{total}` are locale-formatted.
  */
@@ -65,12 +65,12 @@ test.describe('page-wide locale', () => {
   test('a page-wide label fills the gaps; the instance labels win', async ({ page }) => {
     await page.evaluate(() => {
       (window as any).components.locale = {
-        labels: { 'web-command-palette': { searchContexts: 'Kontexte', commands: 'Page commands', navigate: 'Navigieren' } },
+        labels: { 'web-command-palette.labels.scopeContexts': 'Kontexte', 'web-command-palette.headers.commands': 'Page commands', 'web-command-palette.labels.navigate': 'Navigieren' },
       };
     });
     const p = palette(page);
     await open(page);
-    expect(await headings(page)).toEqual(['Befehle', 'Suche']); // instance `commands` beats the page
+    expect(await headings(page)).toEqual(['Befehle', 'Suche']); // instance `headers.commands` beats the page
     await expect(p.footer.locator('.cp__hint', { hasText: '↑↓' })).toContainText('Navigieren');
     await p.input.fill(':');
     await expect(p.context).toHaveText('Kontexte');
@@ -85,7 +85,7 @@ test.describe('page-wide locale', () => {
 
     await page.evaluate(() => {
       (window as any).components.locale = {
-        labels: { 'web-command-palette': { searchingIn: 'Hledám v {name}', close: 'Zavřít', fullscreenTitle: 'Hledat' } },
+        labels: { 'web-command-palette.labels.scopeSearchingIn': 'Hledám v {name}', 'web-command-palette.ariaLabels.close': 'Zavřít', 'web-command-palette.headers.fullscreen': 'Hledat' },
       };
     });
     await expect(p.context).toHaveText('Hledám v Products');
@@ -112,7 +112,7 @@ test.describe('page-wide locale', () => {
     await expect(p.pagination).toHaveText('Page 1 of 1,544 · 12,345 results');
   });
 
-  test('a page-wide formatLabelCallback gets the raw numbers', async ({ page }) => {
+  test('a page-wide translateCallback gets the raw numbers', async ({ page }) => {
     const p = palette(page);
     await p.host.evaluate((el: any) => {
       el.searchCallback = () => Array.from({ length: 12345 }, (_, i) => ({ id: `r${i}`, title: `Row ${i}` }));
@@ -121,9 +121,9 @@ test.describe('page-wide locale', () => {
       (window as any).seen = [];
       (window as any).components.locale = {
         locale: 'cs',
-        formatLabelCallback: ({ key, params }: any) => {
-          if (key === 'pageOf') (window as any).seen.push(params);
-          return key === 'pageOf' ? `typeof ${typeof params.count} ${params.count}` : undefined;
+        translateCallback: ({ key, params }: any) => {
+          if (key === 'web-command-palette.labels.pageOf') (window as any).seen.push(params);
+          return key === 'web-command-palette.labels.pageOf' ? `typeof ${typeof params.count} ${params.count}` : undefined;
         },
       };
     });

@@ -1,12 +1,12 @@
 # Accessibility
 
 - The open palette is a **modal dialog** (`role="dialog"`, `aria-modal="true"`, labelled by
-  `labels.dialogLabel`).
+  `labels['ariaLabels.dialog']`).
 - The input is a **combobox** (`role="combobox"`, `aria-autocomplete="list"`,
   `aria-controls` → the results `listbox`). The highlighted row is exposed via
   `aria-activedescendant`; rows are `role="option"` with `aria-selected`.
 - Home-screen sections are `role="group"` with the section heading as their label.
-- Core's page-wide live region (`announce()`, shared by every component, readable while the modal makes the page inert) announces the result count (`labels.resultsCount`), the
+- Core's page-wide live region (`announce()`, shared by every component, readable while the modal makes the page inert) announces the result count (`labels['ariaLabels.resultsCount']`), the
   empty-state text and "Done: …" after a command; the visible context pill (e.g. "Searching in Products") is `aria-live="polite"`.
 - **Focus**: opening focuses the input; closing returns focus to the element that had it. Focus
   stays inside the dialog — <kbd>Tab</kbd> in the input selects (one wizard step at a time),
@@ -21,5 +21,5 @@
   mixed-direction text is bidi-isolated so command shortcuts keep their order.
 - All visible and announced strings come from `labels` — localise them for screen-reader users too.
 - **Favorites**: the ☆ buttons are pointer affordances (`tabindex="-1"`, `aria-pressed`, labelled
-  with `labels.addFavorite` / `labels.removeFavorite`); the keyboard equivalent is
+  with `ariaLabels.addFavorite` / `ariaLabels.removeFavorite`, tooltip `tooltips.*`); the keyboard equivalent is
   <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>D</kbd> on the active row, advertised in the footer.

@@ -151,7 +151,7 @@ See plan §10. These are the bugs that motivated the project.
 
 - Static vs. dynamic: the `/` and `:` lists and non-`search` steps filter client-side. Only global
   search, context search and `isLiveSearch` steps call providers, debounced (`searchDebounce`).
-- A context search with an empty query must NOT call `searchCallback`; show `labels.typeToSearch`.
+- A context search with an empty query must NOT call `searchCallback`; show `labels['messages.typeToSearch']`.
   The input keeps a locked `"<shortcut> "` prefix.
 - Global search prepends matching commands/contexts (works with no `searchCallback`), then appends
   provider results.

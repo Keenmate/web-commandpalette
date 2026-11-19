@@ -11,6 +11,44 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Changed — label keys are flat `<elementType>.<name>` (core rc25 `/locale`, rulebook D-NC-24, 2026-11-19)
+
+- **BREAKING:** every `labels` key is renamed to `<elementType>.<name>` (`buttons`, `tooltips`, `ariaLabels`,
+  `placeholders`, `headers`, `labels`, `messages`). English defaults are unchanged. A text shown in two places now
+  has one key per place (home heading vs. context pill, footer hint vs. star button name / tooltip, dialog vs. input
+  name, loader text vs. loader name, feedback heading vs. announcement).
+- **BREAKING (page-wide):** `window.components.locale.labels` is one flat dictionary of full keys —
+  `{ 'web-command-palette.messages.noResults': 'Nic nenalezeno' }`; the nested `{ 'web-command-palette': {…} }`
+  shape is gone. The instance `labels` takes short (`messages.noResults`) or full keys.
+- **BREAKING:** the page-wide `formatLabelCallback` is core's `translateCallback({ component, key, template, params,
+  locale })` (`key` = the full key; `null` / `undefined` = not mine).
+- The star button sets no `aria-label` / `title` when its label is `''` (was an empty attribute).
+
+| Old key | New key(s) |
+|---|---|
+| `placeholder` | `placeholders.idle` |
+| `filterPlaceholder` | `placeholders.filter` |
+| `noResults` | `messages.noResults` |
+| `searching` | `messages.searching` (loader text) + `ariaLabels.searching` (loader name) |
+| `searchingIn` | `labels.scopeSearchingIn` |
+| `typeToSearch` | `messages.typeToSearch` |
+| `commands` | `headers.commands` (home heading) + `labels.scopeCommands` (context pill) |
+| `search` | `headers.search` |
+| `searchContexts` | `labels.scopeContexts` |
+| `pageOf` | `labels.pageOf` |
+| `navigate` / `select` / `back` / `pages` / `next` / `run` | `labels.navigate` / `labels.select` / `labels.back` / `labels.pages` / `labels.next` / `labels.run` |
+| `close` | `labels.close` (footer hint) + `ariaLabels.close` (close button) |
+| `fullscreenTitle` | `headers.fullscreen` |
+| `dialogLabel` | `ariaLabels.dialog` (dialog) + `ariaLabels.input` (search input) |
+| `removeToken` | `ariaLabels.removeToken` |
+| `resultsCount` | `ariaLabels.resultsCount` |
+| `favorites` / `recent` | `headers.favorites` / `headers.recent` (home headings) + `labels.scopeFavorites` / `labels.scopeRecent` (context pill) |
+| `addFavorite` / `removeFavorite` | `labels.*` (footer hint) + `tooltips.*` (star title) + `ariaLabels.*` (star name) |
+| `lastUsed` | `labels.lastUsed` |
+| `showAll` | `buttons.showAll` |
+| `noFavorites` / `noRecent` | `messages.noFavorites` / `messages.noRecent` |
+| `done` | `headers.done` (feedback heading) + `ariaLabels.done` (announcement prefix) |
+
 ### Changed — provider calls through core `createAsyncRunner` (core SPEC §12.22, 2026-11-17)
 
 - Search (`searchCallback`, a context's own `searchCallback`) and step options (`getStepOptionsCallback`, static
