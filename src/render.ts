@@ -330,7 +330,8 @@ export class Renderer {
    * Draw the searching loader into the slot the results HTML left
    * (`[data-cp-loader]`) through core `renderLoader()`: instance
    * `renderLoadingCallback` > page-wide `window.components.renderLoadingCallback` >
-   * the default `.cp__loader`. The slot gets `role="status"` + `aria-label`.
+   * the default `.cp__loader`. The slot gets `role="status"` + `aria-label` = the visible
+   * `messages.searching` text (aria-hidden next to it, so it is heard once).
    */
   #mountLoader(labels: PaletteLabels): void {
     const slot = this.#shell.results.querySelector<HTMLElement>('[data-cp-loader]');
@@ -338,7 +339,7 @@ export class Renderer {
     const host = this.#host ?? ((this.#shell.root.getRootNode() as ShadowRoot).host as HTMLElement | undefined) ?? this.#shell.root;
     this.#removeLoader = renderLoader(host, slot, slot.dataset.cpLoader || 'search', {
       prefix: 'cp',
-      label: labels.text('ariaLabels.searching'),
+      label: labels.text('messages.searching'), // the visible loader text names the status (one text, one key)
     });
   }
 

@@ -424,15 +424,13 @@ export interface CommandPaletteLabels {
   'ariaLabels.addFavorite': string;
   /** Accessible name of the star button, when the row is starred. */
   'ariaLabels.removeFavorite': string;
-  /** Accessible name of the loader. */
-  'ariaLabels.searching': string;
   /** Live-region announcement of the result count; `{count}`. */
   'ariaLabels.resultsCount': string;
   /** Live-region announcement prefix after a command ran (`Done: /deploy …`). */
   'ariaLabels.done': string;
   /** A search / filter matched nothing. */
   'messages.noResults': string;
-  /** Loader text. */
+  /** Loader text — also the loader's accessible name (role="status"; one text, one key). */
   'messages.searching': string;
   /** Empty-query prompt in context search; `{name}`. */
   'messages.typeToSearch': string;
@@ -476,7 +474,6 @@ export const DEFAULT_LABELS: CommandPaletteLabels = {
   'ariaLabels.removeToken': 'Remove {name}',
   'ariaLabels.addFavorite': 'Add to favorites',
   'ariaLabels.removeFavorite': 'Remove from favorites',
-  'ariaLabels.searching': 'Searching…',
   'ariaLabels.resultsCount': '{count} results',
   'ariaLabels.done': 'Done',
   'messages.noResults': 'No results found',

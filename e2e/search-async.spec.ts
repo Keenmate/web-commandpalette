@@ -128,14 +128,14 @@ test('search-debounce="0" calls per keystroke; "500" once after typing stops', a
 // ── Shared loader (core SPEC §12.14): instance renderLoadingCallback >
 //    window.components.renderLoadingCallback > the default .cp__loader ──
 
-test('loader: default .cp__loader with role=status + ariaLabels.searching, removed when results land', async ({ page }) => {
+test('loader: default .cp__loader with role=status, named by the visible messages.searching text, removed when results land', async ({ page }) => {
   const p = palette(page);
   await knobs(page, (w) => { w.delays.wait = 800; });
   await open(page);
   await p.input.fill('wait');
   const slot = p.host.locator('.cp__loader-slot');
   await expect(slot).toHaveAttribute('role', 'status');
-  await expect(slot).toHaveAttribute('aria-label', 'Searching…');
+  await expect(slot).toHaveAccessibleName('Searching…');
   const loader = slot.locator('.cp__loader');
   await expect(loader).toHaveCount(1);
   await expect(loader).toHaveAttribute('aria-hidden', 'true');
@@ -149,13 +149,14 @@ test('loader: default .cp__loader with role=status + ariaLabels.searching, remov
   await expect(p.host.locator('.cp__loader')).toHaveCount(0);
 });
 
-test('loader: aria-label follows ariaLabels.searching', async ({ page }) => {
+test('loader: the name follows messages.searching (one text, one key)', async ({ page }) => {
   const p = palette(page);
   await knobs(page, (w) => { w.delays.wait = 800; });
-  await p.host.evaluate((el) => { (el as unknown as { labels: object }).labels = { 'ariaLabels.searching': 'Hledám…' }; });
+  await p.host.evaluate((el) => { (el as unknown as { labels: object }).labels = { 'messages.searching': 'Hledám…' }; });
   await open(page);
   await p.input.fill('wait');
-  await expect(p.host.locator('.cp__loader-slot')).toHaveAttribute('aria-label', 'Hledám…');
+  await expect(p.host.locator('.cp__loading > [aria-hidden="true"]')).toHaveText('Hledám…');
+  await expect(p.host.locator('.cp__loader-slot')).toHaveAccessibleName('Hledám…');
 });
 
 test('loader: the page hook replaces the default; its cleanup runs on remove (results / close)', async ({ page }) => {

@@ -38,6 +38,22 @@ test('reassigning labels while open updates the UI', async ({ page }) => {
   await expect(p.input).toHaveAttribute('placeholder', /Type \/ for commands/);
 });
 
+test('twin fallback: an unset ariaLabels / tooltips key follows a customized same-name sibling (core /locale)', async ({ page }) => {
+  const p = palette(page);
+  await open(page);
+  await p.host.evaluate((el) => {
+    (el as unknown as { labels: unknown }).labels = { 'labels.close': 'Zavřít', 'ariaLabels.addFavorite': 'Přidat do oblíbených' };
+  });
+  // ariaLabels.close ← labels.close (the footer hint's text); the close button is icon-only
+  // (hidden outside the fullscreen sheet, so the attribute is asserted, not the computed name).
+  await expect(p.host.locator('.cp__close')).toHaveAttribute('aria-label', 'Zavřít');
+  // tooltips.addFavorite ← ariaLabels.addFavorite (the star's title; the chord is appended).
+  await p.input.fill('/');
+  const star = p.host.locator('.cp__star:not(.cp__star--on)').first();
+  await expect(star).toHaveAccessibleName('Přidat do oblíbených');
+  await expect(star).toHaveAttribute('title', /^Přidat do oblíbených/);
+});
+
 test("'' renders nothing; undefined keeps the English default", async ({ page }) => {
   const p = palette(page);
   await open(page);

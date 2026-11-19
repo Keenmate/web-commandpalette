@@ -19,7 +19,11 @@
   sheet that stays above the on-screen keyboard.
 - **RTL**: `dir="rtl"` on the element or an ancestor mirrors the layout and the ←/→ paging keys;
   mixed-direction text is bidi-isolated so command shortcuts keep their order.
-- All visible and announced strings come from `labels` — localise them for screen-reader users too.
+- The searching loader is `role="status"`, named by its visible text (`messages.searching` — one text, one key; the
+  text itself is `aria-hidden` so it is heard once).
+- All visible and announced strings come from `labels` — localise them for screen-reader users too. An `ariaLabels.*` /
+  `tooltips.*` key you leave unset follows a customized sibling with the same name (core `/locale` twin fallback):
+  translating `labels.close` also names the close button, `ariaLabels.addFavorite` also titles the star.
 - **Favorites**: the ☆ buttons are pointer affordances (`tabindex="-1"`, `aria-pressed`, labelled
   with `ariaLabels.addFavorite` / `ariaLabels.removeFavorite`, tooltip `tooltips.*`); the keyboard equivalent is
   <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>D</kbd> on the active row, advertised in the footer.

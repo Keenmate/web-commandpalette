@@ -16,7 +16,13 @@ callback and item API below is breaking.
 - **BREAKING:** every `labels` key is renamed to `<elementType>.<name>` (`buttons`, `tooltips`, `ariaLabels`,
   `placeholders`, `headers`, `labels`, `messages`). English defaults are unchanged. A text shown in two places now
   has one key per place (home heading vs. context pill, footer hint vs. star button name / tooltip, dialog vs. input
-  name, loader text vs. loader name, feedback heading vs. announcement).
+  name, feedback heading vs. announcement).
+- **BREAKING (one text, one key):** `ariaLabels.searching` is removed — the loader (`role="status"`) is named by its
+  visible text, `messages.searching`. Every remaining `ariaLabels.*` names something nothing visible names (the
+  dialog, the search input — a placeholder is not a caption —, the icon-only close / remove-token / star buttons) or
+  is an announcement. Twins share `<name>` (`labels.close` / `ariaLabels.close`, `labels.*` / `tooltips.*` /
+  `ariaLabels.*` `addFavorite` / `removeFavorite`, `headers.done` / `ariaLabels.done`), so core's twin fallback
+  applies: an unset `ariaLabels.*` / `tooltips.*` key follows a customized same-name sibling.
 - **BREAKING (page-wide):** `window.components.locale.labels` is one flat dictionary of full keys —
   `{ 'web-command-palette.messages.noResults': 'Nic nenalezeno' }`; the nested `{ 'web-command-palette': {…} }`
   shape is gone. The instance `labels` takes short (`messages.noResults`) or full keys.
@@ -29,7 +35,7 @@ callback and item API below is breaking.
 | `placeholder` | `placeholders.idle` |
 | `filterPlaceholder` | `placeholders.filter` |
 | `noResults` | `messages.noResults` |
-| `searching` | `messages.searching` (loader text) + `ariaLabels.searching` (loader name) |
+| `searching` | `messages.searching` (loader text, also its name) |
 | `searchingIn` | `labels.scopeSearchingIn` |
 | `typeToSearch` | `messages.typeToSearch` |
 | `commands` | `headers.commands` (home heading) + `labels.scopeCommands` (context pill) |

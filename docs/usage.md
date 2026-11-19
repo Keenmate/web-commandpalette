@@ -81,7 +81,7 @@ Objects and functions are **properties only** — set them from JS (or a framewo
 | `maxFavoriteCount` / `maxRecentCount` | `number` | Rows each home section shows. Default `3`; `0` hides the section. |
 | `favoriteKey` / `favoritesKey` / `recentKey` | `string` | Ctrl/⌘ + key while open: star the active row / show all favorites / show all recent. Defaults `d` / `f` / `r`; `''` disables. |
 | `renderFeedbackCallback` | `(ctx) => string \| Node \| null \| false` | Custom feedback content: string = HTML, Node = mounted, `null` = built-in, `false` = hidden (skipped). See [Feedback](#feedback). |
-| `renderLoadingCallback` | `(ctx) => void \| (() => void)` | Draw the searching loader yourself — `ctx = { component, context: 'search', containerElement, element, label }`; fill `containerElement` (already `role="status"` + `aria-label` = the `ariaLabels.searching` label), optionally return a cleanup. Beats the page-wide `window.components.renderLoadingCallback` (one hook for every Keenmate component); unset = the default `.cp__loader` (`--cp-loader-icon` / `-rotate` / `-duration` / `-size` / `-color`, chained to `--base-loader-*`). |
+| `renderLoadingCallback` | `(ctx) => void \| (() => void)` | Draw the searching loader yourself — `ctx = { component, context: 'search', containerElement, element, label }`; fill `containerElement` (already `role="status"` + `aria-label` = the `messages.searching` text), optionally return a cleanup. Beats the page-wide `window.components.renderLoadingCallback` (one hook for every Keenmate component); unset = the default `.cp__loader` (`--cp-loader-icon` / `-rotate` / `-duration` / `-size` / `-color`, chained to `--base-loader-*`). |
 | `customStyles` / `getCustomStylesCallback` | `string \| null` / `(ctx) => string \| null \| undefined` | Extra CSS for this palette's shadow root (attribute `custom-styles`), after the component CSS and after the page-wide `window.components['web-command-palette'].customStyles` / `.getCustomStylesCallback`, so the instance wins. The callback wins over `customStyles`. See [Theming → Custom CSS](theming.md#custom-css-shadow-root). |
 | `isFeedbackShown` | `boolean` | Show the one-line feedback after a command ran. Default `true` (attribute `show-feedback`). |
 | `feedbackDuration` | `number` | How long it stays (ms). Default `1500`; `0` = off. |
@@ -442,11 +442,10 @@ pill, a footer hint and the star button's name / tooltip) has one key per place.
 | `ariaLabels.input` | Command palette | Search input accessible name |
 | `ariaLabels.close` | Close | Close button (fullscreen sheet) |
 | `ariaLabels.removeToken` | Remove {name} | A token's remove button |
-| `ariaLabels.searching` | Searching… | Loader accessible name |
 | `ariaLabels.resultsCount` | {count} results | Live-region announcement of the result count |
 | `ariaLabels.done` | Done | Live-region announcement prefix after a command ran (`Done: …`) |
 | `messages.noResults` | No results found | A search / filter matched nothing |
-| `messages.searching` | Searching… | Loader text |
+| `messages.searching` | Searching… | Loader text — also the loader's accessible name |
 | `messages.typeToSearch` | Type to search {name} | Empty query in a context search |
 | `messages.noFavorites` | No favorites yet — star a row with {key} | Favorites list with nothing starred |
 | `messages.noRecent` | Nothing used yet | Recent list with nothing used yet |
