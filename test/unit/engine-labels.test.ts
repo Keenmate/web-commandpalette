@@ -59,4 +59,14 @@ describe('engine labels (no element)', () => {
     host.state.translateCallback = upper;
     expect(m.placeholder).toBe(DEFAULT_LABELS['placeholders.idle'].toUpperCase());
   });
+
+  it('a throwing translateCallback falls back to the next rule — standalone (host: null) and with an element', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const boom: TranslateCallback = () => { throw new Error('boom'); };
+    expect(harness({ translateCallback: boom }).m.placeholder).toBe(DEFAULT_LABELS['placeholders.idle']);
+    const element = document.createElement('div');
+    const { m } = harness({ translateCallback: boom, element });
+    expect(m.placeholder).toBe(DEFAULT_LABELS['placeholders.idle']);
+  });
 });

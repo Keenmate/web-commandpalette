@@ -68,6 +68,11 @@ export interface CommandPaletteEngineHost {
    * it (callbacks then get the plain fields).
    */
   context?<T extends object>(fields: T): T;
+  /**
+   * The element this engine renders for, read once at construction — core `createLabels` logs a throwing
+   * `translateCallback` under its logger and reads its `lang` context. A standalone UI omits it (`null`).
+   */
+  element?(): Element | null;
   display(): Display;
   pageSize(): number;
   /** `search-debounce`: ms before a typed term reaches `searchCallback` / a live step's options (default 150). */
@@ -273,13 +278,6 @@ const isThenable = <T>(v: unknown): v is PromiseLike<T> =>
   !!v && (typeof v === 'object' || typeof v === 'function') && typeof (v as PromiseLike<T>).then === 'function';
 
 /**
- * Core `createLabels` takes the element it resolves for (its log source; the tag and the
- * own `translateCallback` come as options here). The engine has no element: a `translateCallback`
- * that throws is logged under core's CORE bundle instead of an element's logger.
- */
-const LABELS_SOURCE = { localName: 'web-command-palette' } as unknown as Element;
-
-/**
  * The palette ENGINE — the DOM-free state machine behind `<web-command-palette>`, public
  * for building your own palette UI (docs/usage.md "Build your own UI"): it owns modes,
  * the wizard, filtering, async search, pagination and favorites / recents, and exposes a
@@ -348,7 +346,9 @@ export class CommandPaletteEngine {
 
   constructor(host: CommandPaletteEngineHost) {
     this.#host = host;
-    this.labels = createLabels(LABELS_SOURCE, DEFAULT_LABELS, () => host.labels?.() ?? null, {
+    // The element when there is one (its logger, its `lang`); standalone `null` — the tag and the own
+    // `translateCallback` come as options either way, so the resolution order is the same.
+    this.labels = createLabels(host.element?.() ?? null, DEFAULT_LABELS, () => host.labels?.() ?? null, {
       tag: 'web-command-palette',
       getTranslateCallback: () => host.translateCallback?.() ?? null,
     });

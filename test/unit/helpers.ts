@@ -62,6 +62,8 @@ interface HostState {
   labels: Partial<CommandPaletteLabels> | null;
   /** The engine's own `translateCallback` (none by default). */
   translateCallback: TranslateCallback | null;
+  /** The element the engine renders for (`host.element()`; none = standalone). */
+  element: Element | null;
 }
 
 export function harness(over: Partial<HostState> = {}): Harness {
@@ -80,6 +82,7 @@ export function harness(over: Partial<HostState> = {}): Harness {
     searchRules: { behavior: 'normalized', match: 'contains' },
     labels: null,
     translateCallback: null,
+    element: null,
     ...over,
   };
   const saved: UsageEntry[] = [];
@@ -100,6 +103,7 @@ export function harness(over: Partial<HostState> = {}): Harness {
     searchMatch: () => state.searchRules.match,
     labels: () => state.labels,
     translateCallback: () => state.translateCallback,
+    element: () => state.element,
     usage: () => store,
     maxRecentCount: () => state.maxRecentCount,
     changed: () => changed(),

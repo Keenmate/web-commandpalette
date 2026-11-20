@@ -583,6 +583,7 @@ value written for one works in the other:
 | `maxFavoriteCount?()` / `maxRecentCount?()` | `max-favorite-count` / `max-recent-count` | default 3 |
 | `starKey?()` | `favorite-key` | the drawn keycap text (`Ctrl+D`) for `messages.noFavorites` |
 | `context?(fields)` | — | attach your own fields to every callback ctx |
+| `element?()` | — | your UI's element, read once — a throwing `translateCallback` logs under its logger; omit = `null` |
 | `effect(effect)` / `changed()` / `error?()` | `before*Callback`s, events, close | yours to perform |
 
 Not engine options (they draw or bind DOM — your UI's job): `renderIconCallback`,

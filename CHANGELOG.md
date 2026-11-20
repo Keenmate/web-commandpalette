@@ -21,6 +21,8 @@ callback and item API below is breaking.
   core `createLabels` resolver — the engine builds the resolver itself and exposes it as `engine.labels`.
 - **Added:** host option `translateCallback()` — the engine's own translation hook, asked before
   `window.components.locale.translateCallback` (the element passes its `translateCallback` through).
+- **Added:** optional host option `element()` — the engine's element (read once): a throwing `translateCallback`
+  logs under that element's logger; a standalone UI omits it (core `createLabels(null, …)`).
 - **Docs:** docs/usage.md "Build your own UI" — what the engine does, what you draw, a minimal example and
   the host-option ↔ element-input table.
 

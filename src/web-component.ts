@@ -313,6 +313,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
       searchCallback: () => (this.config.searchCallback as SearchCallback | null) ?? null,
       getStepOptionsCallback: () => (this.config.getStepOptionsCallback as StepOptionsCallback | null) ?? null,
       context: (fields) => this.withContext(fields),
+      element: () => this,
       display: () => (this.config.display as Display) ?? 'inline',
       pageSize: () => (this.config.pageSize as number) ?? 8,
       searchDebounce: () => (this.config.searchDebounce as number) ?? 150,
