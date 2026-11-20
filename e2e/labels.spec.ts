@@ -92,6 +92,30 @@ test.describe('page-wide locale', () => {
     await expect(p.context).toHaveText('Kontexte');
   });
 
+  test("the element's translateCallback beats the page one; null passes on; instance labels beat both", async ({ page }) => {
+    await page.evaluate(() => {
+      (window as any).components.locale = {
+        translateCallback: ({ key }: any) =>
+          key === 'web-command-palette.headers.commands' || key === 'web-command-palette.labels.scopeContexts' || key === 'web-command-palette.ariaLabels.input'
+            ? `page:${key.split('.').pop()}` : null,
+      };
+    });
+    const p = palette(page);
+    await p.host.evaluate((el: any) => {
+      el.translateCallback = ({ key }: any) =>
+        key === 'web-command-palette.headers.commands' || key === 'web-command-palette.labels.scopeContexts' ? `own:${key.split('.').pop()}` : null;
+    });
+    await open(page);
+    expect(await headings(page)).toEqual(['Befehle', 'Suche']); // instance `headers.commands` beats both callbacks
+    await expect(p.input).toHaveAttribute('aria-label', 'page:input'); // own callback → null → the page one
+    await p.input.fill(':');
+    await expect(p.context).toHaveText('own:scopeContexts'); // own callback beats the page one
+
+    // Changing the element's callback re-renders the labels in place.
+    await p.host.evaluate((el: any) => { el.translateCallback = null; });
+    await expect(p.context).toHaveText('page:scopeContexts');
+  });
+
   test('assigning window.components.locale re-renders the open palette (localeChanged), state kept', async ({ page }) => {
     const p = palette(page);
     await open(page);

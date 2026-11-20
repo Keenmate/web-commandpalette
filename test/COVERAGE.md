@@ -128,6 +128,7 @@ Known bugs are in `test/NOTES.md`.
 | Attribute removal resets to default (`page-size`, `display`, `size`, `usage-storage`) | ✓ | `attributes.spec.ts` | `attributes.html` |
 | Invalid `size` keeps the previous preset + `input-rejected` | ✓ | `attributes.spec.ts` | `attributes.html` |
 | `labels` (custom, English fallback, live reassignment) | ✓ | `labels.spec.ts` | `labels.html` |
+| `translateCallback` (own beats page-wide, `null` passes on, instance `labels` beat both, live change) | ✓ | `labels.spec.ts` | `labels.html` |
 | Result `group` headings (first-appearance order) | ✓ | `groups.spec.ts` | `groups.html` |
 | Multiple instances: hotkey ownership + hand-over | ✓ | `multi-instance.spec.ts` | `multi-instance.html` |
 | DOM move while open closes cleanly (D1 / CP-1); no rebuild | ✓ | `lifecycle.spec.ts` | `lifecycle.html` |

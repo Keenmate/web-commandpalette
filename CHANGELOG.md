@@ -11,6 +11,13 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Added — `translateCallback` on the element (core `/locale`, rulebook C-CA-33, 2026-11-20)
+
+- **Added:** `el.translateCallback(ctx)` — this palette's own translation hook (core `TranslateCallback`, `ctx = {
+  component, key, template, params, locale }`). Asked for every label key the instance `labels` did not set, before
+  the page-wide `window.components.locale.translateCallback`; `null` / `undefined` = not mine. Instance `labels`
+  still win over both. One palette on a page needs no `window.components` setup. Changing it re-renders every label.
+
 ### Added — `renderIconCallback` on the element; Changed — core rc25 icon order (core SPEC §12.33, rulebook C-CA-33, 2026-11-20)
 
 - **Added:** `el.renderIconCallback(name, ctx)` — this palette's own icon hook (`ctx = { component, element, prefix:

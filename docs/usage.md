@@ -83,6 +83,7 @@ Objects and functions are **properties only** — set them from JS (or a framewo
 | `renderFeedbackCallback` | `(ctx) => string \| Node \| null \| false` | Custom feedback content: string = HTML, Node = mounted, `null` = built-in, `false` = hidden (skipped). See [Feedback](#feedback). |
 | `renderLoadingCallback` | `(ctx) => void \| (() => void)` | Draw the searching loader yourself — `ctx = { component, context: 'search', containerElement, element, label }`; fill `containerElement` (already `role="status"` + `aria-label` = the `messages.searching` text), optionally return a cleanup. Beats the page-wide `window.components.renderLoadingCallback` (one hook for every Keenmate component); unset = the default `.cp__loader` (`--cp-loader-icon` / `-rotate` / `-duration` / `-size` / `-color`, chained to `--base-loader-*`). |
 | `renderIconCallback` | `(name, ctx) => string \| null \| undefined` | This palette's own icon hook — map an item `icon` name to markup. `ctx = { component, element, prefix: 'cp', item, kind }` (`item` = the row's own command / context / option / result / usage entry). Asked after a built-in name, before the page-wide `window.components.renderIconCallback`; `null` / `undefined` = not mine. See [Icons](#icons). |
+| `translateCallback` | `(ctx) => string \| null \| undefined` | This palette's own translation hook (core `TranslateCallback`). `ctx = { component, key, template, params, locale }`, `key` = the full `web-command-palette.<elementType>.<name>` key, `params` = the raw values. Asked for every label key this palette's `labels` did not set, before the page-wide `window.components.locale.translateCallback`; `null` / `undefined` = not mine. Changing it re-renders every label. See [Labels](#labels). |
 | `customStyles` / `getCustomStylesCallback` | `string \| null` / `(ctx) => string \| null \| undefined` | Extra CSS for this palette's shadow root (attribute `custom-styles`), after the component CSS and after the page-wide `window.components['web-command-palette'].customStyles` / `.getCustomStylesCallback`, so the instance wins. The callback wins over `customStyles`. See [Theming → Custom CSS](theming.md#custom-css-shadow-root). |
 | `isFeedbackShown` | `boolean` | Show the one-line feedback after a command ran. Default `true` (attribute `show-feedback`). |
 | `feedbackDuration` | `number` | How long it stays (ms). Default `1500`; `0` = off. |
@@ -467,8 +468,14 @@ Labels resolve per key through core `/locale` (`createLabels`, tag `web-command-
 `labels` (short `messages.noResults` or full `web-command-palette.messages.noResults` keys) → the
 page-wide flat dictionary `window.components.locale.labels['web-command-palette.<key>']` → the English
 default. Assigning `window.components.locale` re-renders an open palette in place (mode, query and
-wizard answers kept); a page-wide `translateCallback({ component, key, template, params, locale })`
-(ICU / i18next) translates every label (`key` is the full key; return `null` / `undefined` to pass).
+wizard answers kept). A `translateCallback({ component, key, template, params, locale })` (ICU / i18next)
+translates every label the instance `labels` did not set (`key` is the full key; return `null` /
+`undefined` to pass): the palette's own `el.translateCallback` first, then the page-wide
+`window.components.locale.translateCallback` — one palette on a page needs no `window.components` setup.
+
+```js
+palette.translateCallback = ({ key, params }) => i18next.exists(key) ? i18next.t(key, params) : null;
+```
 
 ```js
 window.components.locale = {

@@ -52,7 +52,7 @@ import {
   type ResponsiveMap,
 } from '@keenmate/web-components-core';
 import { runAction } from '@keenmate/web-components-core/actions';
-import { createLabels } from '@keenmate/web-components-core/locale';
+import { createLabels, type TranslateCallback } from '@keenmate/web-components-core/locale';
 import { PaletteEngine, type Effect, type EffectOutcome, type PaletteEngineHost, type TokenView } from './palette';
 import { Renderer, chordKeycap, confirmationBodyHtml, createShell, fillConfirmation, type Shell } from './render';
 import { bindGlobalKeys, handleInputKeydown, isSequence, type GlobalKeysHost } from './keyboard';
@@ -99,7 +99,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'contexts', converter: toObjectArray(), on: 'update', type: 'Context[]',
     description: 'Search contexts, listed on the home screen and under `:`. `{ id, trigger, text, aliases?, description?, icon?, searchCallback? }`. Entering one locks the input to `"<trigger> "` and searches via `searchCallback({ scope: { contextId }, term, signal, entries })`.' },
   { configKey: 'labels', converter: toValue({ validate: isPlainObject }), on: 'update', type: 'Partial<CommandPaletteLabels>',
-    description: 'UI strings (core `/locale`), flat `<elementType>.<name>` keys (`placeholders.filter`, `ariaLabels.dialog`, `headers.fullscreen`, …). Partial, per key: these (short or full `web-command-palette.<key>` keys) → the page-wide flat `window.components.locale.labels[\'web-command-palette.<key>\']` → English; an empty string renders nothing. Content labels (headings, hints, empty / loading / page text) are HTML templates with escaped `{…}` values; attribute / placeholder / announcement labels are plain text. `{name}` / `{key}` / `{page}` / `{total}` / `{count}` are interpolated (numbers locale-formatted); a page-wide `translateCallback` translates every label.' },
+    description: 'UI strings (core `/locale`), flat `<elementType>.<name>` keys (`placeholders.filter`, `ariaLabels.dialog`, `headers.fullscreen`, …). Partial, per key: these (short or full `web-command-palette.<key>` keys) → the page-wide flat `window.components.locale.labels[\'web-command-palette.<key>\']` → English; an empty string renders nothing. Content labels (headings, hints, empty / loading / page text) are HTML templates with escaped `{…}` values; attribute / placeholder / announcement labels are plain text. `{name}` / `{key}` / `{page}` / `{total}` / `{count}` are interpolated (numbers locale-formatted); el.translateCallback, then the page-wide `translateCallback`, translate every label `labels` did not set.' },
 
   // ── Callbacks (property-only, read live on every call) ───────────────────
   { configKey: 'searchCallback', converter: toFunction(), on: 'none', type: '(ctx: SearchContext) => Result[] | Promise<Result[]>',
@@ -118,6 +118,8 @@ const INPUTS: readonly InputDef[] = [
     description: 'Draw the searching loader yourself (shared loader, core SPEC §12.14). `ctx = { component, context, containerElement, element, label }`; `context` is `search` (a search / step-options request in flight, label = the `messages.searching` text). Fill `containerElement` (already `role="status"` + `aria-label`); optionally return a cleanup. Beats the page-wide `window.components.renderLoadingCallback`; unset = the default `.cp__loader` (`--cp-loader-*` tokens).' },
   { configKey: 'renderIconCallback', converter: toFunction(), on: 'update', type: '(name: string, ctx: IconRenderContext) => string | null | undefined',
     description: "Map an item `icon` name to markup for this palette (core `renderIcon`, SPEC §12.33). `ctx = { component, element, prefix: 'cp', item, kind }` — `item` = the row's own `Command` / `Context` / `Option` / `Result` / usage entry, `kind` = `'command' | 'context' | 'option' | 'result' | 'usage'`. Asked after a built-in name (`search`, `check`, … — those always draw the masked `--base-icon-<name>` glyph and never reach a hook) and before the page-wide `window.components.renderIconCallback`. A string is used as is (`''` = no icon); `null` / `undefined` = not mine (the page-wide hook, then the icon-font `<i class=\"cp__icon …\">` / text rule decide). Changing it re-renders the rows." },
+  { configKey: 'translateCallback', converter: toFunction(), on: 'update', type: 'TranslateCallback',
+    description: "Translate this palette's labels (core `/locale`, SPEC §12.24): `(ctx) => string | null | undefined`, `ctx = { component, key, template, params, locale }` — `key` is the FULL `web-command-palette.<elementType>.<name>` key, `params` the raw values (numbers unformatted). Asked for every label key this instance's `labels` did not set, before the page-wide `window.components.locale.translateCallback`; a string is the finished label, `null` / `undefined` = not mine (the page-wide hook, then the page dictionary / English template). Changing it re-renders every label." },
   { configKey: 'saveUsageCallback', converter: toFunction(), on: 'none', type: '(ctx: { entry: UsageEntry }) => void | Promise<void>',
     description: 'Upsert one favorite/recent entry (`ctx.entry`, by `entry.key`) — called on every use and every star toggle when `loadUsageCallback` is set.' },
   { configKey: 'loadStateCallback', converter: toFunction(), on: 'update', type: 'LoadStateCallback<PaletteUsageState>',
@@ -242,7 +244,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   #usage: UsageStore | null = null;
   #isOpen = false;
   #isFullscreen = false;
-  /** UI strings (core `/locale`, rulebook D-NC-24): instance `labels` → page-wide flat `window.components.locale.labels['web-command-palette.<key>']` → English. */
+  /** UI strings (core `/locale`, rulebook D-NC-24): instance `labels` → the element's `translateCallback` → the page-wide one → page-wide flat `window.components.locale.labels['web-command-palette.<key>']` → English. */
   #labels: PaletteLabels = createLabels(this, DEFAULT_LABELS, () => this.config.labels as Partial<CommandPaletteLabels> | undefined, {
     tag: 'web-command-palette',
   });
@@ -633,7 +635,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   }
 
   protected override update(partial: Record<string, unknown>): void {
-    if ('labels' in partial) {
+    if ('labels' in partial || 'translateCallback' in partial) {
       this.#applyLabels();
       this.#renderer.invalidate();
     }
@@ -928,6 +930,7 @@ export interface CommandPaletteConfig {
   renderFeedbackCallback: RenderFeedbackCallback | null;
   renderLoadingCallback: RenderLoaderCallback | null;
   renderIconCallback: RenderIconCallback | null;
+  translateCallback: TranslateCallback | null;
   saveUsageCallback: SaveUsageCallback | null;
   loadStateCallback: LoadStateCallback<PaletteUsageState> | null;
   saveStateCallback: SaveStateCallback<PaletteUsageState> | null;
