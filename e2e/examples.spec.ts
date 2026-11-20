@@ -8,6 +8,8 @@ import { expect, test, type Page } from './fixtures';
  */
 
 const PAGES = ['examples-basic', 'examples-commands-steps', 'examples-async-search', 'examples-favorites', 'examples-theming', 'examples-playground'];
+/** Every hub card: the pages above plus the localization page (several palettes, no single #palette). */
+const HUB_PAGES = [...PAGES, 'examples-localization'];
 
 function trackErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -20,8 +22,8 @@ function trackErrors(page: Page): string[] {
 test('hub renders one card per registered page plus the version badge', async ({ page }) => {
   const errors = trackErrors(page);
   await page.goto('/');
-  await expect(page.locator('.kmwc-index__card')).toHaveCount(PAGES.length);
-  for (const name of PAGES) await expect(page.locator(`.kmwc-index__card[href="${name}.html"]`)).toHaveCount(1);
+  await expect(page.locator('.kmwc-index__card')).toHaveCount(HUB_PAGES.length);
+  for (const name of HUB_PAGES) await expect(page.locator(`.kmwc-index__card[href="${name}.html"]`)).toHaveCount(1);
   await expect(page.locator('[data-kmwc-version]')).toHaveText(/^v\d/);
   expect(errors).toEqual([]);
 });
@@ -46,6 +48,33 @@ for (const name of PAGES) {
     expect(errors).toEqual([]);
   });
 }
+
+// The shared localization page: each toggle changes the strings read back from the shadow roots.
+test('examples-localization.html: every toggle changes the shown text', async ({ page }) => {
+  const errors = trackErrors(page);
+  await page.goto('/examples-localization.html');
+  await expect(page.locator('.container > header .back-link')).toHaveAttribute('href', 'index.html');
+  const out = (n: string) => page.locator(`#lo0${n}-out`);
+  await expect(out('1')).toContainText('Pohyb');
+  await expect(out('6')).toContainText('markup: Type to search <b>&lt;i&gt;Ann&lt;/i&gt;</b>');
+
+  await page.locator('#lo01-labels').uncheck();
+  await expect(out('1')).not.toContainText('Pohyb');
+  await page.locator('#lo02-dict').check();
+  await expect(out('2')).toContainText('Nic nenalezeno');
+  await page.locator('#lo03-page').check();
+  await expect(out('3')).toContainText('#lo03b  hints: Pohyb · Instance wins');
+  await page.locator('#lo03-own').check();
+  await expect(out('3')).toContainText('#lo03a  hints: Pohyb · Auswählen');
+  await page.locator('#lo04-caption').check();
+  await expect(out('4')).toContainText('star  aria-label: Přidat do oblíbených');
+  await expect(out('4')).toContainText('close aria-label: Zavřít');
+  await page.locator('input[name="lo05-locale"][value="de-DE"]').check();
+  await expect(out('5')).toHaveText('Page 1 of 1.544 · 12.345 results');
+  await page.locator('#lo06-escape').check();
+  await expect(out('6')).toContainText('text:   Type to search <b><i>Ann</i></b>');
+  expect(errors).toEqual([]);
+});
 
 test('controls persist across a reload', async ({ page }) => {
   await page.goto('/examples-commands-steps.html');

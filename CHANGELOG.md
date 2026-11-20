@@ -11,6 +11,12 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Docs — localization example page (rulebook C-EP-5, 2026-11-21)
+
+- `examples-localization.html` — the shared localization page (LO01–LO06): instance `labels`, the page-wide
+  dictionary, `translateCallback` (own → page-wide), aria-label / tooltip twins, locale-formatted counts,
+  `shouldEscapeLabels`; linked from the index and `docs/examples.md`, smoke in `e2e/examples.spec.ts`.
+
 ### Changed — public engine `CommandPaletteEngine` (rulebook C-CA-37, 2026-11-20)
 
 - **BREAKING (rename, no alias):** `PaletteEngine` → `CommandPaletteEngine`, `PaletteEngineHost` →

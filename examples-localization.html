@@ -1,0 +1,334 @@
+<meta name="kmwc:title" content="Localization">
+<meta name="kmwc:subtitle" content="The shared localization page — instance <code>labels</code>, the page-wide dictionary, <code>translateCallback</code>, screen-reader / tooltip twins, locale number formatting and <code>shouldEscapeLabels</code>, in the same six sections every Keenmate component has.">
+
+<div class="note">
+    Every UI string goes through core <code>/locale</code>. Keys are flat <code>&lt;elementType&gt;.&lt;name&gt;</code>
+    (<code>placeholders.idle</code>, <code>labels.navigate</code>, <code>messages.noResults</code>, <code>ariaLabels.close</code>, …) — the
+    full list is <code>DEFAULT_LABELS</code> / the <code>labels</code> property in <code>docs/usage.md</code>. Per key: the instance
+    <code>labels</code> (short or full <code>web-command-palette.</code> key) → the element's own <code>translateCallback</code> → the
+    page-wide <code>translateCallback</code> → the page dictionary <code>window.components.locale.labels</code> → the built-in English.
+    The palette is a modal, so each readout box opens its palette for a moment, reads the strings from the shadow root and
+    closes it again — use the <em>Open</em> buttons to look yourself. The page-wide toggles (LO02, LO03, LO05, LO06) are
+    <strong>page-wide</strong>: they change every palette on this page, on purpose.
+</div>
+
+<!-- ============================================================= -->
+<!-- LO01 · Instance labels                                        -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>LO01 · Instance <code>labels</code></h2>
+    <p>
+        Override texts on ONE palette with the <code>labels</code> property. A short key
+        (<code>placeholders.idle</code>, <code>labels.navigate</code>) and a full key
+        (<code>web-command-palette.labels.select</code>) both work; every key you leave out stays English (the <code>Esc</code>
+        hint still reads <code>Close</code>). The neighbour palette is untouched.
+    </p>
+    <div class="controls">
+        <label><input type="checkbox" id="lo01-labels" checked> instance <code>labels</code> on the first palette</label>
+        <button type="button" class="btn-outline" data-open="lo01" data-term="/">Open with <code>labels</code></button>
+        <button type="button" class="btn-outline" data-open="lo01-plain" data-term="/">Open without</button>
+    </div>
+    <div class="output"><div class="output-label">rendered strings (command list)</div><pre id="lo01-out"></pre></div>
+    <div class="code-block" data-language="js"><pre><code>el.labels = {
+  'placeholders.idle': 'Napište / pro příkazy…',          // short key
+  'labels.navigate': 'Pohyb',
+  'web-command-palette.labels.select': 'Vybrat',         // full key
+};   // a property only — labels has no attribute</code></pre></div>
+</div>
+
+<!-- ============================================================= -->
+<!-- LO02 · Page-wide dictionary                                    -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>LO02 · Page-wide dictionary</h2>
+    <p>
+        One flat dictionary on <code>window.components.locale.labels</code> — the app's translation JSON as loaded, full keys
+        <code>'web-command-palette.&lt;elementType&gt;.&lt;name&gt;'</code>, other components' keys side by side — translates every
+        palette on the page at once. Assigning <code>window.components.locale</code> re-renders an open palette in place (mode,
+        query and wizard answers kept). Keys an instance set itself (LO01) still win.
+    </p>
+    <div class="controls">
+        <label><input type="checkbox" id="lo02-dict"> page dictionary (Czech)</label>
+        <button type="button" class="btn-outline" data-open="lo02" data-term="/">Open</button>
+        <button type="button" class="btn-outline" data-open="lo02" data-term="/zzz">Open on “/zzz” (no match)</button>
+    </div>
+    <div class="output"><div class="output-label">rendered strings</div><pre id="lo02-out"></pre></div>
+    <div class="code-block" data-language="js"><pre><code>// e.g. const labels = await (await fetch('/i18n/cs.json')).json();
+window.components.locale = {
+  labels: {
+    'web-command-palette.placeholders.idle': 'Napište / pro příkazy, : pro hledání…',
+    'web-command-palette.labels.navigate': 'Pohyb',
+    'web-command-palette.labels.select': 'Vybrat',
+    'web-command-palette.labels.close': 'Zavřít',
+    'web-command-palette.messages.noResults': 'Nic nenalezeno',
+    'web-multiselect.placeholders.search': 'Hledat…',      // other components share the same JSON
+  },
+};</code></pre></div>
+</div>
+
+<!-- ============================================================= -->
+<!-- LO03 · translateCallback                                       -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>LO03 · <code>translateCallback</code></h2>
+    <p>
+        An app with its own i18n (i18next, FormatJS, …) answers keys through a callback instead of a dictionary. It gets
+        <code>{ component, key, template, params, locale }</code> — <code>key</code> is the full
+        <code>web-command-palette.&lt;elementType&gt;.&lt;name&gt;</code> — and returns the text, or <code>null</code> = not mine.
+        The element's own <code>translateCallback</code> is asked first (German, only <code>labels.select</code> here); its
+        <code>null</code> passes the key on to the page-wide one (a small Slovak i18next-like lookup). A key the instance
+        <code>labels</code> set (the second palette's <code>labels.select</code>) is never sent to any callback.
+    </p>
+    <div class="controls">
+        <label><input type="checkbox" id="lo03-page"> page-wide <code>translateCallback</code> (Slovak)</label>
+        <label><input type="checkbox" id="lo03-own"> first palette's own <code>translateCallback</code> (German)</label>
+        <button type="button" class="btn-outline" data-open="lo03a" data-term="/">Open own callback</button>
+        <button type="button" class="btn-outline" data-open="lo03b" data-term="/">Open instance <code>labels</code></button>
+    </div>
+    <div class="output"><div class="output-label">rendered strings</div><pre id="lo03-out"></pre></div>
+    <div class="code-block" data-language="js"><pre><code>// an i18next-like lookup: a dictionary + t(key, params)
+const sk = { 'web-command-palette.labels.select': 'Vybrať', 'web-command-palette.labels.navigate': 'Pohyb', … };
+const t = (key, params) =&gt; sk[key]?.replace(/\{\{(\w+)\}\}/g, (_, p) =&gt; params?.[p] ?? '');
+
+// page-wide — every component on the page
+window.components.locale = { translateCallback: ({ key, params }) =&gt; (key in sk ? t(key, params) : null) };
+
+// one element — asked BEFORE the page-wide callback; null = not mine
+el.translateCallback = ({ key }) =&gt; (key === 'web-command-palette.labels.select' ? 'Auswählen' : null);
+
+// instance labels are never sent to a callback
+other.labels = { 'labels.select': 'Instance wins' };</code></pre></div>
+</div>
+
+<!-- ============================================================= -->
+<!-- LO04 · Screen-reader name / tooltip follow                     -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>LO04 · Screen-reader name / tooltip follow</h2>
+    <p>
+        An <code>ariaLabels.x</code> / <code>tooltips.x</code> nobody set takes the first customized key of the same
+        <code>&lt;name&gt;</code>, so translating one visible caption translates its twins. Translate only the footer hints
+        <code>labels.addFavorite</code> and <code>labels.close</code>: the row's star button follows — its tooltip
+        (<code>tooltips.addFavorite</code>) and accessible name (<code>ariaLabels.addFavorite</code>) — and so does the
+        sheet's close button (<code>ariaLabels.close</code>). The box reads <code>title</code> / <code>aria-label</code> from the
+        shadow root.
+    </p>
+    <div class="controls">
+        <label><input type="checkbox" id="lo04-caption"> translate <code>labels.addFavorite</code> + <code>labels.close</code> only</label>
+        <button type="button" class="btn-outline" data-open="lo04" data-term="/">Open (hover a row's star)</button>
+    </div>
+    <div class="output"><div class="output-label">star button + close button</div><pre id="lo04-out"></pre></div>
+    <div class="code-block" data-language="js"><pre><code>el.labels = { 'labels.addFavorite': 'Přidat do oblíbených', 'labels.close': 'Zavřít' };
+// → star title "Přidat do oblíbených (Ctrl+D)" AND aria-label "Přidat do oblíbených"
+//   close button aria-label "Zavřít" (ariaLabels.close was never set)
+// an explicitly set tooltips.x / ariaLabels.x always wins over the twin</code></pre></div>
+</div>
+
+<!-- ============================================================= -->
+<!-- LO05 · locale + formatting                                     -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>LO05 · <code>locale</code> + formatting</h2>
+    <p>
+        Numbers in labels (<code>{page}</code> / <code>{total}</code> / <code>{count}</code> in <code>labels.pageOf</code>,
+        <code>ariaLabels.resultsCount</code>, <code>buttons.showAll</code>) are formatted for the page language:
+        <code>window.components.locale.locale</code> → the browser. The palette has no <code>locale</code> input of its own and
+        formats no dates — numbers only. The <em>Numbers</em> context below returns 12,345 rows.
+    </p>
+    <div class="controls"><strong class="muted">page locale</strong>
+        <label><input type="radio" name="lo05-locale" value="" checked> unset (browser)</label>
+        <label><input type="radio" name="lo05-locale" value="de-DE"> de-DE</label>
+        <label><input type="radio" name="lo05-locale" value="cs-CZ"> cs-CZ</label>
+        <label><input type="radio" name="lo05-locale" value="en-IN"> en-IN</label>
+        <button type="button" class="btn-outline" data-open="lo05" data-term=":n 1">Open the Numbers context</button>
+    </div>
+    <div class="output"><div class="output-label">pagination row</div><pre id="lo05-out"></pre></div>
+    <div class="code-block" data-language="js"><pre><code>window.components.locale = { locale: 'de-DE' };
+// "Page 1 of 1.544 · 12.345 results"   (cs-CZ: "12 345", en-IN: "12,345")</code></pre></div>
+</div>
+
+<!-- ============================================================= -->
+<!-- LO06 · shouldEscapeLabels                                      -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>LO06 · <code>shouldEscapeLabels</code></h2>
+    <p>
+        Content labels (headings, hints, empty / loading / page texts) are HTML templates: the template's own
+        <code>&lt;b&gt;</code> renders bold, while a <code>{name}</code> value — here the context's text
+        <code>&lt;i&gt;Ann&lt;/i&gt;</code>, DATA from the app — is always escaped, so its tags show as text instead of turning
+        italic. With <code>window.components.security.shouldEscapeLabels</code> the whole label is text: the template's
+        <code>&lt;b&gt;</code> shows as characters too (for apps whose translators must not inject markup).
+    </p>
+    <div class="controls">
+        <label><input type="checkbox" id="lo06-escape"> <code>shouldEscapeLabels</code></label>
+        <button type="button" class="btn-outline" data-open="lo06" data-term=":ann ">Open the <code>&lt;i&gt;Ann&lt;/i&gt;</code> context</button>
+    </div>
+    <div class="output"><div class="output-label">the empty-state row: markup → shown text</div><pre id="lo06-out"></pre></div>
+    <div class="code-block" data-language="js"><pre><code>el.contexts = [{ id: 'ann', trigger: ':ann', text: '&lt;i&gt;Ann&lt;/i&gt;' }];
+el.labels = { 'messages.typeToSearch': 'Type to search &lt;b&gt;{name}&lt;/b&gt;' };
+// → Type to search &lt;b&gt;&amp;lt;i&amp;gt;Ann&amp;lt;/i&amp;gt;&lt;/b&gt;   (bold, tags of the data as text)
+window.components.security = { shouldEscapeLabels: true };
+// → Type to search &amp;lt;b&amp;gt;&amp;lt;i&amp;gt;Ann…   (the whole label is text)</code></pre></div>
+</div>
+
+<!-- The demo palettes. Only the first connected one owns the global Ctrl/⌘+K hotkey. -->
+<web-command-palette id="lo01" class="lo-palette" motion="none"></web-command-palette>
+<web-command-palette id="lo01-plain" class="lo-palette" motion="none"></web-command-palette>
+<web-command-palette id="lo02" class="lo-palette" motion="none"></web-command-palette>
+<web-command-palette id="lo03a" class="lo-palette" motion="none"></web-command-palette>
+<web-command-palette id="lo03b" class="lo-palette" motion="none"></web-command-palette>
+<web-command-palette id="lo04" class="lo-palette" motion="none"></web-command-palette>
+<web-command-palette id="lo05" class="lo-palette" motion="none" search-debounce="0"></web-command-palette>
+<web-command-palette id="lo06" class="lo-palette" motion="none"></web-command-palette>
+
+<script type="module">
+    const $ = (id) => document.getElementById(id);
+    const TAG = 'web-command-palette';
+
+    // ── Page-wide state: window.components.locale is ONE object (assigning replaces it), so every
+    //    page-wide toggle (LO02 dictionary, LO03 callback, LO05 locale) composes it from here.
+    const page = { labels: null, translateCallback: null, locale: '' };
+    const applyPage = () => {
+        const next = {};
+        if (page.labels) next.labels = page.labels;
+        if (page.translateCallback) next.translateCallback = page.translateCallback;
+        if (page.locale) next.locale = page.locale;
+        window.components.locale = next;
+        refreshAll();
+    };
+
+    // ── Data.
+    const COMMANDS = [
+        { id: 'home', trigger: '/home', text: 'Go home', icon: '🏠' },
+        { id: 'theme', trigger: '/theme', text: 'Switch theme', icon: '🎨',
+          steps: [{ id: 'theme', options: [{ text: 'Light', value: 'light' }, { text: 'Dark', value: 'dark' }] }] },
+    ];
+    const NUMBERS = Array.from({ length: 12345 }, (_, i) => ({ id: `n${i}`, title: `Row ${i + 1}` }));
+    for (const el of document.querySelectorAll('web-command-palette.lo-palette')) {
+        el.storageKey = 'web-commandpalette:localization-demo';   // the star needs usage on; keep the demo's favorites apart
+        el.commands = COMMANDS;
+        el.contexts = [
+            { id: 'numbers', trigger: ':numbers', aliases: [':n'], text: 'Numbers', icon: '🔢', searchCallback: () => NUMBERS },
+            { id: 'ann', trigger: ':ann', text: '<i>Ann</i>', icon: '👤', searchCallback: () => [] },
+        ];
+        el.searchCallback = () => [];
+    }
+
+    // ── Readouts: open the palette for a moment, read the shadow root, close it (one at a time).
+    const sr = (id) => $(id).shadowRoot;
+    const waitFor = async (test, ms = 2000) => {
+        const end = performance.now() + ms;
+        while (!test() && performance.now() < end) await new Promise((r) => setTimeout(r, 10));
+    };
+    let queue = Promise.resolve();
+    const probe = (id, term, read, ready) => (queue = queue.then(async () => {
+        const el = $(id);
+        await el.whenSettled();
+        el.openWith(term);
+        if (ready) await waitFor(() => ready(sr(id)));
+        const out = read(sr(id));
+        el.close();
+        return out;
+    }));
+    const placeholder = (s) => s.querySelector('.cp__input')?.placeholder ?? '';
+    const hints = (s) => [...s.querySelectorAll('.cp__hint')].map((h) => h.lastElementChild.textContent.trim()).join(' · ');
+    const empty = (s) => s.querySelector('.cp__empty')?.textContent.trim() ?? '(none)';
+    const commandsView = (s) => [`placeholder: ${placeholder(s)}`, `hints:       ${hints(s)}`];
+    const write = (id, lines) => { $(id).textContent = lines.join('\n'); };
+
+    let refreshing = null;
+    async function refreshAll() {
+        // Coalesce: a refresh running when another toggle flips re-runs once afterwards.
+        if (refreshing) { refreshing.again = true; return; }
+        refreshing = { again: false };
+        await customElements.whenDefined(TAG);
+        write('lo01-out', [
+            '#lo01        ' + (await probe('lo01', '/', commandsView)).join('\n             '),
+            '#lo01-plain  ' + (await probe('lo01-plain', '/', commandsView)).join('\n             '),
+        ]);
+        write('lo02-out', [
+            ...(await probe('lo02', '/', commandsView)),
+            `no match:    ${await probe('lo02', '/zzz', empty)}`,
+        ]);
+        write('lo03-out', [
+            `#lo03a  hints: ${await probe('lo03a', '/', hints)}`,
+            `#lo03b  hints: ${await probe('lo03b', '/', hints)}`,
+        ]);
+        write('lo04-out', await probe('lo04', '/', (s) => {
+            const star = s.querySelector('.cp__star');
+            return [
+                `star  title:      ${star?.getAttribute('title') ?? '(none)'}`,
+                `star  aria-label: ${star?.getAttribute('aria-label') ?? '(none)'}`,
+                `close aria-label: ${s.querySelector('.cp__close')?.getAttribute('aria-label') ?? '(none)'}`,
+            ];
+        }));
+        write('lo05-out', [await probe('lo05', ':n 1', (s) => s.querySelector('.cp__pagination')?.textContent.trim() ?? '(none)',
+            (s) => s.querySelector('.cp__pagination'))]);
+        write('lo06-out', await probe('lo06', ':ann ', (s) => {
+            const row = s.querySelector('.cp__empty');
+            return row ? [`markup: ${row.innerHTML.trim()}`, `text:   ${row.textContent.trim()}`] : ['(none)'];
+        }));
+        const again = refreshing.again;
+        refreshing = null;
+        if (again) refreshAll();
+    }
+
+    // ── Open buttons: look at the live palette yourself.
+    for (const b of document.querySelectorAll('[data-open]')) {
+        b.addEventListener('click', () => $(b.dataset.open).openWith(b.dataset.term));
+    }
+
+    // ── LO01 · instance labels.
+    const LO01_LABELS = {
+        'placeholders.idle': 'Napište / pro příkazy…',
+        'labels.navigate': 'Pohyb',
+        'web-command-palette.labels.select': 'Vybrat',
+    };
+    const lo01 = () => { $('lo01').labels = $('lo01-labels').checked ? LO01_LABELS : undefined; refreshAll(); };
+    $('lo01-labels').addEventListener('change', lo01);
+    $('lo01').labels = LO01_LABELS;
+
+    // ── LO02 · page dictionary.
+    const CS = {
+        'web-command-palette.placeholders.idle': 'Napište / pro příkazy, : pro hledání…',
+        'web-command-palette.labels.navigate': 'Pohyb',
+        'web-command-palette.labels.select': 'Vybrat',
+        'web-command-palette.labels.close': 'Zavřít',
+        'web-command-palette.messages.noResults': 'Nic nenalezeno',
+        'web-multiselect.placeholders.search': 'Hledat…',
+    };
+    $('lo02-dict').addEventListener('change', (e) => { page.labels = e.target.checked ? CS : null; applyPage(); });
+
+    // ── LO03 · translateCallback.
+    const sk = {
+        'web-command-palette.labels.select': 'Vybrať',
+        'web-command-palette.labels.navigate': 'Pohyb',
+        'web-command-palette.labels.close': 'Zavrieť',
+    };
+    const t = (key, params) => sk[key].replace(/\{\{(\w+)\}\}/g, (_, p) => String(params?.[p] ?? ''));
+    const pageTranslate = ({ key, params }) => (key in sk ? t(key, params) : null);
+    const ownTranslate = ({ key }) => (key === 'web-command-palette.labels.select' ? 'Auswählen' : null);
+    $('lo03-page').addEventListener('change', (e) => { page.translateCallback = e.target.checked ? pageTranslate : null; applyPage(); });
+    $('lo03b').labels = { 'labels.select': 'Instance wins' };
+    $('lo03-own').addEventListener('change', (e) => { $('lo03a').translateCallback = e.target.checked ? ownTranslate : undefined; refreshAll(); });
+
+    // ── LO04 · twin follow.
+    $('lo04-caption').addEventListener('change', (e) => {
+        $('lo04').labels = e.target.checked ? { 'labels.addFavorite': 'Přidat do oblíbených', 'labels.close': 'Zavřít' } : undefined;
+        refreshAll();
+    });
+
+    // ── LO05 · page locale.
+    for (const radio of document.querySelectorAll('input[name="lo05-locale"]')) {
+        radio.addEventListener('change', (e) => { page.locale = e.target.value; applyPage(); });
+    }
+
+    // ── LO06 · shouldEscapeLabels.
+    $('lo06').labels = { 'messages.typeToSearch': 'Type to search <b>{name}</b>' };
+    $('lo06-escape').addEventListener('change', (e) => {
+        window.components.security = { shouldEscapeLabels: e.target.checked };
+        refreshAll();
+    });
+
+    refreshAll();
+</script>
