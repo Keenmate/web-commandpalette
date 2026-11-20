@@ -11,6 +11,19 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Changed — public engine `CommandPaletteEngine` (rulebook C-CA-37, 2026-11-20)
+
+- **BREAKING (rename, no alias):** `PaletteEngine` → `CommandPaletteEngine`, `PaletteEngineHost` →
+  `CommandPaletteEngineHost`. Before `new PaletteEngine(host)`; after `new CommandPaletteEngine(host)`.
+- **BREAKING (host options = the element's input names):** `debounceMs()` → `searchDebounce()`;
+  `searchRules()` (`{ behavior, match }`) → `searchBehavior()` + `searchMatch()`; `labels()` returns the
+  instance `labels` object (`Partial<CommandPaletteLabels>`, as the element's `labels` input) instead of a
+  core `createLabels` resolver — the engine builds the resolver itself and exposes it as `engine.labels`.
+- **Added:** host option `translateCallback()` — the engine's own translation hook, asked before
+  `window.components.locale.translateCallback` (the element passes its `translateCallback` through).
+- **Docs:** docs/usage.md "Build your own UI" — what the engine does, what you draw, a minimal example and
+  the host-option ↔ element-input table.
+
 ### Added — `translateCallback` on the element (core `/locale`, rulebook C-CA-33, 2026-11-20)
 
 - **Added:** `el.translateCallback(ctx)` — this palette's own translation hook (core `TranslateCallback`, `ctx = {
@@ -152,8 +165,8 @@ callback and item API below is breaking.
   plain text. A label holding a literal `<` or `&` there must escape it, or set
   `window.components.security = { shouldEscapeLabels: true }`.
 - **BREAKING (types):** the `Labels` type is renamed `CommandPaletteLabels` (the core `/locale` `Labels`
-  is the resolver API); `PaletteEngineHost.labels()` returns core's resolver (`createLabels(...)`), not a
-  resolved string map. New exports: `PaletteLabels`, `LabelRef`; `PaletteEngine.emptyText` is now a getter
+  is the resolver API); `CommandPaletteEngineHost.labels()` returns the instance `labels` object (the engine
+  builds core's resolver itself, `engine.labels` — see "Public engine" above), not a resolved string map. New exports: `PaletteLabels`, `LabelRef`; `CommandPaletteEngine.emptyText` is now a getter
   over `emptyLabel`, plus `pageLabel`.
 
 ### Changed — standard Keenmate search: accent-insensitive filter, `search-behavior` / `search-match`, core `SearchCallbackContext` (core SPEC §12.11, 2026-11-17)
@@ -531,7 +544,7 @@ goes through core `runAction`: `beforeActionCallback(detail)` → the command's 
 | Old | New |
 |---|---|
 | element methods only | `el.controller` (`CommandPaletteController`): `isOpen`, `open`, `close`, `toggle`, `reset`, `openWith`, `openFavorites`, `openRecent`, `setCommands`, `setContexts` (the element methods stay) |
-| `PaletteMachine` / `MachineHost` (exported) | `PaletteEngine` / `PaletteEngineHost` (exported for standalone use; the element never exposes it). The host gains an optional `context(fields)`; `effect()` may answer `false` / a Promise to veto. `Effect` `{ type: 'command' \| 'complete', commandId }` → `{ type: 'action', command, selections }` |
+| `PaletteMachine` / `MachineHost` (exported) | `CommandPaletteEngine` / `CommandPaletteEngineHost` (exported for standalone use; the element never exposes it). The host gains an optional `context(fields)`; `effect()` may answer `false` / a Promise to veto. `Effect` `{ type: 'command' \| 'complete', commandId }` → `{ type: 'action', command, selections }` |
 | `findByShortcut` (internal) | `findByTrigger` |
 | types `CompleteEventDetail`, `CommandEventDetail` | `ActionEventDetail`; new `PaletteContext`, `CommandContext`, `StepContext`, `SearchContext`, `PaletteEventDetail`, `BeforeActionCallback`, `BeforeResultSelectCallback`, `CommandPaletteController` |
 

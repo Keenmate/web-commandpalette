@@ -71,7 +71,7 @@ and document `open` as read-only state.
 ## 5. `page-size` changed while open doesn't re-page the current results — FIXED
 
 **Where:** `src/web-component.ts` `update()` → `'pageSize' in partial` →
-`this.#engine.refresh()`; `PaletteEngine.refresh()` (`src/palette.ts`) only rebuilds
+`this.#engine.refresh()`; `CommandPaletteEngine.refresh()` (`src/palette.ts`) only rebuilds
 the idle home screen and the `/` / `:` lists — not global search, context search or
 a step's options.
 
@@ -82,7 +82,7 @@ declared `on: 'update'`, so the change is meant to be live.
 **Repro:** `e2e/attributes.spec.ts` "page-size changed while open re-pages the
 current results" (was `test.fail(true, 'NOTES.md #5')`).
 
-**Fix (2026-10-26):** `update()` calls the new `PaletteEngine.pageSizeChanged()` (alongside
+**Fix (2026-10-26):** `update()` calls the new `CommandPaletteEngine.pageSizeChanged()` (alongside
 `displayChanged()`), which re-slices the kept full result list with the new size in the
 search modes, keeping the first visible row on screen. The e2e spec is green (marker
 removed); unit test in `test/unit/palette.test.ts`.

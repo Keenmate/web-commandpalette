@@ -102,18 +102,22 @@ a command is a core `ActionItem` and running one goes through `runAction`
 vanilla, svelte-pure-admin, keen-pure-admin LiveComponent). **Top design priority: easy to
 configure** — `commands` + `searchCallback` must be a complete setup.
 
-- `src/palette.ts` — `PaletteEngine`, DOM-free. Owns modes (`idle`, `command-list`,
+- `src/palette.ts` — `CommandPaletteEngine`, DOM-free. Owns modes (`idle`, `command-list`,
   `command-step`, `context-list`, `context-search`, `global-search`), input routing, the wizard,
   filtering, debounced/abortable provider calls and client-side pagination. Exposes read-only
   view state (`items`, `activeIndex`, `listVersion`, `input`, `lockedLength`, …) and reports
   terminal outcomes through `host.effect()`. Unit-tested directly via `test/unit/helpers.ts`.
+  PUBLIC (rulebook C-CA-37, docs/usage.md "Build your own UI"): host options carry the element's input
+  names (`labels`, `translateCallback`, `searchDebounce`, `searchBehavior` / `searchMatch`, …) and the
+  element passes its values through; the engine owns the one labels resolver (`engine.labels`, core
+  `createLabels`) the renderer reads too. No icon / loader options (it draws nothing).
 - `src/render.ts` — builds the shadow DOM once (`createShell`) and patches it (`Renderer`). Results
   are rebuilt only when `listVersion`/list state changes; moving the active row only toggles a
   class. Markup must match pure-admin-core's `snippets/command-palette.html`.
 - `src/keyboard.ts` — `bindGlobalKeys()` (Ctrl/⌘+K, `g <letter>` sequences over core `/actions`
   `bindShortcuts`) and the input keydown map (`matchesShortcut('Mod+<key>')`).
 - `src/web-component.ts` — thin `BlissElement` subclass: the `static inputs` / `static events`
-  tables (CEM metadata is generated from them), the `PaletteEngineHost` adapter (incl. `context()` = `withContext`, so engine-built ctxs carry
+  tables (CEM metadata is generated from them), the `CommandPaletteEngineHost` adapter (incl. `context()` = `withContext`, so engine-built ctxs carry
   `controller` / `element` / presentation), `createController()` (facade from a method list), overlay/scroll-lock,
   presentation (phone fullscreen sheet), focus. Only the first connected instance owns the global keys.
 - `src/usage.ts` — `UsageStore`: favorites + recents (frecency-ranked, pruned to 50 non-favorites),

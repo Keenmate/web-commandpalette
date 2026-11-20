@@ -1,12 +1,9 @@
 import { vi } from 'vitest';
-import { PaletteEngine, type Effect, type PaletteEngineHost } from '../../src/palette';
+import { CommandPaletteEngine, type Effect, type CommandPaletteEngineHost } from '../../src/palette';
 import { UsageStore } from '../../src/usage';
-import { createLabels } from '@keenmate/web-components-core/locale';
+import type { TranslateCallback } from '@keenmate/web-components-core/locale';
 import type { SearchRules } from '../../src/helpers/filter';
-import { DEFAULT_LABELS, type Command, type Context, type Display, type SearchCallback, type Selection, type StepOptionsCallback, type UsageEntry } from '../../src/types';
-
-/** The engine's labels, as the element builds them (core `/locale`; no instance overrides). */
-const labels = createLabels(document.createElement('div'), DEFAULT_LABELS, () => undefined, { tag: 'web-command-palette' });
+import type { Command, CommandPaletteLabels, Context, Display, SearchCallback, Selection, StepOptionsCallback, UsageEntry } from '../../src/types';
 
 /** An effect as the tests compare it: `action` reduced to the command id + selections. */
 export type TestEffect =
@@ -38,10 +35,10 @@ export const CONTEXTS: Context[] = [
 ];
 
 export interface Harness {
-  m: PaletteEngine;
+  m: CommandPaletteEngine;
   effects: TestEffect[];
   changed: ReturnType<typeof vi.fn>;
-  host: PaletteEngineHost & { state: HostState };
+  host: CommandPaletteEngineHost & { state: HostState };
   /** The in-memory favorites/recents store (when `usage: true`). */
   store: UsageStore | null;
   /** What the store last persisted. */
@@ -61,6 +58,10 @@ interface HostState {
   maxRecentCount: number;
   /** `search-behavior` / `search-match` (default normalized / contains). */
   searchRules: SearchRules;
+  /** The instance `labels` (none by default). */
+  labels: Partial<CommandPaletteLabels> | null;
+  /** The engine's own `translateCallback` (none by default). */
+  translateCallback: TranslateCallback | null;
 }
 
 export function harness(over: Partial<HostState> = {}): Harness {
@@ -77,10 +78,12 @@ export function harness(over: Partial<HostState> = {}): Harness {
     usage: false,
     maxRecentCount: 5,
     searchRules: { behavior: 'normalized', match: 'contains' },
+    labels: null,
+    translateCallback: null,
     ...over,
   };
   const saved: UsageEntry[] = [];
-  let m: PaletteEngine | null = null;
+  let m: CommandPaletteEngine | null = null;
   const store = state.usage
     ? new UsageStore({ load: () => [], save: (entry) => { saved.push(entry); } }, () => m?.usageChanged())
     : null;
@@ -92,9 +95,11 @@ export function harness(over: Partial<HostState> = {}): Harness {
     getStepOptionsCallback: () => state.stepOptions,
     display: () => state.display,
     pageSize: () => state.pageSize,
-    debounceMs: () => state.debounce,
-    searchRules: () => state.searchRules,
-    labels: () => labels,
+    searchDebounce: () => state.debounce,
+    searchBehavior: () => state.searchRules.behavior,
+    searchMatch: () => state.searchRules.match,
+    labels: () => state.labels,
+    translateCallback: () => state.translateCallback,
     usage: () => store,
     maxRecentCount: () => state.maxRecentCount,
     changed: () => changed(),
@@ -102,11 +107,11 @@ export function harness(over: Partial<HostState> = {}): Harness {
       effects.push(e.type === 'action' ? { type: 'action', commandId: e.command.id, selections: e.selections } : e);
     },
   };
-  m = new PaletteEngine(host);
+  m = new CommandPaletteEngine(host);
   return { m, effects, changed, host, store, saved };
 }
 
 /** Flush pending promise callbacks. */
 export const tick = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
 
-export const titles = (m: PaletteEngine): string[] => m.items.map((i) => i.title);
+export const titles = (m: CommandPaletteEngine): string[] => m.items.map((i) => i.title);

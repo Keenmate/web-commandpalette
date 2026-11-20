@@ -124,8 +124,8 @@ a `{:reply}`-backed `searchCallback` / `getStepOptionsCallback` (it pushes the c
 | `commands` / `contexts` | The same properties as on the element (assignable). |
 | `openFavorites()` / `openRecent()` | Open on the full favorites / recent list. |
 
-The same methods exist on the element. The DOM-free `PaletteEngine` behind it is exported for
-standalone use only; the element never exposes it.
+The same methods exist on the element. The element never exposes its own engine; to draw a palette
+of your own on the same logic, see [Build your own UI](#build-your-own-ui).
 
 ## Lifecycle
 
@@ -499,6 +499,99 @@ announcement is plain text. `window.components.security = { shouldEscapeLabels: 
 label plain text. A key set to `''` is deliberately empty — the string is not rendered (an `''`
 footer hint label hides that hint; an `''` aria label removes the attribute). A missing /
 `undefined` key falls through to the page-wide label, then English.
+
+## Build your own UI
+
+`CommandPaletteEngine` is the DOM-free logic behind `<web-command-palette>`, exported so you can
+put your own markup on it (a different framework, a sidebar instead of a dialog, a test harness).
+
+**What it does:** the modes (home, `/` commands, `:` contexts, global search, favorites / recent),
+the multi-step command wizard (static / live / branching steps, replayed answers), client-side
+filtering under `search-behavior` / `search-match`, `searchCallback` / step options through one
+debounced, aborting "latest request wins" runner, pagination, favorites / recents (with a
+`UsageStore`), and the texts it produces (`placeholder`, `contextText`, `emptyText`, `pageText`, the
+`lastUsed` badge) through core `/locale`.
+
+**What you draw:** the input (`engine.input`; `engine.lockedLength` leading characters are the locked
+prefix), the rows (`engine.items` — `title`, `meta`, `icon`, `keys`, `section` / `group`, `favorite`;
+`engine.activeIndex` is the highlighted one), the loader (`engine.isLoading`), the empty state
+(`engine.emptyText`), the pill (`engine.contextText`), the tokens row (`engine.tokens`, in
+`display: 'tokens'`) and pagination (`engine.pageText`). Icons and the loader are yours — the engine
+takes no `renderIconCallback` / `renderLoadingCallback`. Feed it keys and text; it calls your host's
+`changed()` after every state change and `effect()` for the outcome (`select` a result, `action` a
+finished command, `close`).
+
+```js
+import { CommandPaletteEngine } from '@keenmate/web-commandpalette';
+
+const input = document.querySelector('#my-input');
+const list = document.querySelector('#my-list');
+
+const engine = new CommandPaletteEngine({
+  commands: () => commands,          // the same Command[] the element takes
+  contexts: () => contexts,
+  searchCallback: () => ({ term, signal }) => fetch(`/search?q=${encodeURIComponent(term)}`, { signal }).then((r) => r.json()),
+  getStepOptionsCallback: () => null,
+  display: () => 'inline',
+  pageSize: () => 8,
+  labels: () => ({ 'placeholders.idle': 'Search or type / for commands' }),
+  translateCallback: () => null,     // or your i18n hook; the page-wide one is asked after it
+  changed: () => draw(),
+  effect: (effect) => {
+    if (effect.type === 'select') location.href = effect.result.href;
+    if (effect.type === 'action') runMyCommand(effect.command.id, effect.selections);
+    // effect.type === 'close': hide your panel. Return false to veto (nothing is recorded).
+  },
+});
+
+function draw() {
+  input.value = engine.input;
+  input.placeholder = engine.placeholder;
+  list.replaceChildren(...engine.items.map((item, i) => {
+    const li = document.createElement('li');
+    li.textContent = item.title;
+    li.ariaSelected = String(i === engine.activeIndex);
+    li.onclick = () => engine.select(i);
+    return li;
+  }));
+  if (!engine.items.length && engine.emptyText) list.textContent = engine.emptyText;
+}
+
+input.addEventListener('input', () => engine.setInput(input.value));
+input.addEventListener('keydown', (e) => {
+  const keys = { ArrowDown: () => engine.move('down'), ArrowUp: () => engine.move('up'),
+    Enter: () => engine.commit(), Tab: () => engine.select(), Escape: () => engine.back() };
+  if (keys[e.key]) { e.preventDefault(); keys[e.key](); }
+});
+draw();
+// On teardown: engine.dispose() stops timers and in-flight requests.
+```
+
+**Host options = the element's inputs, same names.** The element passes its own values through, so a
+value written for one works in the other:
+
+| Host option | Element input | Notes |
+|---|---|---|
+| `commands()` / `contexts()` | `commands` / `contexts` | required |
+| `searchCallback()` / `getStepOptionsCallback()` | `searchCallback` / `getStepOptionsCallback` | required (`null` = none) |
+| `display()` / `pageSize()` | `display` / `page-size` | required |
+| `searchDebounce?()` | `search-debounce` | default 150 |
+| `searchBehavior?()` / `searchMatch?()` | `search-behavior` / `search-match` | default `normalized` / `contains` |
+| `labels?()` | `labels` | short or full keys |
+| `translateCallback?()` | `translateCallback` | the engine's own hook, before `window.components.locale.translateCallback` |
+| `usage?()` | `usage-storage`, `storage-key`, `load*` / `save*` callbacks | a `UsageStore` (`new UsageStore(persistence, onChange)`), or `null` |
+| `maxFavoriteCount?()` / `maxRecentCount?()` | `max-favorite-count` / `max-recent-count` | default 3 |
+| `starKey?()` | `favorite-key` | the drawn keycap text (`Ctrl+D`) for `messages.noFavorites` |
+| `context?(fields)` | — | attach your own fields to every callback ctx |
+| `effect(effect)` / `changed()` / `error?()` | `before*Callback`s, events, close | yours to perform |
+
+Not engine options (they draw or bind DOM — your UI's job): `renderIconCallback`,
+`renderLoadingCallback`, `renderFeedbackCallback`, `customStyles` / `getCustomStylesCallback`,
+`size`, `presentation`, `open-key` / `favorites-key` / `recent-key` / the hotkeys, `show-feedback`.
+
+`engine.labels` is the palette's resolver (core `createLabels`) over your `labels` +
+`translateCallback`: resolve your own chrome strings through it (`engine.labels.text('ariaLabels.close')`)
+to follow the same rules and keys as the element.
 
 ## Logging
 

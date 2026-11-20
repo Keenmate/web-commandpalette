@@ -52,13 +52,12 @@ import {
   type ResponsiveMap,
 } from '@keenmate/web-components-core';
 import { runAction } from '@keenmate/web-components-core/actions';
-import { createLabels, type TranslateCallback } from '@keenmate/web-components-core/locale';
-import { PaletteEngine, type Effect, type EffectOutcome, type PaletteEngineHost, type TokenView } from './palette';
+import type { TranslateCallback } from '@keenmate/web-components-core/locale';
+import { CommandPaletteEngine, type Effect, type EffectOutcome, type CommandPaletteEngineHost, type TokenView } from './palette';
 import { Renderer, chordKeycap, confirmationBodyHtml, createShell, fillConfirmation, type Shell } from './render';
 import { bindGlobalKeys, handleInputKeydown, isSequence, type GlobalKeysHost } from './keyboard';
 import { UsageStore, stateStorePersistence, type UsagePersistence } from './usage';
 import {
-  DEFAULT_LABELS,
   type ActionEventDetail,
   type BeforeActionCallback,
   type BeforeResultSelectCallback,
@@ -68,7 +67,6 @@ import {
   type Context,
   type Display,
   type CommandPaletteLabels,
-  type PaletteLabels,
   type PaletteKeys,
   type LoadUsageCallback,
   type PaletteContext,
@@ -237,17 +235,13 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   #shadow: ShadowRoot;
   #shell: Shell;
   #renderer: Renderer;
-  #engine: PaletteEngine;
+  #engine: CommandPaletteEngine;
   #globalKeys: GlobalKeysHost;
   /** Unbinds the document-level keys while this palette owns them (core `bindShortcuts`). */
   #unbindGlobalKeys: (() => void) | null = null;
   #usage: UsageStore | null = null;
   #isOpen = false;
   #isFullscreen = false;
-  /** UI strings (core `/locale`, rulebook D-NC-24): instance `labels` → the element's `translateCallback` → the page-wide one → page-wide flat `window.components.locale.labels['web-command-palette.<key>']` → English. */
-  #labels: PaletteLabels = createLabels(this, DEFAULT_LABELS, () => this.config.labels as Partial<CommandPaletteLabels> | undefined, {
-    tag: 'web-command-palette',
-  });
   /** The open dialog's core modal session (SPEC §12.19): trap, inert page, backdrop, Escape, Back, scroll lock. */
   #modal: ModalSession | null = null;
   /** What had focus when the palette opened (focus returns there on close). */
@@ -270,7 +264,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.#shell = createShell();
     this.#shadow.appendChild(this.#shell.root);
     this.#renderer = new Renderer(this.#shell, this);
-    this.#engine = new PaletteEngine(this.#engineHost());
+    this.#engine = new CommandPaletteEngine(this.#engineHost());
     this.#globalKeys = {
       isOpen: () => this.#isOpen,
       toggle: () => this.toggle(),
@@ -312,7 +306,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     return (this.config.commands as Command[] | undefined) ?? [];
   }
 
-  #engineHost(): PaletteEngineHost {
+  #engineHost(): CommandPaletteEngineHost {
     return {
       commands: () => this.#commands(),
       contexts: () => (this.config.contexts as Context[] | undefined) ?? [],
@@ -321,12 +315,14 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
       context: (fields) => this.withContext(fields),
       display: () => (this.config.display as Display) ?? 'inline',
       pageSize: () => (this.config.pageSize as number) ?? 8,
-      debounceMs: () => (this.config.searchDebounce as number) ?? 150,
-      searchRules: () => ({
-        behavior: (this.config.searchBehavior as SearchBehavior) ?? 'normalized',
-        match: (this.config.searchMatch as SearchMatch) ?? 'contains',
-      }),
-      labels: () => this.#labels,
+      searchDebounce: () => (this.config.searchDebounce as number) ?? 150,
+      searchBehavior: () => (this.config.searchBehavior as SearchBehavior) ?? 'normalized',
+      searchMatch: () => (this.config.searchMatch as SearchMatch) ?? 'contains',
+      // UI strings (core `/locale`, rulebook D-NC-24) — the engine owns the one resolver (`#engine.labels`):
+      // instance `labels` → `translateCallback` → the page-wide one → page-wide flat
+      // `window.components.locale.labels['web-command-palette.<key>']` → English.
+      labels: () => this.config.labels as Partial<CommandPaletteLabels> | undefined,
+      translateCallback: () => this.config.translateCallback as TranslateCallback | null | undefined,
       usage: () => this.#usage,
       maxRecentCount: () => (this.config.maxRecentCount as number) ?? 3,
       maxFavoriteCount: () => (this.config.maxFavoriteCount as number) ?? 3,
@@ -431,7 +427,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   }
 
   #render(): void {
-    if (this.#isOpen && !this.#feedbackTimer) this.#renderer.render(this.#engine, this.#labels);
+    if (this.#isOpen && !this.#feedbackTimer) this.#renderer.render(this.#engine, this.#engine.labels);
   }
 
   /**
@@ -477,7 +473,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     const { confirm, root } = this.#shell;
     // The countdown bar shows the timer — decorative, so it goes when motion is off (SPEC §12.16);
     // the timer itself keeps `feedback-duration`.
-    const body = fillConfirmation(confirm, this.#labels.html('headers.done'), duration, !isMotionOff(this));
+    const body = fillConfirmation(confirm, this.#engine.labels.html('headers.done'), duration, !isMotionOff(this));
     // Core's one render-callback contract (SPEC §12.35): string = HTML, Node = mounted, null = built-in.
     renderSlot(body, custom, {
       renderDefault: (el) => {
@@ -502,7 +498,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
       container.style.height = `${to}px`;
     }
     confirm.focus();
-    const doneText = this.#labels.text('ariaLabels.done');
+    const doneText = this.#engine.labels.text('ariaLabels.done');
     announce(doneText ? `${doneText}: ${ctx.sentence}` : ctx.sentence); // core's page-wide live region (SPEC §12.23)
     this.log.UI.debug('feedback', ctx);
     this.#feedbackTimer = setTimeout(() => this.close(), duration);
@@ -736,9 +732,9 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   /** The shell's own strings (dialog name, close button, sheet title); the rest re-resolve on render. */
   #applyLabels(): void {
     const { container, closeButton, fullscreenTitle } = this.#shell;
-    setOrRemove(container, 'aria-label', this.#labels.text('ariaLabels.dialog'));
-    setOrRemove(closeButton, 'aria-label', this.#labels.text('ariaLabels.close'));
-    fullscreenTitle.textContent = this.#labels.text('headers.fullscreen');
+    setOrRemove(container, 'aria-label', this.#engine.labels.text('ariaLabels.dialog'));
+    setOrRemove(closeButton, 'aria-label', this.#engine.labels.text('ariaLabels.close'));
+    fullscreenTitle.textContent = this.#engine.labels.text('headers.fullscreen');
   }
 
   #applySize(): void {

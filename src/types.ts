@@ -40,8 +40,8 @@ export type MaybePromise<T> = T | Promise<T>;
 
 /**
  * The palette's public facade — `el.controller`, and `controller` on every
- * callback ctx and event detail. The imperative API of the element; the internal
- * `PaletteEngine` is never exposed.
+ * callback ctx and event detail. The imperative API of the element; the element's own
+ * `CommandPaletteEngine` is never exposed (a new one is yours to build your own UI on).
  */
 export interface CommandPaletteController {
   /** Whether the palette is open. */
@@ -69,7 +69,7 @@ export interface CommandPaletteController {
 /**
  * What every callback ctx and event detail carries: `controller` + `element`
  * (non-enumerable) and the presentation flags (`presentation`, `isFullscreen`,
- * `isModal`) — the palette is a popup. A standalone `PaletteEngine` without an
+ * `isModal`) — the palette is a popup. A standalone `CommandPaletteEngine` without an
  * element host passes plain objects (no controller / element / presentation).
  */
 // The element type comes from the tag-name map (declared in index.ts), so this

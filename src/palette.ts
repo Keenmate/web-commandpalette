@@ -10,6 +10,7 @@
 import { resolveActionItem, shortcutKeycaps, type ResolvedActionItem } from '@keenmate/web-components-core/actions';
 import { createAsyncRunner, type AsyncRunner } from '@keenmate/web-components-core';
 import { createRegexCompiler } from '@keenmate/web-components-core/search';
+import { createLabels, type TranslateCallback } from '@keenmate/web-components-core/locale';
 import {
   DEFAULT_SEARCH_RULES,
   filterCommands,
@@ -23,9 +24,11 @@ import {
   type SearchRules,
 } from './helpers/filter';
 import { cloneResult, cloneSelections, usageKey, type UsageStore, type UsageTarget } from './usage';
+import { DEFAULT_LABELS } from './types';
 import type {
   Command,
   CommandContext,
+  CommandPaletteLabels,
   Context,
   Display,
   LabelRef,
@@ -34,8 +37,10 @@ import type {
   PaletteLabels,
   Result,
   Scope,
+  SearchBehavior,
   SearchCallback,
   SearchContext,
+  SearchMatch,
   Selection,
   Step,
   StepContext,
@@ -47,8 +52,12 @@ import type {
 /** PgUp/PgDn jump (matches all three legacy implementations). */
 export const PAGE_STEP = 8;
 
-/** What the engine needs from its host (the element). Read live on every use. */
-export interface PaletteEngineHost {
+/**
+ * What the engine needs from its host — your UI, or `<web-command-palette>` (which passes its inputs through).
+ * Read live on every use. Option names match the element's inputs (`commands`, `contexts`, `searchCallback`,
+ * `labels`, `translateCallback`, `pageSize`, `searchDebounce`, …), so the same values work in both.
+ */
+export interface CommandPaletteEngineHost {
   commands(): readonly Command[];
   contexts(): readonly Context[];
   searchCallback(): SearchCallback | null;
@@ -61,11 +70,21 @@ export interface PaletteEngineHost {
   context?<T extends object>(fields: T): T;
   display(): Display;
   pageSize(): number;
-  debounceMs(): number;
-  /** `search-behavior` / `search-match` for client-side filtering + highlighting (default `normalized` / `contains`). */
-  searchRules?(): SearchRules;
-  /** The palette's labels (core `createLabels`; a standalone host can pass its own core `createLabels` resolver). */
-  labels(): PaletteLabels;
+  /** `search-debounce`: ms before a typed term reaches `searchCallback` / a live step's options (default 150). */
+  searchDebounce?(): number;
+  /** `search-behavior` for client-side filtering + highlighting (default `normalized`). */
+  searchBehavior?(): SearchBehavior;
+  /** `search-match` for client-side filtering + highlighting (default `contains`). */
+  searchMatch?(): SearchMatch;
+  /**
+   * The instance `labels` (short keys `labels.pageOf` or full keys `web-command-palette.labels.pageOf`), the
+   * same object the element's `labels` input takes. The engine resolves its own texts (`placeholder`,
+   * `contextText`, `emptyText`, `pageText`, the `lastUsed` badge) through core `createLabels`: these →
+   * `translateCallback` → `window.components.locale.translateCallback` → the page dictionary → English.
+   */
+  labels?(): Partial<CommandPaletteLabels> | null | undefined;
+  /** This palette's own translation hook (core `TranslateCallback`), asked before the page-wide one; `null` = not mine. */
+  translateCallback?(): TranslateCallback | null | undefined;
   /** Favorites/recents store, or null when disabled. */
   usage?(): UsageStore | null;
   /** How many recent entries the home screen shows. */
@@ -93,7 +112,7 @@ export type Effect =
   | { type: 'action'; command: Command; selections: Selection[] }
   | { type: 'close' };
 
-/** The host's answer to {@link PaletteEngineHost.effect}: `false` = vetoed. */
+/** The host's answer to {@link CommandPaletteEngineHost.effect}: `false` = vetoed. */
 export type EffectOutcome = boolean | void | PromiseLike<boolean | void>;
 
 export type ItemKind = 'command' | 'context' | 'option' | 'result' | 'usage';
@@ -254,12 +273,21 @@ const isThenable = <T>(v: unknown): v is PromiseLike<T> =>
   !!v && (typeof v === 'object' || typeof v === 'function') && typeof (v as PromiseLike<T>).then === 'function';
 
 /**
- * The palette ENGINE — the DOM-free state machine behind `<web-command-palette>`.
- * Exported for standalone use (drive it from your own UI / tests); the element
- * never exposes it — consumers use `el.controller`.
+ * Core `createLabels` takes the element it resolves for (its log source; the tag and the
+ * own `translateCallback` come as options here). The engine has no element: a `translateCallback`
+ * that throws is logged under core's CORE bundle instead of an element's logger.
  */
-export class PaletteEngine {
-  #host: PaletteEngineHost;
+const LABELS_SOURCE = { localName: 'web-command-palette' } as unknown as Element;
+
+/**
+ * The palette ENGINE — the DOM-free state machine behind `<web-command-palette>`, public
+ * for building your own palette UI (docs/usage.md "Build your own UI"): it owns modes,
+ * the wizard, filtering, async search, pagination and favorites / recents, and exposes a
+ * read-only view (`input`, `items`, `activeIndex`, `placeholder`, …); you draw it and feed
+ * it keys / input. The element never exposes its own engine — consumers use `el.controller`.
+ */
+export class CommandPaletteEngine {
+  #host: CommandPaletteEngineHost;
 
   // ── public, read-only view state ──────────────────────────────────────────
   mode: Mode = 'idle';
@@ -311,8 +339,19 @@ export class PaletteEngine {
   /** The latest run's "failed" handler (the runner reports errors of the latest run only). */
   #onFail: (() => void) | null = null;
 
-  constructor(host: PaletteEngineHost) {
+  /**
+   * The palette's labels resolver (core `createLabels`) over the host's `labels` +
+   * `translateCallback` — the engine's own texts go through it; a UI resolves its chrome
+   * strings (`ariaLabels.*`, `headers.*`, …) through it too, under the same rules.
+   */
+  readonly labels: PaletteLabels;
+
+  constructor(host: CommandPaletteEngineHost) {
     this.#host = host;
+    this.labels = createLabels(LABELS_SOURCE, DEFAULT_LABELS, () => host.labels?.() ?? null, {
+      tag: 'web-command-palette',
+      getTranslateCallback: () => host.translateCallback?.() ?? null,
+    });
     this.#runner = createAsyncRunner({
       debounceMs: () => this.#debounce,
       onLoadingChange: (isLoading) => {
@@ -393,7 +432,7 @@ export class PaletteEngine {
 
   /** Text of the context pill, or null when hidden. */
   get contextText(): string | null {
-    const labels = this.#host.labels();
+    const labels = this.labels;
     switch (this.mode) {
       case 'command-list': return labels.text('labels.scopeCommands');
       case 'context-list': return labels.text('labels.scopeContexts');
@@ -406,7 +445,7 @@ export class PaletteEngine {
   }
 
   get placeholder(): string {
-    const labels = this.#host.labels();
+    const labels = this.labels;
     if (this.mode === 'command-step') return this.step?.placeholder || labels.text('placeholders.filter');
     if (this.usageView) return labels.text('placeholders.filter');
     return labels.text('placeholders.idle');
@@ -447,7 +486,7 @@ export class PaletteEngine {
 
   /** The empty-state text (`emptyLabel` resolved as plain text), or null. */
   get emptyText(): string | null {
-    return this.emptyLabel ? this.#host.labels().text(this.emptyLabel.key, this.emptyLabel.params) : null;
+    return this.emptyLabel ? this.labels.text(this.emptyLabel.key, this.emptyLabel.params) : null;
   }
 
   /** The pagination row's label (`labels.pageOf`; raw numbers — core `createLabels` formats them for display), or null on a single page. */
@@ -462,7 +501,7 @@ export class PaletteEngine {
   /** The pagination row as plain text, or null on a single page. */
   get pageText(): string | null {
     const ref = this.pageLabel;
-    return ref ? this.#host.labels().text(ref.key, ref.params) : null;
+    return ref ? this.labels.text(ref.key, ref.params) : null;
   }
 
   // ── lifecycle ─────────────────────────────────────────────────────────────
@@ -488,8 +527,16 @@ export class PaletteEngine {
   #regex = createRegexCompiler();
   #highlightQuery: { key: string; query: SearchQuery } | null = null;
 
+  /** `search-debounce` (default 150 ms). */
+  #searchDebounce(): number {
+    return this.#host.searchDebounce?.() ?? 150;
+  }
+
   #rules(): SearchRules {
-    return this.#host.searchRules?.() ?? DEFAULT_SEARCH_RULES;
+    return {
+      behavior: this.#host.searchBehavior?.() ?? DEFAULT_SEARCH_RULES.behavior,
+      match: this.#host.searchMatch?.() ?? DEFAULT_SEARCH_RULES.match,
+    };
   }
 
   /** A typed needle prepared under the current `search-behavior` / `search-match`. */
@@ -910,7 +957,7 @@ export class PaletteEngine {
   #stepItems(options: Option[]): ViewItem[] {
     const def = this.#defaultFor(this.step);
     if (!def || this.#stepQuery.trim()) return options.map(optionItem);
-    const badge = this.#host.labels().text('labels.lastUsed');
+    const badge = this.labels.text('labels.lastUsed');
     const at = options.findIndex((o) => matchesSelection(o, def));
     if (at >= 0) {
       const rest = options.filter((_, i) => i !== at);
@@ -945,7 +992,7 @@ export class PaletteEngine {
     this.#stepQuery = query;
     this.highlight = query.trim();
     if (this.step?.isLiveSearch) {
-      this.#fetchStepOptions(query, true, this.#host.debounceMs());
+      this.#fetchStepOptions(query, true, this.#searchDebounce());
       this.#changed();
       return;
     }
@@ -1155,7 +1202,7 @@ export class PaletteEngine {
         this.emptyLabel = { key: 'messages.noResults' };
         this.#setResults([...prefix, ...this.#starred(((results ?? []) as Result[]).map((r) => resultItem(r, scope)))]);
       },
-      this.#host.debounceMs(),
+      this.#searchDebounce(),
     );
     if (!silent) this.#changed();
   }

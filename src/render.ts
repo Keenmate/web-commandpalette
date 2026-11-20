@@ -13,7 +13,7 @@ import { createActiveDescendant, type ActiveDescendant } from '@keenmate/web-com
 import { findHighlightRanges, wrapRanges } from '@keenmate/web-components-core/search';
 import { NO_SEARCH_QUERY, type SearchQuery } from './helpers/filter';
 import { modChord } from './keyboard';
-import type { HomeSection, PaletteEngine, TokenView, UsageView, ViewItem } from './palette';
+import type { HomeSection, CommandPaletteEngine, TokenView, UsageView, ViewItem } from './palette';
 import { DEFAULT_PALETTE_KEYS, type CommandPaletteLabels, type PaletteKeys, type PaletteLabels } from './types';
 
 export interface Shell {
@@ -177,7 +177,7 @@ function moreHtml(view: UsageView, hidden: number, heading: string, ctx: RenderC
   );
 }
 
-function homeHtml(m: PaletteEngine, ctx: RenderContext): string {
+function homeHtml(m: CommandPaletteEngine, ctx: RenderContext): string {
   const { labels } = ctx;
   const headings: Record<HomeSection, Heading> = {
     favorites: labelHeading(labels, 'headers.favorites'),
@@ -197,7 +197,7 @@ function homeHtml(m: PaletteEngine, ctx: RenderContext): string {
 }
 
 /** Search rows, with a heading section per run of `group` (the engine clusters them). */
-function rowsHtml(m: PaletteEngine, ctx: RenderContext): string {
+function rowsHtml(m: CommandPaletteEngine, ctx: RenderContext): string {
   let out = '';
   let group: string | undefined;
   let rows = '';
@@ -236,7 +236,7 @@ function tokensHtml(tokens: TokenView[] | null, labels: PaletteLabels): string {
     .join('');
 }
 
-function footerHtml(m: PaletteEngine, ctx: RenderContext): string {
+function footerHtml(m: CommandPaletteEngine, ctx: RenderContext): string {
   const { labels } = ctx;
   // A label set to '' hides that hint (L4: '' = deliberately empty).
   const hint = (key: string, label: keyof CommandPaletteLabels & string): string => {
@@ -358,7 +358,7 @@ export class Renderer {
     this.#tokens = '';
   }
 
-  render(m: PaletteEngine, labels: PaletteLabels): void {
+  render(m: CommandPaletteEngine, labels: PaletteLabels): void {
     const s = this.#shell;
 
     // ── input row ──
@@ -408,7 +408,7 @@ export class Renderer {
     }
   }
 
-  #resultsHtml(m: PaletteEngine, ctx: RenderContext): string {
+  #resultsHtml(m: CommandPaletteEngine, ctx: RenderContext): string {
     const { labels } = ctx;
     if (m.mode === 'idle') return homeHtml(m, ctx);
     if (m.items.length) {

@@ -202,7 +202,7 @@ Details — single tests, the CSS pipeline, publishing, the example-site image �
 | Layer | File | Role |
 |-------|------|------|
 | Element | `src/web-component.ts` | `CommandPaletteElement` — the `static inputs` / `static events` tables (IDE metadata is generated from them), overlay, presentation, feedback line |
-| Logic | `src/palette.ts` | `PaletteEngine` — DOM-free modes, wizard, filtering, async search, pagination |
+| Logic | `src/palette.ts` | `CommandPaletteEngine` — DOM-free modes, wizard, filtering, async search, pagination; public for your own UI ([docs/usage.md → Build your own UI](docs/usage.md#build-your-own-ui)) |
 | Logic | `src/usage.ts` | `UsageStore` — favorites + recents, frecency, pluggable persistence |
 | Render | `src/render.ts` | builds the shadow DOM once and patches it |
 | Service | `src/keyboard.ts` | global hotkeys + input key map |

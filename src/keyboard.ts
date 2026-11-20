@@ -14,7 +14,7 @@
  */
 import { isImeEnter } from '@keenmate/web-components-core';
 import { bindShortcuts, matchesShortcut, parseShortcut, type ShortcutBinding } from '@keenmate/web-components-core/actions';
-import type { PaletteEngine } from './palette';
+import type { CommandPaletteEngine } from './palette';
 import { DEFAULT_PALETTE_KEYS, type Command, type PaletteKeys } from './types';
 
 /** `'Mod+<letter>'` — the palette's Ctrl/⌘ chords (open key, star, favorites, recent); '' when off. */
@@ -62,7 +62,7 @@ export function bindGlobalKeys(host: GlobalKeysHost): () => void {
 /** Keydown inside the palette input. Returns true when handled. */
 export function handleInputKeydown(
   e: KeyboardEvent,
-  m: PaletteEngine,
+  m: CommandPaletteEngine,
   input: HTMLInputElement,
   keys: PaletteKeys = DEFAULT_PALETTE_KEYS,
   /** Right-to-left: ←/→ paging swaps so "previous" is the arrow toward the inline start. */
