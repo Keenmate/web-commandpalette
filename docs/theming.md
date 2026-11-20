@@ -174,10 +174,13 @@ chains to the shared `--base-icon-*` glyph where one exists, then to an inline L
 | `--cp-icon-star` / `--cp-icon-star-filled` | ☆ / ★ favorite toggle | → Lucide `star` (outline / filled) |
 | `--cp-icon-size` | size of a masked glyph | default `1em` (row icons are 1.8 × `--cp-rem`) |
 
-An item icon given by **name** (`icon: 'search'`) goes through core `renderIcon`: a `.km-icon` masked
-from the shared `--base-icon-<name>` token. Load a `:root` theme (`@keenmate/base-css-variables`) or set
-the token on the element (`web-command-palette { --base-icon-search: url(…) }`); an unset token draws
-nothing (icon-font classes can't reach inside the shadow root — pass an inline `<svg>` or an emoji instead).
+An item icon given by a **built-in name** (`icon: 'search'`, core `BUILT_IN_ICON_NAMES`) goes through core
+`renderIcon`: a `.km-icon` masked from the shared `--base-icon-<name>` token. Load a `:root` theme
+(`@keenmate/base-css-variables`) or set the token on the element (`web-command-palette { --base-icon-search: url(…) }`);
+an unset token draws nothing. Any other class list (`fa-solid fa-folder`) renders an icon-font
+`<i class="cp__icon …">` (`flex: none`, the row's font size) — the font's class rules must reach the shadow root
+through `custom-styles` / the page-wide `customStyles`; or map the name to markup in `renderIconCallback`
+(see [Usage → Icons](usage.md#icons)).
 
 ```css
 web-command-palette {

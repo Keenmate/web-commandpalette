@@ -99,6 +99,8 @@ export interface RenderContext {
   /** Core `createLabels`: `.text()` for attributes / `textContent`, `.html()` for markup. */
   labels: PaletteLabels;
   keys: PaletteKeys;
+  /** The component host — core `renderIcon` asks its `renderIconCallback` (then the page-wide one). */
+  host: HTMLElement | null;
 }
 
 function starHtml(item: ViewItem, index: number, ctx: RenderContext): string {
@@ -115,7 +117,7 @@ function starHtml(item: ViewItem, index: number, ctx: RenderContext): string {
 }
 
 function itemHtml(item: ViewItem, index: number, active: boolean, query: SearchQuery, ctx: RenderContext): string {
-  const icon = renderIcon(item.icon, { prefix: 'cp' });
+  const icon = renderIcon(item.icon, { prefix: 'cp', host: ctx.host, context: { item: item.ref, kind: item.kind } }); // the host's own Command / Context / Option / Result / usage entry
   // A remembered answer's badge is `labels['labels.lastUsed']`, re-resolved per render (a locale change mid-wizard).
   const badgeText = item.isDefault ? ctx.labels.text('labels.lastUsed') : item.badge;
   const badge = badgeText
@@ -336,11 +338,16 @@ export class Renderer {
   #mountLoader(labels: PaletteLabels): void {
     const slot = this.#shell.results.querySelector<HTMLElement>('[data-cp-loader]');
     if (!slot) return;
-    const host = this.#host ?? ((this.#shell.root.getRootNode() as ShadowRoot).host as HTMLElement | undefined) ?? this.#shell.root;
+    const host = this.#hostEl();
     this.#removeLoader = renderLoader(host, slot, slot.dataset.cpLoader || 'search', {
       prefix: 'cp',
       label: labels.text('messages.searching'), // the visible loader text names the status (one text, one key)
     });
+  }
+
+  /** The component host (`renderLoader` / `renderIcon` read its callbacks). */
+  #hostEl(): HTMLElement {
+    return this.#host ?? ((this.#shell.root.getRootNode() as ShadowRoot).host as HTMLElement | undefined) ?? this.#shell.root;
   }
 
   /** Force the next render to rebuild everything (labels/data changed). */
@@ -378,7 +385,7 @@ export class Renderer {
       this.#listVersion = m.listVersion;
       this.#listKey = listKey;
       this.clearLoader();
-      s.results.innerHTML = this.#resultsHtml(m, { labels, keys: this.keys });
+      s.results.innerHTML = this.#resultsHtml(m, { labels, keys: this.keys, host: this.#hostEl() });
       this.#mountLoader(labels);
       s.results.classList.toggle('cp__results--loading', m.isLoading && m.items.length > 0);
     } else {
@@ -387,7 +394,7 @@ export class Renderer {
     this.#syncActiveDescendant(m.activeIndex);
 
     // ── footer + announcements ──
-    const footer = footerHtml(m, { labels, keys: this.keys });
+    const footer = footerHtml(m, { labels, keys: this.keys, host: this.#hostEl() });
     if (footer !== this.#footer) {
       this.#footer = footer;
       s.footer.innerHTML = footer;

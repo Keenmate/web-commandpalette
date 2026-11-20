@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>e2e fixture — icons</title>
+</head>
+<body>
+  <web-command-palette id="palette"></web-command-palette>
+
+  <script type="module">
+    import { setupStandard, ready } from './fixture-common.js';
+    const el = setupStandard('icons');
+    // Every name a hook sees, in order: `element:<name>` / `page:<name>`.
+    window.iconCalls = [];
+    window.iconContexts = [];
+    // Page-wide hook (core window.components.renderIconCallback): answers everything it is asked.
+    window.components.renderIconCallback = (name, ctx) => {
+      window.iconCalls.push(`page:${name}`);
+      if (name === 'fa-solid fa-folder') return null; // not mine → the icon-font rule
+      return `<b class="page-icon">${name}</b>`;
+    };
+    // The element's own hook: answers only `own-*` names, passes the rest on.
+    el.renderIconCallback = (name, ctx) => {
+      window.iconCalls.push(`element:${name}`);
+      window.iconContexts.push({ name, component: ctx.component, prefix: ctx.prefix, itemId: ctx.item?.id, isElement: ctx.element === el });
+      return name.startsWith('own-') ? `<em class="own-icon">${name}</em>` : null;
+    };
+    el.commands = [
+      { id: 'builtin', trigger: '/builtin', text: 'Builtin', icon: 'search' },
+      { id: 'own', trigger: '/own', text: 'Own', icon: 'own-rocket' },
+      { id: 'shared', trigger: '/shared', text: 'Shared', icon: 'shared-gear' },
+      { id: 'font', trigger: '/font', text: 'Font', icon: 'fa-solid fa-folder' },
+    ];
+    el.contexts = [];
+    ready();
+  </script>
+</body>
+</html>

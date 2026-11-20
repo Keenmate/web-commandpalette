@@ -18,10 +18,15 @@ import type { LabelParams, Labels } from '@keenmate/web-components-core/locale';
 export type { SearchBehavior, SearchMatch };
 
 /**
- * An item icon, read by core `renderIcon` (SPEC §12.33):
+ * An item icon, read by core `renderIcon` (SPEC §12.33), first match wins:
  *  - starts with `<`              → raw SVG/HTML markup, injected as-is (host-trusted)
- *  - an ASCII name (`search`, `chevron-right`) → a glyph masked from `--base-icon-<name>` in
- *    `currentColor` (`<span class="km-icon cp__icon cp__icon--NAME">`; nothing drawn when the token is unset)
+ *  - a built-in name (`search`, `check`, `settings`, … core `BUILT_IN_ICON_NAMES`) → a glyph masked from
+ *    `--base-icon-<name>` in `currentColor` (`<span class="km-icon cp__icon cp__icon--NAME">`; nothing drawn
+ *    when the token is unset). Reserved — no hook sees it
+ *  - the element's `renderIconCallback(name, ctx)`, then the page-wide `window.components.renderIconCallback`
+ *    → markup (`null` / `undefined` = not mine)
+ *  - ASCII class names (`fa-solid fa-folder`, `gear`) → an icon font, `<i class="cp__icon fa-solid fa-folder">`
+ *    (the font's CSS must reach the shadow root — `custom-styles` / page-wide `customStyles`)
  *  - anything else                → escaped text (emoji / glyph)
  */
 export type IconInput = string;

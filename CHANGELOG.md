@@ -11,6 +11,21 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Added — `renderIconCallback` on the element; Changed — core rc25 icon order (core SPEC §12.33, rulebook C-CA-33, 2026-11-20)
+
+- **Added:** `el.renderIconCallback(name, ctx)` — this palette's own icon hook (`ctx = { component, element, prefix:
+  'cp', item, kind }`, `item` = the row's own command / context / option / result / usage entry). Asked after a
+  built-in name and before the page-wide `window.components.renderIconCallback`; a string is the icon (`''` = none),
+  `null` / `undefined` = not mine (the page-wide hook decides next). One palette on a page needs no
+  `window.components` setup. Changing it re-renders the rows.
+- **BREAKING (core rc25 icon order):** a one-word ASCII `icon` that is NOT a core built-in name (`'gear'`,
+  `'chevron-right'`) now renders an icon-font `<i class="cp__icon gear" aria-hidden="true">`, not a glyph masked from
+  `--base-icon-<name>`. Built-in names (`search`, `check`, `settings`, `delete`, … core `BUILT_IN_ICON_NAMES`) still
+  mask their `--base-icon-*` token and never reach a hook. Before: `icon: 'gear'` + `--base-icon-gear: url(…)`. After:
+  pass the markup (`icon: '<svg …>'`), map the name in `renderIconCallback`, or load the icon font's CSS into the
+  shadow root (`custom-styles` / page-wide `customStyles`).
+- `.cp__icon` (every icon `renderIcon` draws, the icon-font `<i>` included) is `flex: none; line-height: 1`.
+
 ### Changed — label keys are flat `<elementType>.<name>` (core rc25 `/locale`, rulebook D-NC-24, 2026-11-19)
 
 - **BREAKING:** every `labels` key is renamed to `<elementType>.<name>` (`buttons`, `tooltips`, `ariaLabels`,

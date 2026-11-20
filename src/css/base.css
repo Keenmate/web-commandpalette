@@ -24,10 +24,17 @@
 }
 
 /* Icons draw through core's one primitive, `.km-icon` (core ICON_CSS, adopted into the shadow root):
-   a glyph masked from --_km-icon in currentColor. An item icon given by NAME (core renderIcon) sets
+   a glyph masked from --_km-icon in currentColor. An item icon given by a BUILT-IN name (core renderIcon) sets
    --_km-icon to --base-icon-<name> inline; the palette's own chrome glyphs below map it onto their
    --cp-icon-* variable (variables.css), so any of them can be replaced with a url(...).
    `.cp__icon` adds the size knob. */
+/* Every icon renderIcon draws — the masked span and an icon-font `<i class="cp__icon fa-solid …">` (a
+   one-word name that isn't built-in) — keeps its size in a flex row; the glyph inherits the font size. */
+.cp__icon {
+  flex: none;
+  line-height: 1;
+}
+
 .km-icon.cp__icon {
   inline-size: var(--cp-icon-size);
   block-size: var(--cp-icon-size);

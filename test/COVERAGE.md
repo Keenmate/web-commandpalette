@@ -145,6 +145,7 @@ Known bugs are in `test/NOTES.md`.
 | Custom CSS: `custom-styles` / `customStyles` / `getCustomStylesCallback`, the page layer `window.components[tag].customStyles` / callback (every instance, instance wins, page `<style>` first), `@import` head link shared + released on `destroy()` | ✓ | `custom-styles.spec.ts` | `custom-styles.html` |
 | Per-instance themes (`--base-*`, `::part()`), `--base-rem` | ✓ | `theming.spec.ts` | `theming.html` |
 | base-css-variables 2.0 tokens, named icons | ✓ | `theming.spec.ts` | `theming.html` |
+| Item icons: element `renderIconCallback` beats the page-wide hook, `null` falls through, a class list → `<i class="cp__icon …">`, a built-in name never reaches a hook, a hook change re-renders | ✓ | `icons.spec.ts` | `icons.html` |
 | Theme context (page signals, per-instance override) | ✓ | `theme-context.spec.ts` | `theme-context.html` |
 | `data-theme="dark"` on the host | ✓ | `theme-context.spec.ts` | `theme-context.html` |
 | RTL layout, paging, confirmation | ✓ | `rtl.spec.ts` | `rtl.html` |

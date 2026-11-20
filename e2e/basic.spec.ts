@@ -111,7 +111,7 @@ test('the host is a real block box that takes no space (rulebook C-TC-7; was dis
   await expect(p.container).toBeVisible();
 });
 
-test('item icons follow core renderIcon: a name draws a masked glyph, emoji stays text, markup goes in raw', async ({ page }) => {
+test('item icons follow core renderIcon: a built-in name draws a masked glyph, another class list an icon-font <i>, emoji stays text, markup goes in raw', async ({ page }) => {
   const p = palette(page);
   await p.host.evaluate((el) => {
     (el as HTMLElement).style.setProperty('--base-icon-search', 'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22/%3E")');
@@ -132,7 +132,9 @@ test('item icons follow core renderIcon: a name draws a masked glyph, emoji stay
     });
   await expect(icon('Alpha').locator('.km-icon.cp__icon.cp__icon--search')).toHaveCount(1);
   expect(await mask('Alpha')).toContain('data:image/svg+xml');
-  expect(await mask('Beta')).not.toContain('url(');
+  // A one-word name that is not built-in is an icon-font class (core rc25), not a mask.
+  await expect(icon('Beta').locator('i.cp__icon.no-such-glyph')).toHaveCount(1);
+  await expect(icon('Beta').locator('.km-icon')).toHaveCount(0);
   await expect(icon('Gamma')).toHaveText('🚀');
   await expect(icon('Gamma').locator('.km-icon')).toHaveCount(0);
   await expect(icon('Delta').locator('svg.probe')).toHaveCount(1);

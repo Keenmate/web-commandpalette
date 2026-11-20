@@ -82,6 +82,7 @@ Objects and functions are **properties only** — set them from JS (or a framewo
 | `favoriteKey` / `favoritesKey` / `recentKey` | `string` | Ctrl/⌘ + key while open: star the active row / show all favorites / show all recent. Defaults `d` / `f` / `r`; `''` disables. |
 | `renderFeedbackCallback` | `(ctx) => string \| Node \| null \| false` | Custom feedback content: string = HTML, Node = mounted, `null` = built-in, `false` = hidden (skipped). See [Feedback](#feedback). |
 | `renderLoadingCallback` | `(ctx) => void \| (() => void)` | Draw the searching loader yourself — `ctx = { component, context: 'search', containerElement, element, label }`; fill `containerElement` (already `role="status"` + `aria-label` = the `messages.searching` text), optionally return a cleanup. Beats the page-wide `window.components.renderLoadingCallback` (one hook for every Keenmate component); unset = the default `.cp__loader` (`--cp-loader-icon` / `-rotate` / `-duration` / `-size` / `-color`, chained to `--base-loader-*`). |
+| `renderIconCallback` | `(name, ctx) => string \| null \| undefined` | This palette's own icon hook — map an item `icon` name to markup. `ctx = { component, element, prefix: 'cp', item, kind }` (`item` = the row's own command / context / option / result / usage entry). Asked after a built-in name, before the page-wide `window.components.renderIconCallback`; `null` / `undefined` = not mine. See [Icons](#icons). |
 | `customStyles` / `getCustomStylesCallback` | `string \| null` / `(ctx) => string \| null \| undefined` | Extra CSS for this palette's shadow root (attribute `custom-styles`), after the component CSS and after the page-wide `window.components['web-command-palette'].customStyles` / `.getCustomStylesCallback`, so the instance wins. The callback wins over `customStyles`. See [Theming → Custom CSS](theming.md#custom-css-shadow-root). |
 | `isFeedbackShown` | `boolean` | Show the one-line feedback after a command ran. Default `true` (attribute `show-feedback`). |
 | `feedbackDuration` | `number` | How long it stays (ms). Default `1500`; `0` = off. |
@@ -398,13 +399,25 @@ the effective direction, also when it changes at runtime.
 
 ## Icons
 
-`icon` is data, read by core's one icon rule (`renderIcon`, core SPEC §12.33):
+`icon` is data, read by core's one icon rule (`renderIcon`, core SPEC §12.33) — first match wins:
 
-- starts with `<` → inserted raw (`<svg>`, `<img>`, `<i class="fa …">`; **the host vouches for this markup**)
-- an ASCII name (`search`, `chevron-right`) → `<span class="km-icon cp__icon cp__icon--NAME">`, a glyph
-  masked from the `--base-icon-<name>` token in `currentColor` — set by a `:root` theme
-  (`@keenmate/base-css-variables`) or on the element; nothing is drawn when the token is unset
-- anything else (an emoji, `1 < 2`) → escaped text
+1. starts with `<` → inserted raw (`<svg>`, `<img>`, `<i class="fa …">`; **the host vouches for this markup**)
+2. a built-in name (`search`, `check`, `settings`, `delete`, … core `BUILT_IN_ICON_NAMES`) →
+   `<span class="km-icon cp__icon cp__icon--NAME">`, a glyph masked from the `--base-icon-<name>` token in
+   `currentColor` — set by a `:root` theme (`@keenmate/base-css-variables`) or on the element; nothing is drawn
+   when the token is unset. Reserved: no hook sees a built-in name
+3. the palette's own `renderIconCallback(name, ctx)`, then the page-wide `window.components.renderIconCallback`
+   → markup (`''` = no icon; `null` / `undefined` = not mine, the next rule decides)
+4. ASCII class names (`fa-solid fa-folder`, `bi-gear`, `gear`) → an icon font,
+   `<i class="cp__icon fa-solid fa-folder" aria-hidden="true">` — the font's CSS must reach the shadow root
+   (`custom-styles` / the page-wide `customStyles`, see [Theming → Custom CSS](theming.md#custom-css-shadow-root))
+5. anything else (an emoji, `1 < 2`) → escaped text
+
+```js
+// one palette, no page setup: map your icon set's names to markup
+palette.renderIconCallback = (name) =>
+  name.startsWith('lucide-') ? `<svg class="lucide"><use href="/lucide.svg#${name.slice(7)}"/></svg>` : null;
+```
 
 ## Labels
 

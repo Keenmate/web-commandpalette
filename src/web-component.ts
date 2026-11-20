@@ -46,6 +46,7 @@ import {
   type InputDef,
   type Presentation,
   type ModalSession,
+  type RenderIconCallback,
   type RenderLoaderCallback,
   type ResponsiveCallback,
   type ResponsiveMap,
@@ -115,6 +116,8 @@ const INPUTS: readonly InputDef[] = [
     description: 'Render the text of the one-line feedback shown after a command ran (the ✓, "Done" and countdown stay). `ctx = { type, commandId?, commandText?, selections?, sentence, result?, scope?, duration }` + `controller` / `element`; `type` is `action` or `select`. Read by core `renderSlot`: a string = HTML, a Node (element, fragment) = mounted, `null` / `undefined` = the built-in line, `false` = hidden (no feedback this time, the palette closes right away). Search-result selections (`type: "select"`) have no built-in line, so they get feedback only when this returns content.' },
   { configKey: 'renderLoadingCallback', converter: toFunction(), on: 'none', type: '(ctx: LoaderRenderContext) => void | (() => void)',
     description: 'Draw the searching loader yourself (shared loader, core SPEC §12.14). `ctx = { component, context, containerElement, element, label }`; `context` is `search` (a search / step-options request in flight, label = the `messages.searching` text). Fill `containerElement` (already `role="status"` + `aria-label`); optionally return a cleanup. Beats the page-wide `window.components.renderLoadingCallback`; unset = the default `.cp__loader` (`--cp-loader-*` tokens).' },
+  { configKey: 'renderIconCallback', converter: toFunction(), on: 'update', type: '(name: string, ctx: IconRenderContext) => string | null | undefined',
+    description: "Map an item `icon` name to markup for this palette (core `renderIcon`, SPEC §12.33). `ctx = { component, element, prefix: 'cp', item, kind }` — `item` = the row's own `Command` / `Context` / `Option` / `Result` / usage entry, `kind` = `'command' | 'context' | 'option' | 'result' | 'usage'`. Asked after a built-in name (`search`, `check`, … — those always draw the masked `--base-icon-<name>` glyph and never reach a hook) and before the page-wide `window.components.renderIconCallback`. A string is used as is (`''` = no icon); `null` / `undefined` = not mine (the page-wide hook, then the icon-font `<i class=\"cp__icon …\">` / text rule decide). Changing it re-renders the rows." },
   { configKey: 'saveUsageCallback', converter: toFunction(), on: 'none', type: '(ctx: { entry: UsageEntry }) => void | Promise<void>',
     description: 'Upsert one favorite/recent entry (`ctx.entry`, by `entry.key`) — called on every use and every star toggle when `loadUsageCallback` is set.' },
   { configKey: 'loadStateCallback', converter: toFunction(), on: 'update', type: 'LoadStateCallback<PaletteUsageState>',
@@ -634,6 +637,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
       this.#applyLabels();
       this.#renderer.invalidate();
     }
+    if ('renderIconCallback' in partial) this.#renderer.invalidate(); // item icons are drawn into the rows
     if ('size' in partial) this.#applySize();
     if ('customStyles' in partial || 'getCustomStylesCallback' in partial) this.#customStyles?.refresh();
     if ('presentation' in partial) this.#applyPresentation(getEnvironment());
@@ -923,6 +927,7 @@ export interface CommandPaletteConfig {
   loadUsageCallback: LoadUsageCallback | null;
   renderFeedbackCallback: RenderFeedbackCallback | null;
   renderLoadingCallback: RenderLoaderCallback | null;
+  renderIconCallback: RenderIconCallback | null;
   saveUsageCallback: SaveUsageCallback | null;
   loadStateCallback: LoadStateCallback<PaletteUsageState> | null;
   saveStateCallback: SaveStateCallback<PaletteUsageState> | null;
