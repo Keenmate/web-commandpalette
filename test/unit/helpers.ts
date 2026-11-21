@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { CommandPaletteEngine, type Effect, type CommandPaletteEngineHost } from '../../src/palette';
+import { CommandPaletteEngine, type Effect, type CommandPaletteEngineHost, type CommandPaletteEngineOptions } from '../../src/palette';
 import { UsageStore } from '../../src/usage';
 import type { TranslateCallback } from '@keenmate/web-components-core/locale';
 import type { SearchRules } from '../../src/helpers/filter';
@@ -38,7 +38,9 @@ export interface Harness {
   m: CommandPaletteEngine;
   effects: TestEffect[];
   changed: ReturnType<typeof vi.fn>;
-  host: CommandPaletteEngineHost & { state: HostState };
+  host: CommandPaletteEngineHost;
+  /** The options the engine was built with. */
+  options: Partial<CommandPaletteEngineOptions>;
   /** The in-memory favorites/recents store (when `usage: true`). */
   store: UsageStore | null;
   /** What the store last persisted. */
@@ -64,7 +66,7 @@ interface HostState {
   translateCallback: TranslateCallback | null;
   /** The element the engine renders for (`host.element()`; none = standalone). */
   element: Element | null;
-  /** The `locale` host option (unset = the engine's default). */
+  /** The `locale` option (unset = the engine's default). */
   locale?: string | null;
 }
 
@@ -92,30 +94,31 @@ export function harness(over: Partial<HostState> = {}): Harness {
   const store = state.usage
     ? new UsageStore({ load: () => [], save: (entry) => { saved.push(entry); } }, () => m?.usageChanged())
     : null;
-  const host = {
-    state,
-    commands: () => state.commands,
-    contexts: () => state.contexts,
-    searchCallback: () => state.search,
-    getStepOptionsCallback: () => state.stepOptions,
-    display: () => state.display,
-    pageSize: () => state.pageSize,
-    searchDebounce: () => state.debounce,
-    searchBehavior: () => state.searchRules.behavior,
-    searchMatch: () => state.searchRules.match,
-    labels: () => state.labels,
-    translateCallback: () => state.translateCallback,
+  const options: Partial<CommandPaletteEngineOptions> = {
+    commands: state.commands,
+    contexts: state.contexts,
+    searchCallback: state.search,
+    getStepOptionsCallback: state.stepOptions,
+    display: state.display,
+    pageSize: state.pageSize,
+    searchDebounce: state.debounce,
+    searchBehavior: state.searchRules.behavior,
+    searchMatch: state.searchRules.match,
+    labels: state.labels,
+    translateCallback: state.translateCallback,
+    locale: state.locale,
+    usage: store,
+    maxRecentCount: state.maxRecentCount,
+  };
+  const host: CommandPaletteEngineHost = {
     element: () => state.element,
-    locale: () => state.locale,
-    usage: () => store,
-    maxRecentCount: () => state.maxRecentCount,
     changed: () => changed(),
     effect: (e: Effect) => {
       effects.push(e.type === 'action' ? { type: 'action', commandId: e.command.id, selections: e.selections } : e);
     },
   };
-  m = new CommandPaletteEngine(host);
-  return { m, effects, changed, host, store, saved };
+  m = new CommandPaletteEngine(host, options);
+  return { m, effects, changed, host, options, store, saved };
 }
 
 /** Flush pending promise callbacks. */

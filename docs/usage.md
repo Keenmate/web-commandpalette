@@ -527,6 +527,13 @@ takes no `renderIconCallback` / `renderLoadingCallback`. Feed it keys and text; 
 `changed()` after every state change and `effect()` for the outcome (`select` a result, `action` a
 finished command, `close`).
 
+**Two arguments:** `new CommandPaletteEngine(host, options)` — `host` holds the hooks the engine calls
+back (`changed`, `effect`, optional `context` / `element` / `error`); `options` holds the settings and the
+data (`commands`, `contexts`, the callbacks, `pageSize`, `labels`, …). A missing option takes the element's
+default. Change settings later with `engine.setOptions(partial)` (merges, applies what the partial names —
+an `undefined` key goes back to its default); read them with `engine.getOptions()` (the merged options,
+read-only).
+
 ```js
 import { CommandPaletteEngine } from '@keenmate/web-commandpalette';
 
@@ -534,22 +541,23 @@ const input = document.querySelector('#my-input');
 const list = document.querySelector('#my-list');
 
 const engine = new CommandPaletteEngine({
-  commands: () => commands,          // the same Command[] the element takes
-  contexts: () => contexts,
-  searchCallback: () => ({ term, signal }) => fetch(`/search?q=${encodeURIComponent(term)}`, { signal }).then((r) => r.json()),
-  getStepOptionsCallback: () => null,
-  display: () => 'inline',
-  pageSize: () => 8,
-  labels: () => ({ 'placeholders.idle': 'Search or type / for commands' }),
-  translateCallback: () => null,     // or your i18n hook; the page-wide one is asked after it
-  locale: () => 'de',                // numbers in labels; omit / null = the page-wide locale, else the browser
   changed: () => draw(),
   effect: (effect) => {
     if (effect.type === 'select') location.href = effect.result.href;
     if (effect.type === 'action') runMyCommand(effect.command.id, effect.selections);
     // effect.type === 'close': hide your panel. Return false to veto (nothing is recorded).
   },
+}, {
+  commands,                          // the same Command[] the element takes
+  contexts,
+  searchCallback: ({ term, signal }) => fetch(`/search?q=${encodeURIComponent(term)}`, { signal }).then((r) => r.json()),
+  labels: { 'placeholders.idle': 'Search or type / for commands' },
+  translateCallback: null,           // or your i18n hook; the page-wide one is asked after it
+  locale: 'de',                      // numbers in labels; omit / null = the page-wide locale, else the browser
 });
+
+// Later: new data or settings — the current list / search / page is re-applied.
+engine.setOptions({ commands: [...commands, newCommand], pageSize: 12 });
 
 function draw() {
   input.value = engine.input;
@@ -574,25 +582,31 @@ draw();
 // On teardown: engine.dispose() stops timers and in-flight requests.
 ```
 
-**Host options = the element's inputs, same names.** The element passes its own values through, so a
-value written for one works in the other:
+**Options = the element's inputs, same names and defaults.** The element passes its own values through
+(`setOptions` from its `update()`), so a value written for one works in the other:
 
-| Host option | Element input | Notes |
+| Option | Element input | Default / notes |
 |---|---|---|
-| `commands()` / `contexts()` | `commands` / `contexts` | required |
-| `searchCallback()` / `getStepOptionsCallback()` | `searchCallback` / `getStepOptionsCallback` | required (`null` = none) |
-| `display()` / `pageSize()` | `display` / `page-size` | required |
-| `searchDebounce?()` | `search-debounce` | default 150 |
-| `searchBehavior?()` / `searchMatch?()` | `search-behavior` / `search-match` | default `normalized` / `contains` |
-| `labels?()` | `labels` | short or full keys |
-| `translateCallback?()` | `translateCallback` | the engine's own hook, before `window.components.locale.translateCallback` |
-| `locale?()` | `locale` | default `null` (the page-wide locale, else the browser) — the numbers in `engine.labels` (`pageText`, counts) and `ctx.locale`; read live |
-| `usage?()` | `usage-storage`, `storage-key`, `load*` / `save*` callbacks | a `UsageStore` (`new UsageStore(persistence, onChange)`), or `null` |
-| `maxFavoriteCount?()` / `maxRecentCount?()` | `max-favorite-count` / `max-recent-count` | default 3 |
-| `starKey?()` | `favorite-key` | the drawn keycap text (`Ctrl+D`) for `messages.noFavorites` |
-| `context?(fields)` | — | attach your own fields to every callback ctx |
-| `element?()` | — | your UI's element, read once — a throwing `translateCallback` logs under its logger; omit = `null` |
+| `commands` / `contexts` | `commands` / `contexts` | `[]` — the data; pass the array again after an in-place edit |
+| `searchCallback` / `getStepOptionsCallback` | `searchCallback` / `getStepOptionsCallback` | `null` = none |
+| `display` / `pageSize` | `display` / `page-size` | `inline` / 8 |
+| `searchDebounce` | `search-debounce` | 150 |
+| `searchBehavior` / `searchMatch` | `search-behavior` / `search-match` | `normalized` / `contains` |
+| `labels` | `labels` | `null`; short or full keys |
+| `translateCallback` | `translateCallback` | `null`; the engine's own hook, before `window.components.locale.translateCallback` |
+| `locale` | `locale` | `null` (the page-wide locale, else the browser) — the numbers in `engine.labels` (`pageText`, counts) and `ctx.locale` |
+| `usage` | `usage-storage`, `storage-key`, `load*` / `save*` callbacks | `null` = off; a `UsageStore` (`new UsageStore(persistence, () => engine.usageChanged())`) |
+| `maxFavoriteCount` / `maxRecentCount` | `max-favorite-count` / `max-recent-count` | 3 |
+| `starKey` | `favorite-key` | `Ctrl+D` — the drawn keycap text for `messages.noFavorites` |
+
+| Host hook | Element | Notes |
+|---|---|---|
+| `context?(fields)` | `withContext` | attach your own fields to every callback ctx |
+| `element?()` | the element | your UI's element, read once — a throwing `translateCallback` logs under its logger; omit = `null` |
 | `effect(effect)` / `changed()` / `error?()` | `before*Callback`s, events, close | yours to perform |
+
+`engine.usageChanged()` tells the engine the store's entries changed (the store's `onChange`); it is data,
+not a setting.
 
 Not engine options (they draw or bind DOM — your UI's job): `renderIconCallback`,
 `renderLoadingCallback`, `renderFeedbackCallback`, `customStyles` / `getCustomStylesCallback`,

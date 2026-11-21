@@ -52,15 +52,78 @@ import type {
 export const PAGE_STEP = 8;
 
 /**
- * What the engine needs from its host — your UI, or `<web-command-palette>` (which passes its inputs through).
- * Read live on every use. Option names match the element's inputs (`commands`, `contexts`, `searchCallback`,
- * `labels`, `translateCallback`, `locale`, `pageSize`, `searchDebounce`, …), so the same values work in both.
+ * The engine's SETTINGS — `new CommandPaletteEngine(host, options)`, then `engine.setOptions(partial)` /
+ * `engine.getOptions()`. Names (and defaults, `ENGINE_DEFAULTS`) match the element's inputs, so the same values
+ * work in both; `<web-command-palette>` passes its inputs through `setOptions` from its `update()`.
+ */
+export interface CommandPaletteEngineOptions {
+  /** `commands` — the same `Command[]` the element takes. Default `[]`. */
+  commands: readonly Command[];
+  /** `contexts` — the search contexts. Default `[]`. */
+  contexts: readonly Context[];
+  /** `searchCallback` — context + global search (`null` = none). */
+  searchCallback: SearchCallback | null;
+  /** `getStepOptionsCallback` — a step's options when the step has no own callback (`null` = none). */
+  getStepOptionsCallback: StepOptionsCallback | null;
+  /** `display` — `inline` (default) or `tokens`. */
+  display: Display;
+  /** `page-size` — rows per search page (default 8). */
+  pageSize: number;
+  /** `search-debounce`: ms before a typed term reaches `searchCallback` / a live step's options (default 150). */
+  searchDebounce: number;
+  /** `search-behavior` for client-side filtering + highlighting (default `normalized`). */
+  searchBehavior: SearchBehavior;
+  /** `search-match` for client-side filtering + highlighting (default `contains`). */
+  searchMatch: SearchMatch;
+  /**
+   * The instance `labels` (short keys `labels.pageOf` or full keys `web-command-palette.labels.pageOf`), the
+   * same object the element's `labels` input takes. The engine resolves its own texts (`placeholder`,
+   * `contextText`, `emptyText`, `pageText`, the `lastUsed` badge) through core `createLabels`: these →
+   * `translateCallback` → `window.components.locale.translateCallback` → the page dictionary → English.
+   */
+  labels: Partial<CommandPaletteLabels> | null;
+  /** This palette's own translation hook (core `TranslateCallback`), asked before the page-wide one; `null` = not mine. */
+  translateCallback: TranslateCallback | null;
+  /**
+   * `locale`: BCP-47 locale for the numbers in labels (`{count}` / `{page}` / `{total}`) and `translateCallback`'s
+   * `ctx.locale`. Default `null` (the page-wide `window.components.locale`, else the browser).
+   */
+  locale: string | null;
+  /** Favorites/recents store (`new UsageStore(persistence, () => engine.usageChanged())`), or `null` = off (default). */
+  usage: UsageStore | null;
+  /** `max-recent-count` — recent entries on the home screen (default 3). */
+  maxRecentCount: number;
+  /** `max-favorite-count` — favorites on the home screen (default 3). */
+  maxFavoriteCount: number;
+  /** The star shortcut's keycap text for `messages.noFavorites` (the element: its `favorite-key` drawn). Default `Ctrl+D`. */
+  starKey: string;
+}
+
+/** The engine defaults — the element's input defaults (`ENGINE_DEFAULTS`, C-CA-37) + the data / hook options. */
+const ENGINE_OPTION_DEFAULTS: Readonly<CommandPaletteEngineOptions> = Object.freeze({
+  commands: Object.freeze([]) as readonly Command[],
+  contexts: Object.freeze([]) as readonly Context[],
+  searchCallback: null,
+  getStepOptionsCallback: null,
+  display: ENGINE_DEFAULTS.display,
+  pageSize: ENGINE_DEFAULTS.pageSize,
+  searchDebounce: ENGINE_DEFAULTS.searchDebounce,
+  searchBehavior: ENGINE_DEFAULTS.searchBehavior,
+  searchMatch: ENGINE_DEFAULTS.searchMatch,
+  labels: null,
+  translateCallback: null,
+  locale: ENGINE_DEFAULTS.locale,
+  usage: null,
+  maxRecentCount: ENGINE_DEFAULTS.maxRecentCount,
+  maxFavoriteCount: ENGINE_DEFAULTS.maxFavoriteCount,
+  starKey: 'Ctrl+D',
+});
+
+/**
+ * The engine's HOOKS — what it calls back, not settings (those are {@link CommandPaletteEngineOptions}):
+ * your UI, or `<web-command-palette>`.
  */
 export interface CommandPaletteEngineHost {
-  commands(): readonly Command[];
-  contexts(): readonly Context[];
-  searchCallback(): SearchCallback | null;
-  getStepOptionsCallback(): StepOptionsCallback | null;
   /**
    * Attach the component context (`controller`, `element`, presentation) to a
    * callback ctx, in place. The element supplies it; a standalone host may omit
@@ -72,36 +135,6 @@ export interface CommandPaletteEngineHost {
    * `translateCallback` under its logger and reads its `lang` context. A standalone UI omits it (`null`).
    */
   element?(): Element | null;
-  display(): Display;
-  pageSize(): number;
-  /** `search-debounce`: ms before a typed term reaches `searchCallback` / a live step's options (default 150). */
-  searchDebounce?(): number;
-  /** `search-behavior` for client-side filtering + highlighting (default `normalized`). */
-  searchBehavior?(): SearchBehavior;
-  /** `search-match` for client-side filtering + highlighting (default `contains`). */
-  searchMatch?(): SearchMatch;
-  /**
-   * The instance `labels` (short keys `labels.pageOf` or full keys `web-command-palette.labels.pageOf`), the
-   * same object the element's `labels` input takes. The engine resolves its own texts (`placeholder`,
-   * `contextText`, `emptyText`, `pageText`, the `lastUsed` badge) through core `createLabels`: these →
-   * `translateCallback` → `window.components.locale.translateCallback` → the page dictionary → English.
-   */
-  labels?(): Partial<CommandPaletteLabels> | null | undefined;
-  /** This palette's own translation hook (core `TranslateCallback`), asked before the page-wide one; `null` = not mine. */
-  translateCallback?(): TranslateCallback | null | undefined;
-  /**
-   * `locale`: BCP-47 locale for the numbers in labels (`{count}` / `{page}` / `{total}`) and `translateCallback`'s
-   * `ctx.locale`. Default `ENGINE_DEFAULTS.locale` (`null` = the page-wide `window.components.locale`, else the browser).
-   */
-  locale?(): string | null | undefined;
-  /** Favorites/recents store, or null when disabled. */
-  usage?(): UsageStore | null;
-  /** How many recent entries the home screen shows. */
-  maxRecentCount?(): number;
-  /** How many favorites the home screen shows. */
-  maxFavoriteCount?(): number;
-  /** The star shortcut's keycap text (for `labels.noFavorites`). */
-  starKey?(): string;
   /** State changed — re-render. */
   changed(): void;
   /**
@@ -120,6 +153,16 @@ export type Effect =
   /** A command ran: immediately (no steps) or after the wizard's last answer. */
   | { type: 'action'; command: Command; selections: Selection[] }
   | { type: 'close' };
+
+/** Merge `partial` into `target` in place; an `undefined` value resets that key to its default. */
+function mergeOptions(target: CommandPaletteEngineOptions, partial: Partial<CommandPaletteEngineOptions>): CommandPaletteEngineOptions {
+  const out = target as unknown as Record<string, unknown>;
+  for (const [key, value] of Object.entries(partial)) {
+    if (!(key in ENGINE_OPTION_DEFAULTS)) continue;
+    out[key] = value === undefined ? (ENGINE_OPTION_DEFAULTS as unknown as Record<string, unknown>)[key] : value;
+  }
+  return target;
+}
 
 /** The host's answer to {@link CommandPaletteEngineHost.effect}: `false` = vetoed. */
 export type EffectOutcome = boolean | void | PromiseLike<boolean | void>;
@@ -348,14 +391,22 @@ export class CommandPaletteEngine {
    */
   readonly labels: PaletteLabels;
 
-  constructor(host: CommandPaletteEngineHost) {
+  /** The merged settings (defaults ← constructor options ← every `setOptions`). */
+  #options: CommandPaletteEngineOptions;
+
+  /**
+   * @param host    the hooks (`changed`, `effect`, optional `context` / `element` / `error`) — not settings.
+   * @param options the settings; a missing (or `undefined`) key takes the element's default.
+   */
+  constructor(host: CommandPaletteEngineHost, options: Partial<CommandPaletteEngineOptions> = {}) {
     this.#host = host;
+    this.#options = mergeOptions({ ...ENGINE_OPTION_DEFAULTS }, options);
     // The element when there is one (its logger, its `lang`); standalone `null` — the tag and the own
     // `translateCallback` come as options either way, so the resolution order is the same.
-    this.labels = createLabels(host.element?.() ?? null, DEFAULT_LABELS, () => host.labels?.() ?? null, {
+    this.labels = createLabels(host.element?.() ?? null, DEFAULT_LABELS, () => this.#options.labels, {
       tag: 'web-command-palette',
-      getTranslateCallback: () => host.translateCallback?.() ?? null,
-      getLocale: () => host.locale?.() ?? ENGINE_DEFAULTS.locale,
+      getTranslateCallback: () => this.#options.translateCallback,
+      getLocale: () => this.#options.locale,
     });
     this.#runner = createAsyncRunner({
       debounceMs: () => this.#debounce,
@@ -372,6 +423,36 @@ export class CommandPaletteEngine {
     this.#home();
   }
 
+  // ── options ───────────────────────────────────────────────────────────────
+
+  /** The merged settings, read-only (the live object — change them through {@link setOptions}). */
+  getOptions(): Readonly<CommandPaletteEngineOptions> {
+    return this.#options;
+  }
+
+  /**
+   * Merge `partial` into the current settings and apply what it names: `commands` / `contexts` / the home
+   * limits rebuild the current list, `search-behavior` / `search-match` re-run the current search, `page-size`
+   * re-pages, `display` re-lays the wizard step, `usage` re-reads the favorites / recents. A key set to
+   * `undefined` goes back to its default. Every named key counts as changed (the same array passed again
+   * after an in-place edit refreshes too); callbacks and `search-debounce` apply on their next use.
+   */
+  setOptions(partial: Partial<CommandPaletteEngineOptions>): void {
+    const has = (k: keyof CommandPaletteEngineOptions): boolean => k in partial;
+    mergeOptions(this.#options, partial);
+    let isApplied = false;
+    if (has('commands') || has('contexts') || has('maxRecentCount') || has('maxFavoriteCount') || has('starKey')) {
+      this.#refresh();
+      isApplied = true;
+    }
+    if (has('usage')) { this.usageChanged(); isApplied = true; }
+    if (has('display')) { this.#displayChanged(); isApplied = true; }
+    if (has('pageSize')) { this.#pageSizeChanged(); isApplied = true; }
+    if (has('searchBehavior') || has('searchMatch')) { this.#searchRulesChanged(); isApplied = true; }
+    // Labels / locale / translateCallback are resolved when drawn — just re-render.
+    if (!isApplied && (has('labels') || has('translateCallback') || has('locale'))) this.#changed();
+  }
+
   // ── host helpers ──────────────────────────────────────────────────────────
 
   /** A callback ctx with the component context attached (when the host supplies it). */
@@ -386,7 +467,7 @@ export class CommandPaletteEngine {
 
   /** The commands to offer: the host's list minus hidden ones (`isVisible` / `getIsVisibleCallback`). */
   #commands(): Command[] {
-    return this.#host.commands().filter((c) => this.#resolve(c).isVisible);
+    return this.#options.commands.filter((c) => this.#resolve(c).isVisible);
   }
 
   /** Command rows (resolved) for a list of commands. */
@@ -458,7 +539,7 @@ export class CommandPaletteEngine {
 
   /** Tokens-display fragments, or null when the tokens row is not in use. */
   get tokens(): TokenView[] | null {
-    if (this.mode !== 'command-step' || this.#host.display() !== 'tokens' || !this.command) return null;
+    if (this.mode !== 'command-step' || this.#options.display !== 'tokens' || !this.command) return null;
     const out: TokenView[] = [{ type: 'command', label: this.command.trigger }];
     this.selections.forEach((sel, index) => {
       const prompt = this.#stepById(sel.stepId)?.prompt?.trim();
@@ -534,13 +615,13 @@ export class CommandPaletteEngine {
 
   /** `search-debounce` (default 150 ms). */
   #searchDebounce(): number {
-    return this.#host.searchDebounce?.() ?? ENGINE_DEFAULTS.searchDebounce;
+    return this.#options.searchDebounce;
   }
 
   #rules(): SearchRules {
     return {
-      behavior: this.#host.searchBehavior?.() ?? ENGINE_DEFAULTS.searchBehavior,
-      match: this.#host.searchMatch?.() ?? ENGINE_DEFAULTS.searchMatch,
+      behavior: this.#options.searchBehavior,
+      match: this.#options.searchMatch,
     };
   }
 
@@ -558,15 +639,15 @@ export class CommandPaletteEngine {
   }
 
   /** `search-behavior` / `search-match` changed — re-run the current search under the new rules. */
-  searchRulesChanged(): void {
+  #searchRulesChanged(): void {
     this.#regex.reset();
     this.#highlightQuery = null;
     if (this.mode === 'idle') this.#changed();
     else this.setInput(this.input);
   }
 
-  /** commands/contexts were replaced — refresh views derived from them. */
-  refresh(): void {
+  /** commands / contexts / the home limits changed — refresh views derived from them. */
+  #refresh(): void {
     if (this.mode === 'idle') { this.#home(); this.#changed(); }
     else if (this.mode === 'command-list' || this.mode === 'context-list') this.setInput(this.input);
   }
@@ -584,7 +665,7 @@ export class CommandPaletteEngine {
         if (sameKey >= 0) this.activeIndex = sameKey;
       }
     } else {
-      const store = this.#host.usage?.();
+      const store = this.#options.usage;
       for (const item of this.#allResults) {
         if (item.favorite !== undefined && item.key) item.favorite = store?.isFavorite(item.key) ?? false;
       }
@@ -598,9 +679,9 @@ export class CommandPaletteEngine {
    * first visible row on screen. Other modes don't paginate; a pending provider call
    * pages its results with the new size when it lands.
    */
-  pageSizeChanged(): void {
+  #pageSizeChanged(): void {
     if (this.mode !== 'context-search' && this.mode !== 'global-search') return;
-    const size = Math.max(1, this.#host.pageSize());
+    const size = Math.max(1, this.#options.pageSize);
     const first = this.items.length ? this.#allResults.indexOf(this.items[0]!) : 0;
     this.totalPages = Math.max(1, Math.ceil(this.#allResults.length / size));
     this.#showPage(Math.floor(Math.max(0, first) / size) + 1);
@@ -608,7 +689,7 @@ export class CommandPaletteEngine {
   }
 
   /** `display` changed — re-lay the current step's input/tokens, keeping the typed query. */
-  displayChanged(): void {
+  #displayChanged(): void {
     if (this.mode !== 'command-step') return;
     this.#layStepInput(this.#stepQuery);
     this.#changed();
@@ -620,7 +701,7 @@ export class CommandPaletteEngine {
   setInput(value: string): void {
     this.input = value;
     if (this.mode === 'command-step' && this.command) {
-      if (this.#host.display() === 'inline') {
+      if (this.#options.display === 'inline') {
         const prefix = this.#stepPrefix();
         if (!value.startsWith(prefix)) return this.#leave(value);
         this.#onStepQuery(value.slice(prefix.length));
@@ -685,7 +766,7 @@ export class CommandPaletteEngine {
     this.highlight = '';
     this.isLoading = false;
     this.emptyLabel = null;
-    const store = this.#host.usage?.() ?? null;
+    const store = this.#options.usage ?? null;
     // Home rows are capped and one-line; the full lists live behind Ctrl/⌘+F / R.
     const capped = (view: UsageView, limit: number): ViewItem[] => {
       const all = this.#usageItems(view, true);
@@ -695,16 +776,16 @@ export class CommandPaletteEngine {
     this.homeMore = { favorites: 0, recent: 0 };
     const star = <T extends ViewItem>(item: T): T => (store && item.key ? { ...item, favorite: store.isFavorite(item.key) } : item);
     this.#setItems([
-      ...(store ? capped('favorites', this.#host.maxFavoriteCount?.() ?? ENGINE_DEFAULTS.maxFavoriteCount) : []),
-      ...(store ? capped('recent', this.#host.maxRecentCount?.() ?? ENGINE_DEFAULTS.maxRecentCount) : []),
+      ...(store ? capped('favorites', this.#options.maxFavoriteCount) : []),
+      ...(store ? capped('recent', this.#options.maxRecentCount) : []),
       ...this.#commandItems(this.#commands(), 'commands').map(star),
-      ...this.#host.contexts().map((c) => star(contextItem(c, 'contexts'))),
+      ...this.#options.contexts.map((c) => star(contextItem(c, 'contexts'))),
     ]);
   }
 
   /** Rows for every visible favorite / recent entry. `compact` = one-line home rows (no meta). */
   #usageItems(view: UsageView, compact: boolean): ViewItem[] {
-    const store = this.#host.usage?.();
+    const store = this.#options.usage;
     if (!store) return [];
     const list = view === 'favorites' ? store.favorites() : store.recent(Number.MAX_SAFE_INTEGER);
     return list.map((e) => this.#usageItem(e, view, compact)).filter((i): i is ViewItem => !!i);
@@ -726,7 +807,7 @@ export class CommandPaletteEngine {
         return { ...base, ...commandState(r), title: e.label, meta: meta(r.text) };
       }
       case 'context': {
-        const c = this.#host.contexts().find((x) => x.id === e.contextId);
+        const c = this.#options.contexts.find((x) => x.id === e.contextId);
         return c ? { ...base, title: c.text, meta: meta(c.description), icon: c.icon, keys: [c.trigger] } : null;
       }
       case 'result':
@@ -741,7 +822,7 @@ export class CommandPaletteEngine {
    * home too, so the shortcut toggles. No-op when favorites are off.
    */
   showUsage(view: UsageView): void {
-    if (!this.#host.usage?.()) return;
+    if (!this.#options.usage) return;
     if (this.usageView === view) {
       this.reset();
       return;
@@ -764,7 +845,7 @@ export class CommandPaletteEngine {
     this.emptyLabel = all.length
       ? { key: 'messages.noResults' }
       : view === 'favorites'
-        ? { key: 'messages.noFavorites', params: { key: this.#host.starKey?.() ?? 'Ctrl+D' } }
+        ? { key: 'messages.noFavorites', params: { key: this.#options.starKey } }
         : { key: 'messages.noRecent' };
     this.#setItems(q ? all.filter((i) => matchesAny([i.title, i.meta], this.#query(q))) : all);
   }
@@ -774,7 +855,7 @@ export class CommandPaletteEngine {
   /** Star / unstar row `index` (default: the active row). No-op for rows that can't be starred. */
   toggleFavorite(index = this.activeIndex): void {
     const item = this.items[index];
-    const store = this.#host.usage?.();
+    const store = this.#options.usage;
     if (!item || item.favorite === undefined || !store) return;
     const target = this.#targetOf(item);
     if (!target) return;
@@ -796,7 +877,7 @@ export class CommandPaletteEngine {
   }
 
   #record(target: UsageTarget): void {
-    this.#host.usage?.()?.record(target);
+    this.#options.usage?.record(target);
   }
 
   // ── commands ──────────────────────────────────────────────────────────────
@@ -818,7 +899,7 @@ export class CommandPaletteEngine {
 
   /** Mark starrable rows with their current star state (only when favorites are on). */
   #starred(items: ViewItem[]): ViewItem[] {
-    const store = this.#host.usage?.();
+    const store = this.#options.usage;
     if (!store) return items;
     for (const item of items) if (item.key) item.favorite = store.isFavorite(item.key);
     return items;
@@ -944,7 +1025,7 @@ export class CommandPaletteEngine {
   }
 
   #layStepInput(query: string): void {
-    if (this.#host.display() === 'inline') {
+    if (this.#options.display === 'inline') {
       const prefix = this.#stepPrefix();
       this.input = prefix + query;
       this.lockedLength = prefix.length;
@@ -1015,7 +1096,7 @@ export class CommandPaletteEngine {
   /** `isLive`: the result IS the list (search step); else it's the full set to filter. */
   #fetchStepOptions(query: string, isLive: boolean, debounceMs = 0): void {
     const step = this.step!;
-    const cb = step.getOptionsCallback ?? this.#host.getStepOptionsCallback();
+    const cb = step.getOptionsCallback ?? this.#options.getStepOptionsCallback;
     const command = this.command!;
     if (!cb) {
       this.#stepOptions = [];
@@ -1117,7 +1198,7 @@ export class CommandPaletteEngine {
   #onContextInput(v: string): void {
     const space = v.indexOf(' ');
     if (space >= 0) {
-      const exact = findByTrigger(this.#host.contexts(), v.slice(0, space));
+      const exact = findByTrigger(this.#options.contexts, v.slice(0, space));
       if (exact) return this.#enterContext(exact, v.slice(space + 1).trimStart());
     }
     const needle = v.slice(1).trim();
@@ -1125,7 +1206,7 @@ export class CommandPaletteEngine {
     this.highlight = needle;
     this.isLoading = false;
     this.emptyLabel = { key: 'messages.noResults' };
-    this.#setItems(this.#starred(filterContexts(this.#host.contexts(), this.#query(needle)).map((c) => contextItem(c))));
+    this.#setItems(this.#starred(filterContexts(this.#options.contexts, this.#query(needle)).map((c) => contextItem(c))));
   }
 
   /** Enter scoped search: the input becomes `"<shortcut> "` (locked) + `query`. */
@@ -1172,9 +1253,9 @@ export class CommandPaletteEngine {
     const query = this.#query(q);
     const local = this.#starred([
       ...globalMatches(this.#commands(), query).map((c) => globalEntryItem('command', c, this.#resolve(c))),
-      ...globalMatches(this.#host.contexts(), query).map((c) => globalEntryItem('context', c)),
+      ...globalMatches(this.#options.contexts, query).map((c) => globalEntryItem('context', c)),
     ]);
-    if (!this.#host.searchCallback()) {
+    if (!this.#options.searchCallback) {
       this.isLoading = false;
       this.emptyLabel = { key: 'messages.noResults' };
       this.#setResults(local);
@@ -1187,8 +1268,8 @@ export class CommandPaletteEngine {
 
   /** The provider for `scope`: the context's own `search`, else `searchCallback`. */
   #searchFor(scope: Scope, term: string): ((signal: AbortSignal) => unknown) | null {
-    const own = scope !== 'global' ? this.#host.contexts().find((c) => c.id === scope.contextId)?.searchCallback : undefined;
-    const cb = own ?? this.#host.searchCallback();
+    const own = scope !== 'global' ? this.#options.contexts.find((c) => c.id === scope.contextId)?.searchCallback : undefined;
+    const cb = own ?? this.#options.searchCallback;
     if (!cb) return null;
     return (signal) => cb(this.#ctx(withSearchContext({ scope, term }, signal)) as SearchContext);
   }
@@ -1254,12 +1335,12 @@ export class CommandPaletteEngine {
   #setResults(all: ViewItem[]): void {
     this.#allResults = clusterByGroup(all);
     this.totalResults = all.length;
-    this.totalPages = Math.max(1, Math.ceil(all.length / Math.max(1, this.#host.pageSize())));
+    this.totalPages = Math.max(1, Math.ceil(all.length / Math.max(1, this.#options.pageSize)));
     this.#showPage(1);
   }
 
   #showPage(page: number): void {
-    const size = Math.max(1, this.#host.pageSize());
+    const size = Math.max(1, this.#options.pageSize);
     this.page = Math.min(Math.max(1, page), this.totalPages);
     this.items = this.#allResults.slice((this.page - 1) * size, this.page * size);
     this.activeIndex = this.items.length ? 0 : -1;
@@ -1363,7 +1444,7 @@ export class CommandPaletteEngine {
         return this.#enterCommand(c, '', e.kind === 'run' ? e.selections : undefined);
       }
       case 'context': {
-        const c = this.#host.contexts().find((x) => x.id === e.contextId);
+        const c = this.#options.contexts.find((x) => x.id === e.contextId);
         if (c) this.#enterContext(c, '');
         return false;
       }

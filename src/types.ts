@@ -530,7 +530,7 @@ export interface ResultSelectEventDetail extends PaletteContext {
 
 /**
  * Every input default, ONE source (rulebook C-CA-37): `<web-command-palette>`'s input rows read their
- * `default` from here, and `CommandPaletteEngine` / the element's engine host fall back to the same values, so
+ * `default` from here, and `CommandPaletteEngine`'s option defaults are built from the same values, so
  * a standalone engine behaves exactly like the element. `locale: null` = unset — the page-wide
  * `window.components.locale`, else the browser language (core `resolveLocale`; `'auto'` / `''` mean the same).
  */

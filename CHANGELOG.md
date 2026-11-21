@@ -11,6 +11,23 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Changed — BREAKING — `CommandPaletteEngine` takes settings one way (rulebook C-CA-39, 2026-11-21)
+
+- **BREAKING (no alias):** `new CommandPaletteEngine(host)` with one host function per setting →
+  `new CommandPaletteEngine(host, options)`. `host` keeps only the hooks (`changed`, `effect`, `context?`,
+  `element?`, `error?`); every setting and the data are plain `options` (same names, defaults from the element's
+  inputs): `commands`, `contexts`, `searchCallback`, `getStepOptionsCallback`, `display`, `pageSize`,
+  `searchDebounce`, `searchBehavior`, `searchMatch`, `labels`, `translateCallback`, `locale`, `usage`,
+  `maxRecentCount`, `maxFavoriteCount`, `starKey`. Before `{ commands: () => list, pageSize: () => 8, … }`;
+  after `new CommandPaletteEngine({ changed, effect }, { commands: list, pageSize: 8 })`.
+- **Added:** `engine.setOptions(partial)` (merges; re-applies what it names — the list, the wizard step, paging,
+  the search; `undefined` = back to the default) and `engine.getOptions()` (the merged options, read-only).
+  Exported type `CommandPaletteEngineOptions`.
+- **BREAKING (removed):** `engine.refresh()`, `displayChanged()`, `pageSizeChanged()`, `searchRulesChanged()` —
+  `setOptions` applies those changes. `usageChanged()` stays (the `UsageStore`'s data notification).
+- The element passes its inputs through `setOptions` (`searchCallback`, `getStepOptionsCallback`,
+  `search-debounce` now react on `update`); no attribute / property / event changes.
+
 ### Added — `locale` input (core `/locale`, rulebook C-CA-38, 2026-11-21)
 
 - **Added:** `locale` input (attribute + property): BCP-47 locale for the numbers in labels — `{count}` /

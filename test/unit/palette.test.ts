@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { COMMANDS, CONTEXTS, harness, titles } from './helpers';
 import type { Command, Option, Result, SearchContext } from '../../src/types';
+import { CommandPaletteEngine } from '../../src/palette';
+import { ENGINE_DEFAULTS } from '../../src/types';
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
@@ -201,7 +203,7 @@ describe('command steps (wizard)', () => {
   });
 
   it('tokens display: input holds only the query; tokens carry the sentence', () => {
-    const { m, host } = harness({ display: 'tokens', stepOptions: () => [{ text: 'Production', value: 'prod' }] });
+    const { m } = harness({ display: 'tokens', stepOptions: () => [{ text: 'Production', value: 'prod' }] });
     m.setInput('/deploy ');
     expect(m.input).toBe('');
     expect(m.lockedLength).toBe(0);
@@ -216,8 +218,7 @@ describe('command steps (wizard)', () => {
     expect(m.step?.id).toBe('env');
     expect(m.selections).toEqual([]);
     // switching display re-lays the input
-    host.state.display = 'inline';
-    m.displayChanged();
+    m.setOptions({ display: 'inline' });
     expect(m.input).toBe('/deploy to ');
   });
 
@@ -437,7 +438,7 @@ describe('global search', () => {
     expect(search).toHaveBeenCalledTimes(1);
   });
 
-  it('pageSizeChanged re-pages the current results, keeping the first visible row (NOTES #5)', async () => {
+  it('setOptions({ pageSize }) re-pages the current results, keeping the first visible row (NOTES #5)', async () => {
     const hits = Array.from({ length: 20 }, (_, i) => ({ id: String(i), title: `Hit ${i}` }));
     const search = vi.fn(() => hits);
     const h = harness({ search, commands: [], contexts: [], pageSize: 8 });
@@ -445,12 +446,10 @@ describe('global search', () => {
     m.setInput('hit');
     await vi.advanceTimersByTimeAsync(150);
     m.turnPage(1); // rows 8..15
-    h.host.state.pageSize = 5;
-    m.pageSizeChanged();
+    m.setOptions({ pageSize: 5 });
     expect(m.pageText).toBe('Page 2 of 4 · 20 results');
     expect(titles(m)).toEqual(['Hit 5', 'Hit 6', 'Hit 7', 'Hit 8', 'Hit 9']);
-    h.host.state.pageSize = 50;
-    m.pageSizeChanged();
+    m.setOptions({ pageSize: 50 });
     expect(m.pageText).toBeNull();
     expect(m.items).toHaveLength(20);
     expect(search).toHaveBeenCalledTimes(1);
@@ -475,11 +474,40 @@ describe('misc', () => {
     expect(effects).toEqual([{ type: 'close' }]);
   });
 
-  it('refresh() rebuilds the home screen after commands change', () => {
+  it('setOptions({ commands }) rebuilds the home screen', () => {
     const h = harness();
-    h.host.state.commands = [COMMANDS[2]];
-    h.m.refresh();
+    h.m.setOptions({ commands: [COMMANDS[2]] });
     expect(titles(h.m)).toEqual(['Sign out', 'Products', 'Users']);
+  });
+});
+
+describe('options (C-CA-39)', () => {
+  it('missing keys take the element defaults (ENGINE_DEFAULTS); getOptions is the merged, read-only view', () => {
+    const m = new CommandPaletteEngine({ changed: () => {}, effect: () => {} }, { pageSize: 4 });
+    const o = m.getOptions();
+    expect(o.pageSize).toBe(4);
+    expect(o.display).toBe(ENGINE_DEFAULTS.display);
+    expect(o.searchDebounce).toBe(ENGINE_DEFAULTS.searchDebounce);
+    expect(o.maxRecentCount).toBe(ENGINE_DEFAULTS.maxRecentCount);
+    expect(o.locale).toBe(ENGINE_DEFAULTS.locale);
+    expect(o.commands).toEqual([]);
+    expect(o.usage).toBeNull();
+  });
+
+  it('setOptions merges; an undefined key goes back to its default', () => {
+    const { m } = harness({ pageSize: 3 });
+    m.setOptions({ display: 'tokens' });
+    expect(m.getOptions()).toMatchObject({ pageSize: 3, display: 'tokens' });
+    m.setOptions({ pageSize: undefined });
+    expect(m.getOptions().pageSize).toBe(ENGINE_DEFAULTS.pageSize);
+  });
+
+  it('the same commands array passed again after an in-place edit refreshes', () => {
+    const commands = [...COMMANDS];
+    const { m } = harness({ commands });
+    commands.splice(0, 2);
+    m.setOptions({ commands });
+    expect(titles(m)).toEqual(['Sign out', 'Products', 'Users']);
   });
 });
 
@@ -501,16 +529,14 @@ describe('search rules (core /search)', () => {
   });
 
   it('search-behavior / search-match change re-runs the current filter', () => {
-    const { m, host } = harness({ commands: accented });
+    const { m } = harness({ commands: accented });
     m.setInput('/Krumlov');
     expect(titles(m)).toEqual(['Český Krumlov']);
-    host.state.searchRules = { behavior: 'normalized', match: 'starts-with' };
-    m.searchRulesChanged();
+    m.setOptions({ searchBehavior: 'normalized', searchMatch: 'starts-with' });
     expect(titles(m)).toEqual([]);
-    host.state.searchRules = { behavior: 'normalized', match: 'word-starts-with' };
-    m.searchRulesChanged();
+    m.setOptions({ searchBehavior: 'normalized', searchMatch: 'word-starts-with' });
     expect(titles(m)).toEqual(['Český Krumlov']);
-    host.state.searchRules = { behavior: 'exact', match: 'contains' };
+    m.setOptions({ searchBehavior: 'exact', searchMatch: 'contains' });
     m.setInput('/ces');
     expect(titles(m)).toEqual(['Český Krumlov']); // matches the trigger /cesky
     m.setInput('/Čes');

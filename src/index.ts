@@ -9,7 +9,7 @@ export type { Presentation, ResponsiveMap, ResponsiveCallback, ResponsiveContext
 // The DOM-free engine + helpers, to build your own palette UI on (docs/usage.md "Build your own UI",
 // rulebook C-CA-37). The element never exposes its own engine — use `el.controller`.
 export { CommandPaletteEngine, PAGE_STEP } from './palette';
-export type { CommandPaletteEngineHost, Effect, EffectOutcome, ViewItem, TokenView, NavDirection, HomeSection } from './palette';
+export type { CommandPaletteEngineHost, CommandPaletteEngineOptions, Effect, EffectOutcome, ViewItem, TokenView, NavDirection, HomeSection } from './palette';
 export { UsageStore, usageKey, frecency, MAX_RECENT_ENTRIES } from './usage';
 export type { UsagePersistence, UsageTarget } from './usage';
 

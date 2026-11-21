@@ -118,23 +118,23 @@ describe('favorites + recents', () => {
   });
 
   it('entries for commands/contexts the user no longer has are hidden', () => {
-    const { m, store, host } = harness({ usage: true });
+    const { m, store } = harness({ usage: true });
     m.setInput('/signout');
     m.select();
-    host.state.commands = COMMANDS.filter((c) => c.id !== 'signout');
+    m.setOptions({ commands: COMMANDS.filter((c) => c.id !== 'signout') });
     m.reset();
     expect(store!.all()).toHaveLength(1);
     expect(sections(m)).toEqual(['commands', 'contexts']);
   });
 
   it('maxRecentCount caps the Recent section; 0 hides it', () => {
-    const { m, host } = harness({ usage: true, maxRecentCount: 1 });
+    const { m } = harness({ usage: true, maxRecentCount: 1 });
     m.setInput('/signout');
     m.select();
     m.enterContext(CONTEXTS[1]);
     m.reset();
     expect(m.items.filter((i) => i.section === 'recent')).toHaveLength(1);
-    host.state.maxRecentCount = 0;
+    m.setOptions({ maxRecentCount: 0 });
     m.reset();
     expect(sections(m)).toEqual(['commands', 'contexts']);
   });
@@ -177,8 +177,8 @@ describe('compact home + full lists (Ctrl/⌘+F / R)', () => {
   });
 
   it('favorites list: empty hint names the star key; unstarring removes the row', () => {
-    const { m, host } = harness({ usage: true });
-    host.starKey = () => '⌘D';
+    const { m } = harness({ usage: true });
+    m.setOptions({ starKey: '⌘D' });
     m.showUsage('favorites');
     expect(m.items).toEqual([]);
     expect(m.emptyText).toBe('No favorites yet — star a row with ⌘D');

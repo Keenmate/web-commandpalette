@@ -4,7 +4,7 @@ import { DEFAULT_LABELS, ENGINE_DEFAULTS } from '../../src/types';
 import { harness } from './helpers';
 
 /**
- * The engine without the element: its own `labels` / `translateCallback` host options
+ * The engine without the element: its own `labels` / `translateCallback` options
  * resolve the engine's texts (placeholder, context pill, empty state) under core's
  * order — instance labels → own translateCallback → page-wide translateCallback → English.
  */
@@ -26,9 +26,9 @@ describe('engine labels (no element)', () => {
   });
 
   it('labels: an instance label (short or full key) replaces the default', () => {
-    const { m, host } = harness({ labels: { 'placeholders.idle': 'Hledat…' } });
+    const { m } = harness({ labels: { 'placeholders.idle': 'Hledat…' } });
     expect(m.placeholder).toBe('Hledat…');
-    host.state.labels = { 'web-command-palette.labels.scopeCommands': 'Příkazy' };
+    m.setOptions({ labels: { 'web-command-palette.labels.scopeCommands': 'Příkazy' } });
     m.setInput('/');
     expect(m.contextText).toBe('Příkazy');
   });
@@ -54,9 +54,9 @@ describe('engine labels (no element)', () => {
     expect(own).not.toHaveBeenCalledWith(expect.objectContaining({ key: 'web-command-palette.placeholders.idle' }));
   });
 
-  it('is read live: a changed host option applies on the next read', () => {
-    const { m, host } = harness();
-    host.state.translateCallback = upper;
+  it('setOptions: a changed option applies on the next read', () => {
+    const { m } = harness();
+    m.setOptions({ translateCallback: upper });
     expect(m.placeholder).toBe(DEFAULT_LABELS['placeholders.idle'].toUpperCase());
   });
 
@@ -83,13 +83,13 @@ describe('engine locale (no element, C-CA-38)', () => {
     expect(showAll(m)).toContain('1.234');
   });
 
-  it('unset follows window.components.locale.locale; read live', () => {
+  it('unset follows window.components.locale.locale; setOptions applies a new one', () => {
     page().locale = { locale: 'de' };
-    const { m, host } = harness();
+    const { m } = harness();
     expect(showAll(m)).toContain('1.234');
-    host.state.locale = 'en';
+    m.setOptions({ locale: 'en' });
     expect(showAll(m)).toContain('1,234');
-    host.state.locale = 'auto';
+    m.setOptions({ locale: 'auto' });
     expect(showAll(m)).toContain('1.234');
   });
 

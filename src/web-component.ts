@@ -53,7 +53,7 @@ import {
 } from '@keenmate/web-components-core';
 import { runAction } from '@keenmate/web-components-core/actions';
 import type { TranslateCallback } from '@keenmate/web-components-core/locale';
-import { CommandPaletteEngine, type Effect, type EffectOutcome, type CommandPaletteEngineHost, type TokenView } from './palette';
+import { CommandPaletteEngine, type Effect, type EffectOutcome, type CommandPaletteEngineHost, type CommandPaletteEngineOptions, type TokenView } from './palette';
 import { Renderer, chordKeycap, confirmationBodyHtml, createShell, fillConfirmation, type Shell } from './render';
 import { bindGlobalKeys, handleInputKeydown, isSequence, type GlobalKeysHost } from './keyboard';
 import { UsageStore, stateStorePersistence, type UsagePersistence } from './usage';
@@ -103,9 +103,9 @@ const INPUTS: readonly InputDef[] = [
     description: 'BCP-47 locale for the numbers in labels (`{count}` / `{page}` / `{total}` — the results count, the pagination row, the "show all" count), or unset (the page-wide `window.components.locale`, else the browser language). Also the `ctx.locale` of `translateCallback`. A change re-renders the labels in place. UI strings are `labels`.' },
 
   // ── Callbacks (property-only, read live on every call) ───────────────────
-  { configKey: 'searchCallback', converter: toFunction(), on: 'none', type: '(ctx: SearchContext) => Result[] | Promise<Result[]>',
+  { configKey: 'searchCallback', converter: toFunction(), on: 'update', type: '(ctx: SearchContext) => Result[] | Promise<Result[]>',
     description: "Context + global search. `ctx` = core's shared `SearchCallbackContext` (`{ term, signal, entries }`, the same shape as every Keenmate component; `entries` is always empty — the palette has no client-side records behind a search) + `scope` (`'global'` or `{ contextId }`) + `controller` / `element`. Called only for NON-EMPTY terms, debounced; a superseded call's `signal` is aborted and its late result ignored. A context's own `searchCallback` wins for that context." },
-  { configKey: 'getStepOptionsCallback', converter: toFunction(), on: 'none', type: '(ctx: StepOptionsContext) => Option[] | Promise<Option[]>',
+  { configKey: 'getStepOptionsCallback', converter: toFunction(), on: 'update', type: '(ctx: StepOptionsContext) => Option[] | Promise<Option[]>',
     description: 'Options for a command step; `ctx = { commandId, stepId, term, selections, signal }` + `controller` / `element`. A static step is fetched ONCE on entry (term `""`) and filtered client-side; an `isLiveSearch: true` step is called per debounced keystroke. A step with its own `getOptionsCallback` uses that instead.' },
   { configKey: 'beforeActionCallback', converter: toFunction(), on: 'none', type: '(detail: ActionEventDetail) => unknown',
     description: 'Runs before a command fires `action`, with the same detail. Return `false` (async OK) to cancel: no `onClick`, no event, nothing recorded; a wizard steps back to its last answer and the palette stays open.' },
@@ -143,7 +143,7 @@ const INPUTS: readonly InputDef[] = [
     description: 'Search results per page (←/→ to page). Default 8.' },
   { configKey: 'openKey', attribute: 'open-key', converter: toText({ default: ENGINE_DEFAULTS.openKey, isEmptyAllowed: true }), on: 'none',
     description: "Key that toggles the palette together with Ctrl/⌘. Default `k`. Set `''` to disable the global hotkey." },
-  { configKey: 'searchDebounce', attribute: 'search-debounce', converter: toInt({ min: 0, default: ENGINE_DEFAULTS.searchDebounce }), on: 'none',
+  { configKey: 'searchDebounce', attribute: 'search-debounce', converter: toInt({ min: 0, default: ENGINE_DEFAULTS.searchDebounce }), on: 'update',
     description: 'Debounce (ms) before a provider call in global search, context search and `isLiveSearch` steps. Static lists never call a provider.' },
   { configKey: 'searchBehavior', attribute: 'search-behavior', converter: toEnum(['normalized', 'case-insensitive', 'exact'] as const, { default: ENGINE_DEFAULTS.searchBehavior }), on: 'update',
     description: 'How the built-in filter (the `/` and `:` lists, static steps, favorites/recent, the commands/contexts prepended to global search) and the `<mark>` highlight normalize text: `normalized` (default) ignores case and diacritics (`ces` finds `Český`), `case-insensitive` ignores case only, `exact` matches both. Live: re-runs the current search. Not applied to `searchCallback` / `getStepOptionsCallback` (they get the term as typed) or `regex` matching.' },
@@ -267,7 +267,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.#shell = createShell();
     this.#shadow.appendChild(this.#shell.root);
     this.#renderer = new Renderer(this.#shell, this);
-    this.#engine = new CommandPaletteEngine(this.#engineHost());
+    this.#engine = new CommandPaletteEngine(this.#engineHost(), this.#engineOptions());
     this.#globalKeys = {
       isOpen: () => this.#isOpen,
       toggle: () => this.toggle(),
@@ -309,33 +309,46 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     return (this.config.commands as Command[] | undefined) ?? [];
   }
 
+  /** The engine's hooks (not settings — those go through `setOptions`, {@link #engineOptions}). */
   #engineHost(): CommandPaletteEngineHost {
     return {
-      commands: () => this.#commands(),
-      contexts: () => (this.config.contexts as Context[] | undefined) ?? [],
-      searchCallback: () => (this.config.searchCallback as SearchCallback | null) ?? null,
-      getStepOptionsCallback: () => (this.config.getStepOptionsCallback as StepOptionsCallback | null) ?? null,
       context: (fields) => this.withContext(fields),
       element: () => this,
-      display: () => (this.config.display as Display) ?? ENGINE_DEFAULTS.display,
-      pageSize: () => (this.config.pageSize as number) ?? ENGINE_DEFAULTS.pageSize,
-      searchDebounce: () => (this.config.searchDebounce as number) ?? ENGINE_DEFAULTS.searchDebounce,
-      searchBehavior: () => (this.config.searchBehavior as SearchBehavior) ?? ENGINE_DEFAULTS.searchBehavior,
-      searchMatch: () => (this.config.searchMatch as SearchMatch) ?? ENGINE_DEFAULTS.searchMatch,
-      // UI strings (core `/locale`, rulebook D-NC-24) — the engine owns the one resolver (`#engine.labels`):
-      // instance `labels` → `translateCallback` → the page-wide one → page-wide flat
-      // `window.components.locale.labels['web-command-palette.<key>']` → English.
-      labels: () => this.config.labels as Partial<CommandPaletteLabels> | undefined,
-      translateCallback: () => this.config.translateCallback as TranslateCallback | null | undefined,
-      locale: () => this.config.locale as string | null | undefined,
-      usage: () => this.#usage,
-      maxRecentCount: () => (this.config.maxRecentCount as number) ?? ENGINE_DEFAULTS.maxRecentCount,
-      maxFavoriteCount: () => (this.config.maxFavoriteCount as number) ?? ENGINE_DEFAULTS.maxFavoriteCount,
-      starKey: () => chordKeycap(this.#keys().favorite),
       changed: () => this.#render(),
       effect: (effect) => this.#onEffect(effect),
       error: (message, err) => this.log.DATA.error(message, err),
     };
+  }
+
+  /**
+   * The engine options from this element's inputs (all of them, or the ones `partial` names). Same names and
+   * defaults (`ENGINE_DEFAULTS`); `undefined` = the engine's default. UI strings (core `/locale`, rulebook D-NC-24):
+   * the engine owns the one resolver (`#engine.labels`) — instance `labels` → `translateCallback` → the page-wide
+   * one → page-wide flat `window.components.locale.labels['web-command-palette.<key>']` → English.
+   */
+  #engineOptions(partial?: Record<string, unknown>): Partial<CommandPaletteEngineOptions> {
+    const c = this.config;
+    const all: Partial<CommandPaletteEngineOptions> = {
+      commands: this.#commands(),
+      contexts: (c.contexts as Context[] | undefined) ?? [],
+      searchCallback: (c.searchCallback as SearchCallback | null) ?? null,
+      getStepOptionsCallback: (c.getStepOptionsCallback as StepOptionsCallback | null) ?? null,
+      display: c.display as Display | undefined,
+      pageSize: c.pageSize as number | undefined,
+      searchDebounce: c.searchDebounce as number | undefined,
+      searchBehavior: c.searchBehavior as SearchBehavior | undefined,
+      searchMatch: c.searchMatch as SearchMatch | undefined,
+      labels: (c.labels as Partial<CommandPaletteLabels> | undefined) ?? null,
+      translateCallback: (c.translateCallback as TranslateCallback | null | undefined) ?? null,
+      locale: c.locale as string | null | undefined,
+      maxRecentCount: c.maxRecentCount as number | undefined,
+      maxFavoriteCount: c.maxFavoriteCount as number | undefined,
+      starKey: chordKeycap(this.#keys().favorite),
+    };
+    if (!partial) return all;
+    const keys = Object.keys(partial);
+    if (keys.some((k) => k === 'favoriteKey')) keys.push('starKey');
+    return Object.fromEntries(keys.filter((k) => k in all).map((k) => [k, all[k as keyof CommandPaletteEngineOptions]]));
   }
 
   /** `withContext` typed for the palette: `controller` / `element` + the presentation flags. */
@@ -542,7 +555,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   #applyUsage(): void {
     if (this.config.usageStorage === 'none') {
       this.#usage = null;
-      this.#engine.usageChanged();
+      this.#engine.setOptions({ usage: null });
       return;
     }
     const load = this.config.loadUsageCallback as LoadUsageCallback | null;
@@ -554,6 +567,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
         }
       : stateStorePersistence(this.#stateStore);
     this.#usage = new UsageStore(persistence, () => this.#engine.usageChanged(), (err) => this.log.DATA.error('usage storage failed', err));
+    this.#engine.setOptions({ usage: this.#usage });
     this.#usage.load();
   }
 
@@ -625,17 +639,22 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   // ── core lifecycle hooks ──────────────────────────────────────────────────
 
   protected override reinit(): void {
+    // Engine options first — the chrome labels below resolve through the engine's resolver (`#engine.labels`).
+    this.#engine.setOptions(this.#engineOptions());
     this.#applyLabels();
     this.#applySize();
     this.#applyUsage();
     this.#renderer.keys = this.#keys();
-    this.#engine.refresh();
     this.#applyCustomStyles();
     this.#renderer.invalidate();
     this.#render();
   }
 
   protected override update(partial: Record<string, unknown>): void {
+    // The engine settings this batch changed, first — `setOptions` applies each (the list, wizard step, paging,
+    // search) and the chrome labels below resolve through the engine's resolver.
+    const engineOptions = this.#engineOptions(partial);
+    if (Object.keys(engineOptions).length) this.#engine.setOptions(engineOptions);
     if ('labels' in partial || 'translateCallback' in partial || 'locale' in partial) {
       this.#applyLabels();
       this.#renderer.invalidate();
@@ -644,15 +663,8 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     if ('size' in partial) this.#applySize();
     if ('customStyles' in partial || 'getCustomStylesCallback' in partial) this.#customStyles?.refresh();
     if ('presentation' in partial) this.#applyPresentation(getEnvironment());
-    if ('commands' in partial || 'contexts' in partial) this.#engine.refresh();
-    if ('display' in partial) this.#engine.displayChanged();
-    if ('pageSize' in partial) this.#engine.pageSizeChanged();
-    if ('searchBehavior' in partial || 'searchMatch' in partial) {
-      this.#renderer.invalidate();
-      this.#engine.searchRulesChanged();
-    }
+    if ('searchBehavior' in partial || 'searchMatch' in partial) this.#renderer.invalidate();
     if ('usageStorage' in partial || 'storageKey' in partial || 'loadUsageCallback' in partial || 'loadStateCallback' in partial) this.#applyUsage();
-    else if ('maxRecentCount' in partial || 'maxFavoriteCount' in partial) this.#engine.refresh();
     if ('favoriteKey' in partial || 'favoritesKey' in partial || 'recentKey' in partial) {
       this.#renderer.keys = this.#keys();
       this.#renderer.invalidate();
