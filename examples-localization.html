@@ -131,20 +131,28 @@ other.labels = { 'labels.select': 'Instance wins' };</code></pre></div>
     <h2>LO05 · <code>locale</code> + formatting</h2>
     <p>
         Numbers in labels (<code>{page}</code> / <code>{total}</code> / <code>{count}</code> in <code>labels.pageOf</code>,
-        <code>ariaLabels.resultsCount</code>, <code>buttons.showAll</code>) are formatted for the page language:
-        <code>window.components.locale.locale</code> → the browser. The palette has no <code>locale</code> input of its own and
-        formats no dates — numbers only. The <em>Numbers</em> context below returns 12,345 rows.
+        <code>ariaLabels.resultsCount</code>, <code>buttons.showAll</code>) are formatted for the palette's
+        <code>locale</code> → <code>window.components.locale.locale</code> → the browser. The element's own
+        <code>locale</code> wins over the page locale; unset (or <code>auto</code>) follows it. The palette formats no
+        dates — numbers only. The <em>Numbers</em> context below returns 12,345 rows.
     </p>
     <div class="controls"><strong class="muted">page locale</strong>
         <label><input type="radio" name="lo05-locale" value="" checked> unset (browser)</label>
         <label><input type="radio" name="lo05-locale" value="de-DE"> de-DE</label>
         <label><input type="radio" name="lo05-locale" value="cs-CZ"> cs-CZ</label>
         <label><input type="radio" name="lo05-locale" value="en-IN"> en-IN</label>
+    </div>
+    <div class="controls"><strong class="muted">element <code>locale</code></strong>
+        <label><input type="radio" name="lo05-el-locale" value="" checked> unset (page)</label>
+        <label><input type="radio" name="lo05-el-locale" value="en"> en</label>
+        <label><input type="radio" name="lo05-el-locale" value="de"> de</label>
+        <label><input type="radio" name="lo05-el-locale" value="cs"> cs</label>
         <button type="button" class="btn-outline" data-open="lo05" data-term=":n 1">Open the Numbers context</button>
     </div>
     <div class="output"><div class="output-label">pagination row</div><pre id="lo05-out"></pre></div>
     <div class="code-block" data-language="js"><pre><code>window.components.locale = { locale: 'de-DE' };
-// "Page 1 of 1.544 · 12.345 results"   (cs-CZ: "12 345", en-IN: "12,345")</code></pre></div>
+// "Page 1 of 1.544 · 12.345 results"   (cs-CZ: "12 345", en-IN: "12,345")
+palette.locale = 'en';   // this palette only (attribute: &lt;web-command-palette locale="en"&gt;): "12,345"</code></pre></div>
 </div>
 
 <!-- ============================================================= -->
@@ -321,6 +329,14 @@ window.components.security = { shouldEscapeLabels: true };
     // ── LO05 · page locale.
     for (const radio of document.querySelectorAll('input[name="lo05-locale"]')) {
         radio.addEventListener('change', (e) => { page.locale = e.target.value; applyPage(); });
+    }
+    // ── LO05 · the element's own locale (wins over the page; unset = the page).
+    for (const radio of document.querySelectorAll('input[name="lo05-el-locale"]')) {
+        radio.addEventListener('change', (e) => {
+            if (e.target.value) $('lo05').setAttribute('locale', e.target.value);
+            else $('lo05').removeAttribute('locale');
+            refreshAll();
+        });
     }
 
     // ── LO06 · shouldEscapeLabels.

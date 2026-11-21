@@ -64,6 +64,8 @@ interface HostState {
   translateCallback: TranslateCallback | null;
   /** The element the engine renders for (`host.element()`; none = standalone). */
   element: Element | null;
+  /** The `locale` host option (unset = the engine's default). */
+  locale?: string | null;
 }
 
 export function harness(over: Partial<HostState> = {}): Harness {
@@ -104,6 +106,7 @@ export function harness(over: Partial<HostState> = {}): Harness {
     labels: () => state.labels,
     translateCallback: () => state.translateCallback,
     element: () => state.element,
+    locale: () => state.locale,
     usage: () => store,
     maxRecentCount: () => state.maxRecentCount,
     changed: () => changed(),

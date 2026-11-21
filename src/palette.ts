@@ -24,7 +24,7 @@ import {
   type SearchRules,
 } from './helpers/filter';
 import { cloneResult, cloneSelections, usageKey, type UsageStore, type UsageTarget } from './usage';
-import { DEFAULT_LABELS } from './types';
+import { DEFAULT_LABELS, DEFAULT_LOCALE } from './types';
 import type {
   Command,
   CommandContext,
@@ -55,7 +55,7 @@ export const PAGE_STEP = 8;
 /**
  * What the engine needs from its host — your UI, or `<web-command-palette>` (which passes its inputs through).
  * Read live on every use. Option names match the element's inputs (`commands`, `contexts`, `searchCallback`,
- * `labels`, `translateCallback`, `pageSize`, `searchDebounce`, …), so the same values work in both.
+ * `labels`, `translateCallback`, `locale`, `pageSize`, `searchDebounce`, …), so the same values work in both.
  */
 export interface CommandPaletteEngineHost {
   commands(): readonly Command[];
@@ -90,6 +90,11 @@ export interface CommandPaletteEngineHost {
   labels?(): Partial<CommandPaletteLabels> | null | undefined;
   /** This palette's own translation hook (core `TranslateCallback`), asked before the page-wide one; `null` = not mine. */
   translateCallback?(): TranslateCallback | null | undefined;
+  /**
+   * `locale`: BCP-47 locale for the numbers in labels (`{count}` / `{page}` / `{total}`) and `translateCallback`'s
+   * `ctx.locale`. Default {@link DEFAULT_LOCALE} (`null` = the page-wide `window.components.locale`, else the browser).
+   */
+  locale?(): string | null | undefined;
   /** Favorites/recents store, or null when disabled. */
   usage?(): UsageStore | null;
   /** How many recent entries the home screen shows. */
@@ -351,6 +356,7 @@ export class CommandPaletteEngine {
     this.labels = createLabels(host.element?.() ?? null, DEFAULT_LABELS, () => host.labels?.() ?? null, {
       tag: 'web-command-palette',
       getTranslateCallback: () => host.translateCallback?.() ?? null,
+      getLocale: () => host.locale?.() ?? DEFAULT_LOCALE,
     });
     this.#runner = createAsyncRunner({
       debounceMs: () => this.#debounce,

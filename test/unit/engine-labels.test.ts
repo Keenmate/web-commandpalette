@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { publishLocaleHooks, type TranslateCallback } from '@keenmate/web-components-core/locale';
-import { DEFAULT_LABELS } from '../../src/types';
+import { DEFAULT_LABELS, DEFAULT_LOCALE } from '../../src/types';
 import { harness } from './helpers';
 
 /**
@@ -68,5 +68,34 @@ describe('engine labels (no element)', () => {
     const element = document.createElement('div');
     const { m } = harness({ translateCallback: boom, element });
     expect(m.placeholder).toBe(DEFAULT_LABELS['placeholders.idle']);
+  });
+});
+
+describe('engine locale (no element, C-CA-38)', () => {
+  const showAll = (m: ReturnType<typeof harness>['m']): string => m.labels.text('buttons.showAll', { count: 1234 });
+
+  it('the default is DEFAULT_LOCALE (null) — the same value the element row uses', () => {
+    expect(DEFAULT_LOCALE).toBeNull();
+  });
+
+  it('locale: "de" formats the numbers in labels', () => {
+    const { m } = harness({ locale: 'de' });
+    expect(showAll(m)).toContain('1.234');
+  });
+
+  it('unset follows window.components.locale.locale; read live', () => {
+    page().locale = { locale: 'de' };
+    const { m, host } = harness();
+    expect(showAll(m)).toContain('1.234');
+    host.state.locale = 'en';
+    expect(showAll(m)).toContain('1,234');
+    host.state.locale = 'auto';
+    expect(showAll(m)).toContain('1.234');
+  });
+
+  it("translateCallback gets the engine's locale as ctx.locale", () => {
+    const own = vi.fn<TranslateCallback>(() => null);
+    harness({ locale: 'cs', translateCallback: own }).m.placeholder;
+    expect(own).toHaveBeenCalledWith(expect.objectContaining({ locale: 'cs' }));
   });
 });

@@ -174,3 +174,38 @@ test.describe('page-wide locale', () => {
     expect(seen).toEqual({ page: 1, total: 1544, count: 12345 });
   });
 });
+
+/**
+ * The element's own `locale` input (C-CA-38): the numbers in labels follow it; unset = the page-wide
+ * `window.components.locale.locale`, else the browser. A change re-renders the open palette in place.
+ */
+test.describe('locale input', () => {
+  test.afterEach(async ({ page }) => {
+    await page.evaluate(() => { (window as any).components.locale = null; });
+  });
+
+  test('locale="de" formats the counts; unset follows window.components.locale.locale; live', async ({ page }) => {
+    const p = palette(page);
+    await p.host.evaluate((el: any) => {
+      el.searchCallback = () => Array.from({ length: 12345 }, (_, i) => ({ id: `r${i}`, title: `Row ${i}` }));
+      el.setAttribute('locale', 'de');
+    });
+    expect(await p.host.evaluate((el: any) => el.locale)).toBe('de');
+    await open(page);
+    await p.input.fill(':p row');
+    await expect(p.pagination).toHaveText('Page 1 of 1.544 · 12.345 results');
+
+    // unset → the page-wide locale
+    await page.evaluate(() => { (window as any).components.locale = { locale: 'cs' }; });
+    await p.host.evaluate(async (el: any) => { el.removeAttribute('locale'); await el.whenSettled(); });
+    expect(await p.host.evaluate((el: any) => el.locale)).toBeNull();
+    await expect(p.pagination).toHaveText(/^Page 1 of 1\s544 · 12\s345 results$/);
+
+    // the element's own locale wins over the page one; 'auto' = unset
+    await p.host.evaluate(async (el: any) => { el.locale = 'en-US'; await el.whenSettled(); });
+    await expect(p.pagination).toHaveText('Page 1 of 1,544 · 12,345 results');
+    await p.host.evaluate(async (el: any) => { el.locale = 'auto'; await el.whenSettled(); });
+    await expect(p.pagination).toHaveText(/^Page 1 of 1\s544 · 12\s345 results$/);
+    await expect(p.input).toHaveValue(':products row'); // mode + query kept
+  });
+});

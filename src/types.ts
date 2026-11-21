@@ -539,3 +539,10 @@ export interface PaletteKeys {
 }
 
 export const DEFAULT_PALETTE_KEYS: PaletteKeys = { favorite: 'd', favorites: 'f', recent: 'r' };
+
+/**
+ * The `locale` default, shared by `<web-command-palette>` (its input row) and `CommandPaletteEngine`
+ * (its `locale()` host option): `null` = unset — the page-wide `window.components.locale`, else the
+ * browser language (core `resolveLocale`; `'auto'` / `''` mean the same).
+ */
+export const DEFAULT_LOCALE: string | null = null;

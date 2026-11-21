@@ -67,6 +67,7 @@ Objects and functions are **properties only** — set them from JS (or a framewo
 | `loadStateCallback` | `LoadStateCallback<PaletteUsageState>` | Core state store (SPEC §12.17): `({ key }) => { entries } \| null` (async OK) — the page keeps the whole list. Set both state callbacks; either one alone switches `localStorage` off. |
 | `saveStateCallback` | `SaveStateCallback<PaletteUsageState>` | `({ key, state })`, `state` = the WHOLE `{ entries }` on every use / star toggle. |
 | `labels` | `Partial<CommandPaletteLabels>` | UI strings (core `/locale`); unset keys fall back to the page-wide labels, then English. See [Labels](#labels). |
+| `locale` | `string \| null` | BCP-47 locale for the numbers in labels (`{count}` / `{page}` / `{total}`) and `translateCallback`'s `ctx.locale` (attribute `locale`). Unset (default, or `'auto'`) = the page-wide `window.components.locale.locale`, else the browser language. A change re-renders the labels in place. See [Labels](#labels). |
 | `display` | `'inline' \| 'tokens'` | Wizard display. Default `inline`. |
 | `size` | `'sm' \| 'lg' \| 'xl' \| null` | Width/height preset. |
 | `pageSize` | `number` | Search results per page. Default `8`. |
@@ -97,7 +98,7 @@ LiveView bridge after `connectedCallback`.
 
 ## Attributes
 
-`display`, `size`, `page-size`, `open-key`, `search-debounce`, `search-behavior`, `search-match`, `presentation`,
+`display`, `size`, `locale`, `page-size`, `open-key`, `search-debounce`, `search-behavior`, `search-match`, `presentation`,
 `usage-storage`, `storage-key`, `max-favorite-count`, `max-recent-count`, `favorite-key`, `favorites-key`,
 `recent-key`, `favorites-hotkey`, `recent-hotkey`, `show-feedback`, `feedback-duration`, `custom-styles`.
 `open` is **reflected** (present while open) — use the controller to open/close.
@@ -488,8 +489,13 @@ window.components.locale = {
 ```
 
 **Numbers** filled into `{count}`, `{page}` and `{total}` are passed as numbers; core formats them for
-the resolved locale (the page-wide `locale` / `thousandsSeparator`, else the browser language) —
-`12 345` in Czech, `12,345` in English. A `translateCallback` receives the raw numbers (for plurals).
+the resolved locale (the palette's own `locale`, else the page-wide `locale` / `thousandsSeparator`, else
+the browser language) — `12 345` in Czech, `12,345` in English. A `translateCallback` receives the raw
+numbers (for plurals) and the resolved locale as `ctx.locale`.
+
+```html
+<web-command-palette locale="de"></web-command-palette>  <!-- "Page 1 of 1.544 · 12.345 results" -->
+```
 
 **HTML or text.** A label drawn as content — `headers.*`, footer hints, the `messages.*` empty /
 loading text, `labels.pageOf`, `buttons.showAll` — is an HTML template: markup in it renders,
@@ -536,6 +542,7 @@ const engine = new CommandPaletteEngine({
   pageSize: () => 8,
   labels: () => ({ 'placeholders.idle': 'Search or type / for commands' }),
   translateCallback: () => null,     // or your i18n hook; the page-wide one is asked after it
+  locale: () => 'de',                // numbers in labels; omit / null = the page-wide locale, else the browser
   changed: () => draw(),
   effect: (effect) => {
     if (effect.type === 'select') location.href = effect.result.href;
@@ -579,6 +586,7 @@ value written for one works in the other:
 | `searchBehavior?()` / `searchMatch?()` | `search-behavior` / `search-match` | default `normalized` / `contains` |
 | `labels?()` | `labels` | short or full keys |
 | `translateCallback?()` | `translateCallback` | the engine's own hook, before `window.components.locale.translateCallback` |
+| `locale?()` | `locale` | default `DEFAULT_LOCALE` (`null` = the page-wide locale, else the browser) — the numbers in `engine.labels` (`pageText`, counts) and `ctx.locale`; read live |
 | `usage?()` | `usage-storage`, `storage-key`, `load*` / `save*` callbacks | a `UsageStore` (`new UsageStore(persistence, onChange)`), or `null` |
 | `maxFavoriteCount?()` / `maxRecentCount?()` | `max-favorite-count` / `max-recent-count` | default 3 |
 | `starKey?()` | `favorite-key` | the drawn keycap text (`Ctrl+D`) for `messages.noFavorites` |

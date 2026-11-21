@@ -11,6 +11,17 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Added — `locale` input (core `/locale`, rulebook C-CA-38, 2026-11-21)
+
+- **Added:** `locale` input (attribute + property): BCP-47 locale for the numbers in labels — `{count}` /
+  `{page}` / `{total}` in `labels.pageOf`, `ariaLabels.resultsCount`, `buttons.showAll` — and `translateCallback`'s
+  `ctx.locale`. Unset (or `auto`) = the page-wide `window.components.locale.locale`, else the browser. A change
+  re-renders the labels in place (mode, query and wizard answers kept).
+- **Added:** `CommandPaletteEngine` host option `locale()` — the same setting, same default (`DEFAULT_LOCALE`,
+  `null`, shared by the element's input row); the element passes its `locale` through.
+- **Docs:** usage.md (input table, attributes, Labels, "Build your own UI" host-option table + example);
+  `examples-localization.html` LO05 has an element `locale` toggle next to the page locale.
+
 ### Docs — localization example page (rulebook C-EP-5, 2026-11-21)
 
 - `examples-localization.html` — the shared localization page (LO01–LO06): instance `labels`, the page-wide

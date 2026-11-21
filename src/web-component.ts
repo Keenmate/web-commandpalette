@@ -82,6 +82,7 @@ import {
   type Selection,
   type ResultSelectEventDetail,
   type StepOptionsCallback,
+  DEFAULT_LOCALE,
 } from './types';
 import styles from './css/main.css?inline';
 
@@ -98,6 +99,8 @@ const INPUTS: readonly InputDef[] = [
     description: 'Search contexts, listed on the home screen and under `:`. `{ id, trigger, text, aliases?, description?, icon?, searchCallback? }`. Entering one locks the input to `"<trigger> "` and searches via `searchCallback({ scope: { contextId }, term, signal, entries })`.' },
   { configKey: 'labels', converter: toValue({ validate: isPlainObject }), on: 'update', type: 'Partial<CommandPaletteLabels>',
     description: 'UI strings (core `/locale`), flat `<elementType>.<name>` keys (`placeholders.filter`, `ariaLabels.dialog`, `headers.fullscreen`, …). Partial, per key: these (short or full `web-command-palette.<key>` keys) → the page-wide flat `window.components.locale.labels[\'web-command-palette.<key>\']` → English; an empty string renders nothing. Content labels (headings, hints, empty / loading / page text) are HTML templates with escaped `{…}` values; attribute / placeholder / announcement labels are plain text. `{name}` / `{key}` / `{page}` / `{total}` / `{count}` are interpolated (numbers locale-formatted); el.translateCallback, then the page-wide `translateCallback`, translate every label `labels` did not set.' },
+  { configKey: 'locale', attribute: 'locale', converter: toText({ isNullable: true }), default: DEFAULT_LOCALE, on: 'update',
+    description: 'BCP-47 locale for the numbers in labels (`{count}` / `{page}` / `{total}` — the results count, the pagination row, the "show all" count), or unset (the page-wide `window.components.locale`, else the browser language). Also the `ctx.locale` of `translateCallback`. A change re-renders the labels in place. UI strings are `labels`.' },
 
   // ── Callbacks (property-only, read live on every call) ───────────────────
   { configKey: 'searchCallback', converter: toFunction(), on: 'none', type: '(ctx: SearchContext) => Result[] | Promise<Result[]>',
@@ -324,6 +327,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
       // `window.components.locale.labels['web-command-palette.<key>']` → English.
       labels: () => this.config.labels as Partial<CommandPaletteLabels> | undefined,
       translateCallback: () => this.config.translateCallback as TranslateCallback | null | undefined,
+      locale: () => this.config.locale as string | null | undefined,
       usage: () => this.#usage,
       maxRecentCount: () => (this.config.maxRecentCount as number) ?? 3,
       maxFavoriteCount: () => (this.config.maxFavoriteCount as number) ?? 3,
@@ -632,7 +636,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   }
 
   protected override update(partial: Record<string, unknown>): void {
-    if ('labels' in partial || 'translateCallback' in partial) {
+    if ('labels' in partial || 'translateCallback' in partial || 'locale' in partial) {
       this.#applyLabels();
       this.#renderer.invalidate();
     }
@@ -918,6 +922,7 @@ export interface CommandPaletteConfig {
   commands: Command[];
   contexts: Context[];
   labels: Partial<CommandPaletteLabels> | undefined;
+  locale: string | null;
   // callbacks
   searchCallback: SearchCallback | null;
   getStepOptionsCallback: StepOptionsCallback | null;
