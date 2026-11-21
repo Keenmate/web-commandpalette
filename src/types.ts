@@ -526,6 +526,34 @@ export interface ResultSelectEventDetail extends PaletteContext {
   scope: Scope;
 }
 
+// ── defaults ──────────────────────────────────────────────────────────────────
+
+/**
+ * Every input default, ONE source (rulebook C-CA-37): `<web-command-palette>`'s input rows read their
+ * `default` from here, and `CommandPaletteEngine` / the element's engine host fall back to the same values, so
+ * a standalone engine behaves exactly like the element. `locale: null` = unset — the page-wide
+ * `window.components.locale`, else the browser language (core `resolveLocale`; `'auto'` / `''` mean the same).
+ */
+export const ENGINE_DEFAULTS = Object.freeze({
+  display: 'inline' as Display,
+  pageSize: 8,
+  openKey: 'k',
+  searchDebounce: 150,
+  searchBehavior: 'normalized' as SearchBehavior,
+  searchMatch: 'contains' as SearchMatch,
+  feedbackDuration: 1500,
+  usageStorage: 'local' as 'local' | 'none',
+  storageKey: 'web-commandpalette:usage',
+  maxFavoriteCount: 3,
+  maxRecentCount: 3,
+  favoriteKey: 'd',
+  favoritesKey: 'f',
+  recentKey: 'r',
+  favoritesHotkey: 'g f',
+  presentation: 'auto' as 'auto' | 'floating' | 'fullscreen',
+  locale: null as string | null,
+});
+
 // ── keys ──────────────────────────────────────────────────────────────────────
 
 /** Ctrl/⌘ + letter shortcuts inside the palette ('' = off). */
@@ -538,11 +566,10 @@ export interface PaletteKeys {
   recent: string;
 }
 
-export const DEFAULT_PALETTE_KEYS: PaletteKeys = { favorite: 'd', favorites: 'f', recent: 'r' };
+export const DEFAULT_PALETTE_KEYS: PaletteKeys = {
+  favorite: ENGINE_DEFAULTS.favoriteKey,
+  favorites: ENGINE_DEFAULTS.favoritesKey,
+  recent: ENGINE_DEFAULTS.recentKey,
+};
 
-/**
- * The `locale` default, shared by `<web-command-palette>` (its input row) and `CommandPaletteEngine`
- * (its `locale()` host option): `null` = unset — the page-wide `window.components.locale`, else the
- * browser language (core `resolveLocale`; `'auto'` / `''` mean the same).
- */
-export const DEFAULT_LOCALE: string | null = null;
+

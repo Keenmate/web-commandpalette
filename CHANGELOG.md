@@ -17,10 +17,14 @@ callback and item API below is breaking.
   `{page}` / `{total}` in `labels.pageOf`, `ariaLabels.resultsCount`, `buttons.showAll` — and `translateCallback`'s
   `ctx.locale`. Unset (or `auto`) = the page-wide `window.components.locale.locale`, else the browser. A change
   re-renders the labels in place (mode, query and wizard answers kept).
-- **Added:** `CommandPaletteEngine` host option `locale()` — the same setting, same default (`DEFAULT_LOCALE`,
-  `null`, shared by the element's input row); the element passes its `locale` through.
+- **Added:** `CommandPaletteEngine` host option `locale()` — the same setting, same default (`null`,
+  one source with the element's input row); the element passes its `locale` through.
 - **Docs:** usage.md (input table, attributes, Labels, "Build your own UI" host-option table + example);
   `examples-localization.html` LO05 has an element `locale` toggle next to the page locale.
+
+### Internal — engine defaults from one source (rulebook C-CA-37, 2026-11-21)
+
+- `ENGINE_DEFAULTS` (`src/types.ts`, not exported) is the one source of every input default: the element's input rows, its engine host and `CommandPaletteEngine`'s fallbacks read it (replaces `DEFAULT_LOCALE`; `DEFAULT_PALETTE_KEYS` / `DEFAULT_SEARCH_RULES` derive from it). No behaviour change.
 
 ### Docs — localization example page (rulebook C-EP-5, 2026-11-21)
 

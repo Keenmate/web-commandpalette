@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { publishLocaleHooks, type TranslateCallback } from '@keenmate/web-components-core/locale';
-import { DEFAULT_LABELS, DEFAULT_LOCALE } from '../../src/types';
+import { DEFAULT_LABELS, ENGINE_DEFAULTS } from '../../src/types';
 import { harness } from './helpers';
 
 /**
@@ -74,8 +74,8 @@ describe('engine labels (no element)', () => {
 describe('engine locale (no element, C-CA-38)', () => {
   const showAll = (m: ReturnType<typeof harness>['m']): string => m.labels.text('buttons.showAll', { count: 1234 });
 
-  it('the default is DEFAULT_LOCALE (null) — the same value the element row uses', () => {
-    expect(DEFAULT_LOCALE).toBeNull();
+  it('the default is ENGINE_DEFAULTS.locale (null) — the same value the element row uses', () => {
+    expect(ENGINE_DEFAULTS.locale).toBeNull();
   });
 
   it('locale: "de" formats the numbers in labels', () => {

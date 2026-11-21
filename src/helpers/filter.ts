@@ -18,7 +18,7 @@ import {
   type SearchBehavior,
   type SearchMatch,
 } from '@keenmate/web-components-core/search';
-import type { Command, Context, Option } from '../types';
+import { ENGINE_DEFAULTS, type Command, type Context, type Option } from '../types';
 
 /** The palette's `search-behavior` / `search-match` pair. */
 export interface SearchRules {
@@ -26,7 +26,10 @@ export interface SearchRules {
   match: SearchMatch;
 }
 
-export const DEFAULT_SEARCH_RULES: Readonly<SearchRules> = Object.freeze({ behavior: 'normalized', match: 'contains' });
+export const DEFAULT_SEARCH_RULES: Readonly<SearchRules> = Object.freeze({
+  behavior: ENGINE_DEFAULTS.searchBehavior,
+  match: ENGINE_DEFAULTS.searchMatch,
+});
 
 /** A typed term prepared once for one filtering pass (term + the rules it was prepared under). */
 export interface SearchQuery extends SearchRules {

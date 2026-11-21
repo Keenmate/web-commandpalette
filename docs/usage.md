@@ -586,7 +586,7 @@ value written for one works in the other:
 | `searchBehavior?()` / `searchMatch?()` | `search-behavior` / `search-match` | default `normalized` / `contains` |
 | `labels?()` | `labels` | short or full keys |
 | `translateCallback?()` | `translateCallback` | the engine's own hook, before `window.components.locale.translateCallback` |
-| `locale?()` | `locale` | default `DEFAULT_LOCALE` (`null` = the page-wide locale, else the browser) — the numbers in `engine.labels` (`pageText`, counts) and `ctx.locale`; read live |
+| `locale?()` | `locale` | default `null` (the page-wide locale, else the browser) — the numbers in `engine.labels` (`pageText`, counts) and `ctx.locale`; read live |
 | `usage?()` | `usage-storage`, `storage-key`, `load*` / `save*` callbacks | a `UsageStore` (`new UsageStore(persistence, onChange)`), or `null` |
 | `maxFavoriteCount?()` / `maxRecentCount?()` | `max-favorite-count` / `max-recent-count` | default 3 |
 | `starKey?()` | `favorite-key` | the drawn keycap text (`Ctrl+D`) for `messages.noFavorites` |

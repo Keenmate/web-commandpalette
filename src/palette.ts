@@ -12,7 +12,6 @@ import { createAsyncRunner, type AsyncRunner } from '@keenmate/web-components-co
 import { createRegexCompiler } from '@keenmate/web-components-core/search';
 import { createLabels, type TranslateCallback } from '@keenmate/web-components-core/locale';
 import {
-  DEFAULT_SEARCH_RULES,
   filterCommands,
   filterContexts,
   filterOptions,
@@ -24,7 +23,7 @@ import {
   type SearchRules,
 } from './helpers/filter';
 import { cloneResult, cloneSelections, usageKey, type UsageStore, type UsageTarget } from './usage';
-import { DEFAULT_LABELS, DEFAULT_LOCALE } from './types';
+import { DEFAULT_LABELS, ENGINE_DEFAULTS } from './types';
 import type {
   Command,
   CommandContext,
@@ -92,7 +91,7 @@ export interface CommandPaletteEngineHost {
   translateCallback?(): TranslateCallback | null | undefined;
   /**
    * `locale`: BCP-47 locale for the numbers in labels (`{count}` / `{page}` / `{total}`) and `translateCallback`'s
-   * `ctx.locale`. Default {@link DEFAULT_LOCALE} (`null` = the page-wide `window.components.locale`, else the browser).
+   * `ctx.locale`. Default `ENGINE_DEFAULTS.locale` (`null` = the page-wide `window.components.locale`, else the browser).
    */
   locale?(): string | null | undefined;
   /** Favorites/recents store, or null when disabled. */
@@ -356,7 +355,7 @@ export class CommandPaletteEngine {
     this.labels = createLabels(host.element?.() ?? null, DEFAULT_LABELS, () => host.labels?.() ?? null, {
       tag: 'web-command-palette',
       getTranslateCallback: () => host.translateCallback?.() ?? null,
-      getLocale: () => host.locale?.() ?? DEFAULT_LOCALE,
+      getLocale: () => host.locale?.() ?? ENGINE_DEFAULTS.locale,
     });
     this.#runner = createAsyncRunner({
       debounceMs: () => this.#debounce,
@@ -535,13 +534,13 @@ export class CommandPaletteEngine {
 
   /** `search-debounce` (default 150 ms). */
   #searchDebounce(): number {
-    return this.#host.searchDebounce?.() ?? 150;
+    return this.#host.searchDebounce?.() ?? ENGINE_DEFAULTS.searchDebounce;
   }
 
   #rules(): SearchRules {
     return {
-      behavior: this.#host.searchBehavior?.() ?? DEFAULT_SEARCH_RULES.behavior,
-      match: this.#host.searchMatch?.() ?? DEFAULT_SEARCH_RULES.match,
+      behavior: this.#host.searchBehavior?.() ?? ENGINE_DEFAULTS.searchBehavior,
+      match: this.#host.searchMatch?.() ?? ENGINE_DEFAULTS.searchMatch,
     };
   }
 
@@ -696,8 +695,8 @@ export class CommandPaletteEngine {
     this.homeMore = { favorites: 0, recent: 0 };
     const star = <T extends ViewItem>(item: T): T => (store && item.key ? { ...item, favorite: store.isFavorite(item.key) } : item);
     this.#setItems([
-      ...(store ? capped('favorites', this.#host.maxFavoriteCount?.() ?? 3) : []),
-      ...(store ? capped('recent', this.#host.maxRecentCount?.() ?? 3) : []),
+      ...(store ? capped('favorites', this.#host.maxFavoriteCount?.() ?? ENGINE_DEFAULTS.maxFavoriteCount) : []),
+      ...(store ? capped('recent', this.#host.maxRecentCount?.() ?? ENGINE_DEFAULTS.maxRecentCount) : []),
       ...this.#commandItems(this.#commands(), 'commands').map(star),
       ...this.#host.contexts().map((c) => star(contextItem(c, 'contexts'))),
     ]);

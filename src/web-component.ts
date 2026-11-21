@@ -82,7 +82,7 @@ import {
   type Selection,
   type ResultSelectEventDetail,
   type StepOptionsCallback,
-  DEFAULT_LOCALE,
+  ENGINE_DEFAULTS,
 } from './types';
 import styles from './css/main.css?inline';
 
@@ -99,7 +99,7 @@ const INPUTS: readonly InputDef[] = [
     description: 'Search contexts, listed on the home screen and under `:`. `{ id, trigger, text, aliases?, description?, icon?, searchCallback? }`. Entering one locks the input to `"<trigger> "` and searches via `searchCallback({ scope: { contextId }, term, signal, entries })`.' },
   { configKey: 'labels', converter: toValue({ validate: isPlainObject }), on: 'update', type: 'Partial<CommandPaletteLabels>',
     description: 'UI strings (core `/locale`), flat `<elementType>.<name>` keys (`placeholders.filter`, `ariaLabels.dialog`, `headers.fullscreen`, …). Partial, per key: these (short or full `web-command-palette.<key>` keys) → the page-wide flat `window.components.locale.labels[\'web-command-palette.<key>\']` → English; an empty string renders nothing. Content labels (headings, hints, empty / loading / page text) are HTML templates with escaped `{…}` values; attribute / placeholder / announcement labels are plain text. `{name}` / `{key}` / `{page}` / `{total}` / `{count}` are interpolated (numbers locale-formatted); el.translateCallback, then the page-wide `translateCallback`, translate every label `labels` did not set.' },
-  { configKey: 'locale', attribute: 'locale', converter: toText({ isNullable: true }), default: DEFAULT_LOCALE, on: 'update',
+  { configKey: 'locale', attribute: 'locale', converter: toText({ isNullable: true }), default: ENGINE_DEFAULTS.locale, on: 'update',
     description: 'BCP-47 locale for the numbers in labels (`{count}` / `{page}` / `{total}` — the results count, the pagination row, the "show all" count), or unset (the page-wide `window.components.locale`, else the browser language). Also the `ctx.locale` of `translateCallback`. A change re-renders the labels in place. UI strings are `labels`.' },
 
   // ── Callbacks (property-only, read live on every call) ───────────────────
@@ -135,43 +135,43 @@ const INPUTS: readonly InputDef[] = [
     description: 'Computed custom CSS for this palette (`ctx` = `controller` / `element` + the presentation flags); wins over `custom-styles`. Re-run on every build and when this or `custom-styles` changes.' },
 
   // ── Attributes ───────────────────────────────────────────────────────────
-  { configKey: 'display', attribute: 'display', converter: toEnum(['inline', 'tokens'] as const, { default: 'inline' }), shouldReflect: true, on: 'update',
+  { configKey: 'display', attribute: 'display', converter: toEnum(['inline', 'tokens'] as const, { default: ENGINE_DEFAULTS.display }), shouldReflect: true, on: 'update',
     description: 'Wizard display: `inline` keeps the accumulated sentence in the input (`/assign iPad to `, prefix locked); `tokens` shows prior answers as removable badges above an empty input.' },
   { configKey: 'size', attribute: 'size', converter: toEnum(['sm', 'lg', 'xl'] as const, { isNullable: true }), shouldReflect: true, on: 'update',
     description: 'Width/height preset (`sm` | `lg` | `xl`). Unset = default. For arbitrary sizes set `--cp-width` / `--cp-results-max-height`.' },
-  { configKey: 'pageSize', attribute: 'page-size', converter: toInt({ min: 1, default: 8 }), on: 'update',
+  { configKey: 'pageSize', attribute: 'page-size', converter: toInt({ min: 1, default: ENGINE_DEFAULTS.pageSize }), on: 'update',
     description: 'Search results per page (←/→ to page). Default 8.' },
-  { configKey: 'openKey', attribute: 'open-key', converter: toText({ default: 'k', isEmptyAllowed: true }), on: 'none',
+  { configKey: 'openKey', attribute: 'open-key', converter: toText({ default: ENGINE_DEFAULTS.openKey, isEmptyAllowed: true }), on: 'none',
     description: "Key that toggles the palette together with Ctrl/⌘. Default `k`. Set `''` to disable the global hotkey." },
-  { configKey: 'searchDebounce', attribute: 'search-debounce', converter: toInt({ min: 0, default: 150 }), on: 'none',
+  { configKey: 'searchDebounce', attribute: 'search-debounce', converter: toInt({ min: 0, default: ENGINE_DEFAULTS.searchDebounce }), on: 'none',
     description: 'Debounce (ms) before a provider call in global search, context search and `isLiveSearch` steps. Static lists never call a provider.' },
-  { configKey: 'searchBehavior', attribute: 'search-behavior', converter: toEnum(['normalized', 'case-insensitive', 'exact'] as const, { default: 'normalized' }), on: 'update',
+  { configKey: 'searchBehavior', attribute: 'search-behavior', converter: toEnum(['normalized', 'case-insensitive', 'exact'] as const, { default: ENGINE_DEFAULTS.searchBehavior }), on: 'update',
     description: 'How the built-in filter (the `/` and `:` lists, static steps, favorites/recent, the commands/contexts prepended to global search) and the `<mark>` highlight normalize text: `normalized` (default) ignores case and diacritics (`ces` finds `Český`), `case-insensitive` ignores case only, `exact` matches both. Live: re-runs the current search. Not applied to `searchCallback` / `getStepOptionsCallback` (they get the term as typed) or `regex` matching.' },
-  { configKey: 'searchMatch', attribute: 'search-match', converter: toEnum(['contains', 'equals', 'starts-with', 'word-starts-with', 'ends-with', 'word-ends-with', 'regex'] as const, { default: 'contains' }), on: 'update',
+  { configKey: 'searchMatch', attribute: 'search-match', converter: toEnum(['contains', 'equals', 'starts-with', 'word-starts-with', 'ends-with', 'word-ends-with', 'regex'] as const, { default: ENGINE_DEFAULTS.searchMatch }), on: 'update',
     description: 'Where the built-in filter looks for the term in each text field: `contains` (default), `equals` (the whole value), `starts-with` / `ends-with` (whole value), `word-starts-with` / `word-ends-with` (any word), or `regex` (tested against the raw value; an invalid pattern keeps the last valid result). Live: re-runs the current search.' },
   { configKey: 'isFeedbackShown', attribute: 'show-feedback', converter: toBool('default-true'), on: 'none',
     description: 'After a command ran, collapse the dialog to one line for `feedback-duration` ms showing what ran (✓ `/deploy to Staging branch main` · Done) instead of vanishing. The `action` event fires first; `close` follows when it goes. Any key or click dismisses it. `show-feedback="false"` turns it off.' },
-  { configKey: 'feedbackDuration', attribute: 'feedback-duration', converter: toInt({ min: 0, default: 1500 }), on: 'none',
+  { configKey: 'feedbackDuration', attribute: 'feedback-duration', converter: toInt({ min: 0, default: ENGINE_DEFAULTS.feedbackDuration }), on: 'none',
     description: 'How long the feedback stays (ms). Default 1500; `0` turns it off.' },
-  { configKey: 'usageStorage', attribute: 'usage-storage', converter: toEnum(['local', 'none'] as const, { default: 'local' }), shouldReflect: true, on: 'update',
+  { configKey: 'usageStorage', attribute: 'usage-storage', converter: toEnum(['local', 'none'] as const, { default: ENGINE_DEFAULTS.usageStorage }), shouldReflect: true, on: 'update',
     description: 'Favorites + recents. `local` (default) keeps them under `storage-key` (core state store: `localStorage` `km-state:web-command-palette:<storage-key>`, or `loadStateCallback` / `saveStateCallback`) — or in the host per entry, via `loadUsageCallback` / `saveUsageCallback`, when those are set; `none` turns stars and the Favorites/Recent sections off.' },
-  { configKey: 'storageKey', attribute: 'storage-key', converter: toText({ default: 'web-commandpalette:usage' }), on: 'update',
+  { configKey: 'storageKey', attribute: 'storage-key', converter: toText({ default: ENGINE_DEFAULTS.storageKey }), on: 'update',
     description: 'Key of the persisted favorites/recents (core SPEC §12.17): `localStorage` `km-state:web-command-palette:<storage-key>`, or `ctx.key` of `loadStateCallback` / `saveStateCallback`. Put the user id in it (`cp:usage:42`) so users sharing a browser never see each other’s. `usage-storage="none"` turns persistence off.' },
-  { configKey: 'maxFavoriteCount', attribute: 'max-favorite-count', converter: toInt({ min: 0, default: 3 }), on: 'update',
+  { configKey: 'maxFavoriteCount', attribute: 'max-favorite-count', converter: toInt({ min: 0, default: ENGINE_DEFAULTS.maxFavoriteCount }), on: 'update',
     description: 'How many favorites the home screen shows (one-line rows). The heading shows how many more there are; all of them are behind `favorites-key` / `favorites-hotkey`. `0` hides the section.' },
-  { configKey: 'maxRecentCount', attribute: 'max-recent-count', converter: toInt({ min: 0, default: 3 }), on: 'update',
+  { configKey: 'maxRecentCount', attribute: 'max-recent-count', converter: toInt({ min: 0, default: ENGINE_DEFAULTS.maxRecentCount }), on: 'update',
     description: 'How many recently/frequently used items the home screen shows (one-line rows). All of them are behind `recent-key` / `recent-hotkey`. `0` hides the section.' },
-  { configKey: 'favoriteKey', attribute: 'favorite-key', converter: toText({ default: 'd', isEmptyAllowed: true }), on: 'update',
+  { configKey: 'favoriteKey', attribute: 'favorite-key', converter: toText({ default: ENGINE_DEFAULTS.favoriteKey, isEmptyAllowed: true }), on: 'update',
     description: "Ctrl/⌘ + this key stars/unstars the active row while the palette is open. Default `d`; `''` disables." },
-  { configKey: 'favoritesKey', attribute: 'favorites-key', converter: toText({ default: 'f', isEmptyAllowed: true }), on: 'update',
+  { configKey: 'favoritesKey', attribute: 'favorites-key', converter: toText({ default: ENGINE_DEFAULTS.favoritesKey, isEmptyAllowed: true }), on: 'update',
     description: "Ctrl/⌘ + this key shows all favorites (again: back home) while the palette is open. Default `f`; `''` disables." },
-  { configKey: 'recentKey', attribute: 'recent-key', converter: toText({ default: 'r', isEmptyAllowed: true }), on: 'update',
+  { configKey: 'recentKey', attribute: 'recent-key', converter: toText({ default: ENGINE_DEFAULTS.recentKey, isEmptyAllowed: true }), on: 'update',
     description: "Ctrl/⌘ + this key shows all recently used items while the palette is open. Default `r`; `''` disables." },
-  { configKey: 'favoritesHotkey', attribute: 'favorites-hotkey', converter: toText({ default: 'g f', isEmptyAllowed: true }), on: 'none',
+  { configKey: 'favoritesHotkey', attribute: 'favorites-hotkey', converter: toText({ default: ENGINE_DEFAULTS.favoritesHotkey, isEmptyAllowed: true }), on: 'none',
     description: "`g <letter>` sequence that opens the palette on the favorites list from anywhere (while closed, not typing). Default `g f`; `''` disables. A command with the same `shortcut` wins." },
   { configKey: 'recentHotkey', attribute: 'recent-hotkey', converter: toText({ isNullable: true }), on: 'none',
     description: '`g <letter>` sequence that opens the palette on the recent list. Off by default (e.g. `g h`).' },
-  { configKey: 'presentation', attribute: 'presentation', converter: toEnum(['auto', 'floating', 'fullscreen'] as const, { default: 'auto' }), shouldReflect: true, on: 'update',
+  { configKey: 'presentation', attribute: 'presentation', converter: toEnum(['auto', 'floating', 'fullscreen'] as const, { default: ENGINE_DEFAULTS.presentation }), shouldReflect: true, on: 'update',
     description: '`auto` (default) opens a fullscreen sheet on touch phones and the floating dialog elsewhere (a narrow desktop window stays floating); `floating` / `fullscreen` force one.' },
 
   // ── Reserved bridge hooks (wired by @keenmate/keen-web-commandpalette) ─────
@@ -271,7 +271,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.#globalKeys = {
       isOpen: () => this.#isOpen,
       toggle: () => this.toggle(),
-      openKey: () => this.config.openKey as string ?? 'k',
+      openKey: () => this.config.openKey as string ?? ENGINE_DEFAULTS.openKey,
       // Hidden / disabled commands don't claim their sequence.
       commands: () => this.#commands().filter((c) => this.#engine.isCommandEnabled(c)),
       runCommand: (command, e) => {
@@ -300,7 +300,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
       const v = this.config[name];
       return typeof v === 'string' ? v : fallback;
     };
-    return { favorite: key('favoriteKey', 'd'), favorites: key('favoritesKey', 'f'), recent: key('recentKey', 'r') };
+    return { favorite: key('favoriteKey', ENGINE_DEFAULTS.favoriteKey), favorites: key('favoritesKey', ENGINE_DEFAULTS.favoritesKey), recent: key('recentKey', ENGINE_DEFAULTS.recentKey) };
   }
 
   // ── engine wiring ─────────────────────────────────────────────────────────
@@ -317,11 +317,11 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
       getStepOptionsCallback: () => (this.config.getStepOptionsCallback as StepOptionsCallback | null) ?? null,
       context: (fields) => this.withContext(fields),
       element: () => this,
-      display: () => (this.config.display as Display) ?? 'inline',
-      pageSize: () => (this.config.pageSize as number) ?? 8,
-      searchDebounce: () => (this.config.searchDebounce as number) ?? 150,
-      searchBehavior: () => (this.config.searchBehavior as SearchBehavior) ?? 'normalized',
-      searchMatch: () => (this.config.searchMatch as SearchMatch) ?? 'contains',
+      display: () => (this.config.display as Display) ?? ENGINE_DEFAULTS.display,
+      pageSize: () => (this.config.pageSize as number) ?? ENGINE_DEFAULTS.pageSize,
+      searchDebounce: () => (this.config.searchDebounce as number) ?? ENGINE_DEFAULTS.searchDebounce,
+      searchBehavior: () => (this.config.searchBehavior as SearchBehavior) ?? ENGINE_DEFAULTS.searchBehavior,
+      searchMatch: () => (this.config.searchMatch as SearchMatch) ?? ENGINE_DEFAULTS.searchMatch,
       // UI strings (core `/locale`, rulebook D-NC-24) — the engine owns the one resolver (`#engine.labels`):
       // instance `labels` → `translateCallback` → the page-wide one → page-wide flat
       // `window.components.locale.labels['web-command-palette.<key>']` → English.
@@ -329,8 +329,8 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
       translateCallback: () => this.config.translateCallback as TranslateCallback | null | undefined,
       locale: () => this.config.locale as string | null | undefined,
       usage: () => this.#usage,
-      maxRecentCount: () => (this.config.maxRecentCount as number) ?? 3,
-      maxFavoriteCount: () => (this.config.maxFavoriteCount as number) ?? 3,
+      maxRecentCount: () => (this.config.maxRecentCount as number) ?? ENGINE_DEFAULTS.maxRecentCount,
+      maxFavoriteCount: () => (this.config.maxFavoriteCount as number) ?? ENGINE_DEFAULTS.maxFavoriteCount,
       starKey: () => chordKeycap(this.#keys().favorite),
       changed: () => this.#render(),
       effect: (effect) => this.#onEffect(effect),
@@ -442,7 +442,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
    */
   #showFeedback(done: Done): boolean {
     if (this.config.isFeedbackShown === false) return false;
-    const duration = (this.config.feedbackDuration as number | undefined) ?? 1500;
+    const duration = (this.config.feedbackDuration as number | undefined) ?? ENGINE_DEFAULTS.feedbackDuration;
     if (duration <= 0) return false;
 
     const command = done.type === 'action' ? done.command : null;
@@ -749,7 +749,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
 
   /** floating vs. the phone fullscreen sheet — capability-first, via core's device classification. */
   #applyPresentation(env: EnvironmentSnapshot): void {
-    const mode = (this.config.presentation as Presentation | null) ?? 'auto';
+    const mode = (this.config.presentation as Presentation | null) ?? ENGINE_DEFAULTS.presentation;
     const isFullscreen = resolvePresentation(mode, env) !== 'floating';
     if (isFullscreen === this.#isFullscreen) return;
     this.#isFullscreen = isFullscreen;
