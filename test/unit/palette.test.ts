@@ -3,6 +3,7 @@ import { COMMANDS, CONTEXTS, harness, titles } from './helpers';
 import type { Command, Option, Result, SearchContext } from '../../src/types';
 import { CommandPaletteEngine } from '../../src/palette';
 import { ENGINE_DEFAULTS } from '../../src/types';
+import { logging } from '../../src/logger';
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
@@ -508,6 +509,21 @@ describe('options (C-CA-39)', () => {
     commands.splice(0, 2);
     m.setOptions({ commands });
     expect(titles(m)).toEqual(['Sign out', 'Products', 'Users']);
+  });
+
+  it('setOptions warns once per unknown key (INIT) and skips it; known keys still apply', () => {
+    const warn = vi.spyOn(logging.loggers.INIT, 'warn').mockImplementation(() => {});
+    try {
+      const { m } = harness();
+      m.setOptions({ pageSize: 4, pagesize: 5, bogus: 1 } as never);
+      expect(m.getOptions().pageSize).toBe(4);
+      expect('pagesize' in m.getOptions()).toBe(false);
+      expect(warn).toHaveBeenCalledTimes(2);
+      expect(warn.mock.calls[0][0]).toContain('"pagesize" is not an option');
+      expect(warn.mock.calls[1][0]).toContain('"bogus" is not an option');
+    } finally {
+      warn.mockRestore();
+    }
   });
 });
 

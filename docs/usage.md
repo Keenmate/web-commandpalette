@@ -531,7 +531,7 @@ finished command, `close`).
 back (`changed`, `effect`, optional `context` / `element` / `error`); `options` holds the settings and the
 data (`commands`, `contexts`, the callbacks, `pageSize`, `labels`, …). A missing option takes the element's
 default. Change settings later with `engine.setOptions(partial)` (merges, applies what the partial names —
-an `undefined` key goes back to its default); read them with `engine.getOptions()` (the merged options,
+an `undefined` key goes back to its default; a key that is not an option is skipped with a warning); read them with `engine.getOptions()` (the merged options,
 read-only).
 
 ```js

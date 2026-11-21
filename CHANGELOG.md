@@ -23,6 +23,9 @@ callback and item API below is breaking.
 - **Added:** `engine.setOptions(partial)` (merges; re-applies what it names — the list, the wizard step, paging,
   the search; `undefined` = back to the default) and `engine.getOptions()` (the merged options, read-only).
   Exported type `CommandPaletteEngineOptions`.
+- **Changed:** `setOptions` warns once per key that is not an option (`COMMANDPALETTE:INIT`,
+  `CommandPaletteEngine.setOptions(): "<key>" is not an option — ignored`) and skips it — a typo no longer
+  passes silently (the same rule as `EditorEngine.setOptions`).
 - **BREAKING (removed):** `engine.refresh()`, `displayChanged()`, `pageSizeChanged()`, `searchRulesChanged()` —
   `setOptions` applies those changes. `usageChanged()` stays (the `UsageStore`'s data notification).
 - The element passes its inputs through `setOptions` (`searchCallback`, `getStepOptionsCallback`,

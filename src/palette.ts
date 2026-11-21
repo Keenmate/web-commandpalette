@@ -24,6 +24,9 @@ import {
 } from './helpers/filter';
 import { cloneResult, cloneSelections, usageKey, type UsageStore, type UsageTarget } from './usage';
 import { DEFAULT_LABELS, ENGINE_DEFAULTS } from './types';
+import { logging } from './logger';
+
+const initLogger = logging.loggers.INIT;
 import type {
   Command,
   CommandContext,
@@ -155,10 +158,17 @@ export type Effect =
   | { type: 'close' };
 
 /** Merge `partial` into `target` in place; an `undefined` value resets that key to its default. */
-function mergeOptions(target: CommandPaletteEngineOptions, partial: Partial<CommandPaletteEngineOptions>): CommandPaletteEngineOptions {
+function mergeOptions(
+  target: CommandPaletteEngineOptions,
+  partial: Partial<CommandPaletteEngineOptions>,
+  onUnknown?: (key: string) => void,
+): CommandPaletteEngineOptions {
   const out = target as unknown as Record<string, unknown>;
   for (const [key, value] of Object.entries(partial)) {
-    if (!(key in ENGINE_OPTION_DEFAULTS)) continue;
+    if (!(key in ENGINE_OPTION_DEFAULTS)) {
+      onUnknown?.(key);
+      continue;
+    }
     out[key] = value === undefined ? (ENGINE_OPTION_DEFAULTS as unknown as Record<string, unknown>)[key] : value;
   }
   return target;
@@ -435,11 +445,14 @@ export class CommandPaletteEngine {
    * limits rebuild the current list, `search-behavior` / `search-match` re-run the current search, `page-size`
    * re-pages, `display` re-lays the wizard step, `usage` re-reads the favorites / recents. A key set to
    * `undefined` goes back to its default. Every named key counts as changed (the same array passed again
-   * after an in-place edit refreshes too); callbacks and `search-debounce` apply on their next use.
+   * after an in-place edit refreshes too); callbacks and `search-debounce` apply on their next use. A key that
+   * is not an option is ignored with a warning (`COMMANDPALETTE:INIT`).
    */
   setOptions(partial: Partial<CommandPaletteEngineOptions>): void {
     const has = (k: keyof CommandPaletteEngineOptions): boolean => k in partial;
-    mergeOptions(this.#options, partial);
+    mergeOptions(this.#options, partial, (key) =>
+      initLogger.warn(`CommandPaletteEngine.setOptions(): "${key}" is not an option — ignored`),
+    );
     let isApplied = false;
     if (has('commands') || has('contexts') || has('maxRecentCount') || has('maxFavoriteCount') || has('starKey')) {
       this.#refresh();
