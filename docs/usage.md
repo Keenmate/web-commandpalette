@@ -66,7 +66,7 @@ Objects and functions are **properties only** — set them from JS (or a framewo
 | `saveUsageCallback` | `({ entry }) => void \| Promise<void>` | Upsert one entry (by `entry.key`) on every use / star toggle (with `loadUsageCallback`). |
 | `loadStateCallback` | `LoadStateCallback<PaletteUsageState>` | Core state store (SPEC §12.17): `({ key }) => { entries } \| null` (async OK) — the page keeps the whole list. Set both state callbacks; either one alone switches `localStorage` off. |
 | `saveStateCallback` | `SaveStateCallback<PaletteUsageState>` | `({ key, state })`, `state` = the WHOLE `{ entries }` on every use / star toggle. |
-| `labels` | `Partial<CommandPaletteLabels>` | UI strings (core `/locale`); unset keys fall back to the page-wide labels, then English. See [Labels](#labels). |
+| `labels` | `Partial<CommandPaletteLabels>` | UI strings (core `/locale`); unset keys fall back to the page-wide labels, then English. Also a JSON attribute (`labels='{"placeholders.idle":"Hledat…"}'`). See [Labels](#labels). |
 | `locale` | `string \| null` | BCP-47 locale for the numbers in labels (`{count}` / `{page}` / `{total}`) and `translateCallback`'s `ctx.locale` (attribute `locale`). Unset (default, or `'auto'`) = the page-wide `window.components.locale.locale`, else the browser language. A change re-renders the labels in place. See [Labels](#labels). |
 | `display` | `'inline' \| 'tokens'` | Wizard display. Default `inline`. |
 | `size` | `'sm' \| 'lg' \| 'xl' \| null` | Width/height preset. |
@@ -98,7 +98,7 @@ LiveView bridge after `connectedCallback`.
 
 ## Attributes
 
-`display`, `size`, `locale`, `page-size`, `open-key`, `search-debounce`, `search-behavior`, `search-match`, `presentation`,
+`display`, `size`, `labels` (JSON), `locale`, `page-size`, `open-key`, `search-debounce`, `search-behavior`, `search-match`, `presentation`,
 `usage-storage`, `storage-key`, `max-favorite-count`, `max-recent-count`, `favorite-key`, `favorites-key`,
 `recent-key`, `favorites-hotkey`, `recent-hotkey`, `show-feedback`, `feedback-duration`, `custom-styles`.
 `open` is **reflected** (present while open) — use the controller to open/close.
@@ -431,6 +431,8 @@ palette.labels = {
   'headers.recent': 'Nedávné',
 };
 ```
+
+Or as a JSON attribute: `<web-command-palette labels='{"placeholders.idle":"Hledat…"}'>`.
 
 Keys are flat `<elementType>.<name>` (type `CommandPaletteLabels`, defaults in the exported
 `DEFAULT_LABELS`). One key per surface: a text shown in two places (a home heading and the context

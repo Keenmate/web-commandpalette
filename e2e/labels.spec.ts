@@ -38,6 +38,16 @@ test('reassigning labels while open updates the UI', async ({ page }) => {
   await expect(p.input).toHaveAttribute('placeholder', /Type \/ for commands/);
 });
 
+test('a labels JSON attribute renders like the property (C-CA labels attribute)', async ({ page }) => {
+  const p = palette(page);
+  await p.host.evaluate((el) => {
+    el.setAttribute('labels', JSON.stringify({ 'headers.commands': 'Příkazy', 'placeholders.idle': 'Hledat…' }));
+  });
+  await open(page);
+  expect(await headings(page)).toEqual(['Příkazy', 'Search']); // headers.search not in the JSON → English
+  await expect(p.input).toHaveAttribute('placeholder', 'Hledat…');
+});
+
 test('twin fallback: an unset ariaLabels / tooltips key follows a customized same-name sibling (core /locale)', async ({ page }) => {
   const p = palette(page);
   await open(page);

@@ -36,6 +36,12 @@ callback and item API below is breaking.
 - The element passes its inputs through `setOptions` (`searchCallback`, `getStepOptionsCallback`,
   `search-debounce` now react on `update`); no attribute / property / event changes.
 
+### Added — `labels` JSON attribute (2026-11-21)
+
+- **Added:** `labels` is also an attribute (`labels='{"placeholders.idle":"Hledat…"}'`, JSON object; core
+  `toObject`) — the same shape as the property, like web-multiselect / -daterangepicker / -treeview / -grid /
+  -editor / -dropzone. Malformed JSON warns and keeps the previous value.
+
 ### Added — `locale` input (core `/locale`, rulebook C-CA-38, 2026-11-21)
 
 - **Added:** `locale` input (attribute + property): BCP-47 locale for the numbers in labels — `{count}` /
