@@ -11,9 +11,12 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
-### Changed — BREAKING — `CommandPaletteEngine` takes settings one way (rulebook C-CA-39, 2026-11-21)
+### Changed — BREAKING — public engine `CommandPaletteEngine`, settings one way (rulebook C-CA-37 / C-CA-39, 2026-11-20 – 11-21)
 
-- **BREAKING (no alias):** `new CommandPaletteEngine(host)` with one host function per setting →
+- **BREAKING (rename, no alias):** `PaletteEngine` → `CommandPaletteEngine`, `PaletteEngineHost` →
+  `CommandPaletteEngineHost`.
+- **BREAKING (no alias):** `new PaletteEngine(host)` with one host function per setting (`debounceMs()`,
+  `searchRules()`, `labels()` returning a `createLabels` resolver, …) →
   `new CommandPaletteEngine(host, options)`. `host` keeps only the hooks (`changed`, `effect`, `context?`,
   `element?`, `error?`); every setting and the data are plain `options` (same names, defaults from the element's
   inputs): `commands`, `contexts`, `searchCallback`, `getStepOptionsCallback`, `display`, `pageSize`,
@@ -31,10 +34,18 @@ callback and item API below is breaking.
   `''` = off). The engine draws the keycap itself (core `formatShortcut('Mod+<key>')`: `Ctrl+D` / Apple `⌘D`)
   for `messages.noFavorites`. Before `{ starKey: 'Ctrl+K' }`; after `{ favoriteKey: 'k' }`. The element passes
   its `favoriteKey` through unchanged.
+- **Added:** option `translateCallback` — the engine's own translation hook, asked before
+  `window.components.locale.translateCallback` (the element passes its `translateCallback` through); option
+  `labels` is the instance `labels` object (`Partial<CommandPaletteLabels>`, as the element's input) — the engine
+  builds the resolver itself and exposes it as `engine.labels`.
+- **Added:** optional host hook `element()` — the engine's element (read once): a throwing `translateCallback`
+  logs under that element's logger; a standalone UI omits it (core `createLabels(null, …)`).
 - **BREAKING (removed):** `engine.refresh()`, `displayChanged()`, `pageSizeChanged()`, `searchRulesChanged()` —
   `setOptions` applies those changes. `usageChanged()` stays (the `UsageStore`'s data notification).
 - The element passes its inputs through `setOptions` (`searchCallback`, `getStepOptionsCallback`,
   `search-debounce` now react on `update`); no attribute / property / event changes.
+- **Docs:** docs/usage.md "Build your own UI" — what the engine does, what you draw, a minimal example and
+  the option ↔ element-input table.
 
 ### Added — `labels` JSON attribute (2026-11-21)
 
@@ -48,9 +59,9 @@ callback and item API below is breaking.
   `{page}` / `{total}` in `labels.pageOf`, `ariaLabels.resultsCount`, `buttons.showAll` — and `translateCallback`'s
   `ctx.locale`. Unset (or `auto`) = the page-wide `window.components.locale.locale`, else the browser. A change
   re-renders the labels in place (mode, query and wizard answers kept).
-- **Added:** `CommandPaletteEngine` host option `locale()` — the same setting, same default (`null`,
+- **Added:** `CommandPaletteEngine` option `locale` — the same setting, same default (`null`,
   one source with the element's input row); the element passes its `locale` through.
-- **Docs:** usage.md (input table, attributes, Labels, "Build your own UI" host-option table + example);
+- **Docs:** usage.md (input table, attributes, Labels, "Build your own UI" option table + example);
   `examples-localization.html` LO05 has an element `locale` toggle next to the page locale.
 
 ### Internal — engine defaults from one source (rulebook C-CA-37, 2026-11-21)
@@ -62,21 +73,6 @@ callback and item API below is breaking.
 - `examples-localization.html` — the shared localization page (LO01–LO06): instance `labels`, the page-wide
   dictionary, `translateCallback` (own → page-wide), aria-label / tooltip twins, locale-formatted counts,
   `shouldEscapeLabels`; linked from the index and `docs/examples.md`, smoke in `e2e/examples.spec.ts`.
-
-### Changed — public engine `CommandPaletteEngine` (rulebook C-CA-37, 2026-11-20)
-
-- **BREAKING (rename, no alias):** `PaletteEngine` → `CommandPaletteEngine`, `PaletteEngineHost` →
-  `CommandPaletteEngineHost`. Before `new PaletteEngine(host)`; after `new CommandPaletteEngine(host)`.
-- **BREAKING (host options = the element's input names):** `debounceMs()` → `searchDebounce()`;
-  `searchRules()` (`{ behavior, match }`) → `searchBehavior()` + `searchMatch()`; `labels()` returns the
-  instance `labels` object (`Partial<CommandPaletteLabels>`, as the element's `labels` input) instead of a
-  core `createLabels` resolver — the engine builds the resolver itself and exposes it as `engine.labels`.
-- **Added:** host option `translateCallback()` — the engine's own translation hook, asked before
-  `window.components.locale.translateCallback` (the element passes its `translateCallback` through).
-- **Added:** optional host option `element()` — the engine's element (read once): a throwing `translateCallback`
-  logs under that element's logger; a standalone UI omits it (core `createLabels(null, …)`).
-- **Docs:** docs/usage.md "Build your own UI" — what the engine does, what you draw, a minimal example and
-  the host-option ↔ element-input table.
 
 ### Added — `translateCallback` on the element (core `/locale`, rulebook C-CA-33, 2026-11-20)
 

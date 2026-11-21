@@ -42,7 +42,7 @@ top; the CSS is the component's own (plain CSS in the shadow root).
 
 - **RTL, i18n and a phone sheet** — `dir="rtl"` on the element or any ancestor mirrors the layout, which uses logical CSS throughout. It also swaps ←/→ paging and isolates mixed-direction text, so `/deploy …` keeps its order inside Hebrew or Arabic UI. Every visible and announced string comes from the `labels` map, or page-wide from `window.components.locale` (core `/locale`); a `translateCallback` on the palette (or page-wide) plugs in i18next / ICU. Counts are formatted for the locale — the palette's own `locale` attribute, else the page locale, else the browser. On touch phones, `mobile-presentation="auto"` turns the dialog into a fullscreen sheet that stays above the on-screen keyboard.
 
-> **Breaking change in the next release (2.0) — interaction model.** The `cp-` prefix is gone
+> **Breaking change in the next release (1.0.0-rc03) — interaction model.** The `cp-` prefix is gone
 > (`open`, `close`, `result-select`, `ready`), and `cp-command` / `cp-complete` fold into one `action`
 > event per command run (`detail.id` = the command id, `detail.selections` the wizard answers).
 > `on*` twins receive the event **detail**. Commands are core action items (`name` → `text`,
