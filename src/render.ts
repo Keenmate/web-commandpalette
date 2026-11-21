@@ -8,11 +8,10 @@
  * `aria-activedescendant` at it and scrolls it into view, so keyboard navigation is pure DOM work.
  */
 import { announce, escapeHtml, renderIcon, renderLoader } from '@keenmate/web-components-core';
-import { formatShortcut } from '@keenmate/web-components-core/actions';
 import { createActiveDescendant, type ActiveDescendant } from '@keenmate/web-components-core/a11y';
 import { findHighlightRanges, wrapRanges } from '@keenmate/web-components-core/search';
 import { NO_SEARCH_QUERY, type SearchQuery } from './helpers/filter';
-import { modChord } from './keyboard';
+import { chordKeycap } from './keyboard';
 import type { HomeSection, CommandPaletteEngine, TokenView, UsageView, ViewItem } from './palette';
 import { DEFAULT_PALETTE_KEYS, type CommandPaletteLabels, type PaletteKeys, type PaletteLabels } from './types';
 
@@ -91,8 +90,6 @@ function keycaps(keys: string[] | undefined): string {
     .join(' ')}</div>`;
 }
 
-/** Keycap text for a Ctrl/⌘ + key shortcut — core `formatShortcut('Mod+<key>')`: `Ctrl+D` / Apple `⌘D`; '' when off. */
-export const chordKeycap = (key: string): string => formatShortcut(modChord(key));
 
 /** What the markup helpers need besides the engine. */
 export interface RenderContext {

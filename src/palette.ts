@@ -24,6 +24,7 @@ import {
 } from './helpers/filter';
 import { cloneResult, cloneSelections, usageKey, type UsageStore, type UsageTarget } from './usage';
 import { DEFAULT_LABELS, ENGINE_DEFAULTS } from './types';
+import { chordKeycap } from './keyboard';
 import { logging } from './logger';
 
 const initLogger = logging.loggers.INIT;
@@ -98,8 +99,11 @@ export interface CommandPaletteEngineOptions {
   maxRecentCount: number;
   /** `max-favorite-count` — favorites on the home screen (default 3). */
   maxFavoriteCount: number;
-  /** The star shortcut's keycap text for `messages.noFavorites` (the element: its `favorite-key` drawn). Default `Ctrl+D`. */
-  starKey: string;
+  /**
+   * `favorite-key` — Ctrl/⌘ + this key stars the active row (default `d`; `''` = off). The engine draws its keycap
+   * (`Ctrl+D` / Apple `⌘D`, core `formatShortcut`) into `messages.noFavorites`; your UI binds the key itself.
+   */
+  favoriteKey: string;
 }
 
 /** The engine defaults — the element's input defaults (`ENGINE_DEFAULTS`, C-CA-37) + the data / hook options. */
@@ -119,7 +123,7 @@ const ENGINE_OPTION_DEFAULTS: Readonly<CommandPaletteEngineOptions> = Object.fre
   usage: null,
   maxRecentCount: ENGINE_DEFAULTS.maxRecentCount,
   maxFavoriteCount: ENGINE_DEFAULTS.maxFavoriteCount,
-  starKey: 'Ctrl+D',
+  favoriteKey: ENGINE_DEFAULTS.favoriteKey,
 });
 
 /**
@@ -454,7 +458,7 @@ export class CommandPaletteEngine {
       initLogger.warn(`CommandPaletteEngine.setOptions(): "${key}" is not an option — ignored`),
     );
     let isApplied = false;
-    if (has('commands') || has('contexts') || has('maxRecentCount') || has('maxFavoriteCount') || has('starKey')) {
+    if (has('commands') || has('contexts') || has('maxRecentCount') || has('maxFavoriteCount') || has('favoriteKey')) {
       this.#refresh();
       isApplied = true;
     }
@@ -858,7 +862,7 @@ export class CommandPaletteEngine {
     this.emptyLabel = all.length
       ? { key: 'messages.noResults' }
       : view === 'favorites'
-        ? { key: 'messages.noFavorites', params: { key: this.#options.starKey } }
+        ? { key: 'messages.noFavorites', params: { key: chordKeycap(this.#options.favoriteKey) } }
         : { key: 'messages.noRecent' };
     this.#setItems(q ? all.filter((i) => matchesAny([i.title, i.meta], this.#query(q))) : all);
   }

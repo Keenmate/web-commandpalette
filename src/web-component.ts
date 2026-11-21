@@ -54,7 +54,7 @@ import {
 import { runAction } from '@keenmate/web-components-core/actions';
 import type { TranslateCallback } from '@keenmate/web-components-core/locale';
 import { CommandPaletteEngine, type Effect, type EffectOutcome, type CommandPaletteEngineHost, type CommandPaletteEngineOptions, type TokenView } from './palette';
-import { Renderer, chordKeycap, confirmationBodyHtml, createShell, fillConfirmation, type Shell } from './render';
+import { Renderer, confirmationBodyHtml, createShell, fillConfirmation, type Shell } from './render';
 import { bindGlobalKeys, handleInputKeydown, isSequence, type GlobalKeysHost } from './keyboard';
 import { UsageStore, stateStorePersistence, type UsagePersistence } from './usage';
 import {
@@ -343,11 +343,10 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
       locale: c.locale as string | null | undefined,
       maxRecentCount: c.maxRecentCount as number | undefined,
       maxFavoriteCount: c.maxFavoriteCount as number | undefined,
-      starKey: chordKeycap(this.#keys().favorite),
+      favoriteKey: this.#keys().favorite,
     };
     if (!partial) return all;
     const keys = Object.keys(partial);
-    if (keys.some((k) => k === 'favoriteKey')) keys.push('starKey');
     return Object.fromEntries(keys.filter((k) => k in all).map((k) => [k, all[k as keyof CommandPaletteEngineOptions]]));
   }
 

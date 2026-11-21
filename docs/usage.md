@@ -597,7 +597,7 @@ draw();
 | `locale` | `locale` | `null` (the page-wide locale, else the browser) — the numbers in `engine.labels` (`pageText`, counts) and `ctx.locale` |
 | `usage` | `usage-storage`, `storage-key`, `load*` / `save*` callbacks | `null` = off; a `UsageStore` (`new UsageStore(persistence, () => engine.usageChanged())`) |
 | `maxFavoriteCount` / `maxRecentCount` | `max-favorite-count` / `max-recent-count` | 3 |
-| `starKey` | `favorite-key` | `Ctrl+D` — the drawn keycap text for `messages.noFavorites` |
+| `favoriteKey` | `favorite-key` | `d` — Ctrl/⌘ + this key stars a row (`''` = off); the engine draws its keycap (`Ctrl+D` / `⌘D`) into `messages.noFavorites`, your UI binds the key |
 
 | Host hook | Element | Notes |
 |---|---|---|

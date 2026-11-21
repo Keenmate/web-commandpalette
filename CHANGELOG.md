@@ -18,7 +18,7 @@ callback and item API below is breaking.
   `element?`, `error?`); every setting and the data are plain `options` (same names, defaults from the element's
   inputs): `commands`, `contexts`, `searchCallback`, `getStepOptionsCallback`, `display`, `pageSize`,
   `searchDebounce`, `searchBehavior`, `searchMatch`, `labels`, `translateCallback`, `locale`, `usage`,
-  `maxRecentCount`, `maxFavoriteCount`, `starKey`. Before `{ commands: () => list, pageSize: () => 8, … }`;
+  `maxRecentCount`, `maxFavoriteCount`, `favoriteKey`. Before `{ commands: () => list, pageSize: () => 8, … }`;
   after `new CommandPaletteEngine({ changed, effect }, { commands: list, pageSize: 8 })`.
 - **Added:** `engine.setOptions(partial)` (merges; re-applies what it names — the list, the wizard step, paging,
   the search; `undefined` = back to the default) and `engine.getOptions()` (the merged options, read-only).
@@ -26,6 +26,11 @@ callback and item API below is breaking.
 - **Changed:** `setOptions` warns once per key that is not an option (`COMMANDPALETTE:INIT`,
   `CommandPaletteEngine.setOptions(): "<key>" is not an option — ignored`) and skips it — a typo no longer
   passes silently (the same rule as `EditorEngine.setOptions`).
+- **BREAKING (rename, no alias):** engine option `starKey` (the drawn keycap text, default `'Ctrl+D'`) →
+  `favoriteKey`, the element's `favorite-key` input with the same meaning and default: the key letter (`'d'`,
+  `''` = off). The engine draws the keycap itself (core `formatShortcut('Mod+<key>')`: `Ctrl+D` / Apple `⌘D`)
+  for `messages.noFavorites`. Before `{ starKey: 'Ctrl+K' }`; after `{ favoriteKey: 'k' }`. The element passes
+  its `favoriteKey` through unchanged.
 - **BREAKING (removed):** `engine.refresh()`, `displayChanged()`, `pageSizeChanged()`, `searchRulesChanged()` —
   `setOptions` applies those changes. `usageChanged()` stays (the `UsageStore`'s data notification).
 - The element passes its inputs through `setOptions` (`searchCallback`, `getStepOptionsCallback`,

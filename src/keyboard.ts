@@ -13,12 +13,15 @@
  *    active row. Navigation never awaits a provider.
  */
 import { isImeEnter } from '@keenmate/web-components-core';
-import { bindShortcuts, matchesShortcut, parseShortcut, type ShortcutBinding } from '@keenmate/web-components-core/actions';
+import { bindShortcuts, formatShortcut, matchesShortcut, parseShortcut, type ShortcutBinding } from '@keenmate/web-components-core/actions';
 import type { CommandPaletteEngine } from './palette';
 import { DEFAULT_PALETTE_KEYS, type Command, type PaletteKeys } from './types';
 
 /** `'Mod+<letter>'` — the palette's Ctrl/⌘ chords (open key, star, favorites, recent); '' when off. */
 export const modChord = (key: string | null | undefined): string => (key ? `Mod+${key}` : '');
+
+/** Keycap text for a Ctrl/⌘ + key shortcut — core `formatShortcut('Mod+<key>')`: `Ctrl+D` / Apple `⌘D`; '' when off. */
+export const chordKeycap = (key: string): string => formatShortcut(modChord(key));
 
 /** Is `shortcut` a key sequence (`'g d'`)? Only sequences run globally; a chord (`'Ctrl+K'`) is display-only. */
 export const isSequence = (shortcut: string | null | undefined): boolean => parseShortcut(shortcut ?? undefined).length > 1;

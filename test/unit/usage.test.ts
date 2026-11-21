@@ -178,10 +178,13 @@ describe('compact home + full lists (Ctrl/⌘+F / R)', () => {
 
   it('favorites list: empty hint names the star key; unstarring removes the row', () => {
     const { m } = harness({ usage: true });
-    m.setOptions({ starKey: '⌘D' });
+    m.showUsage('favorites');
+    expect(m.emptyText).toBe('No favorites yet — star a row with Ctrl+D'); // default favoriteKey 'd', drawn by the engine
+    m.reset();
+    m.setOptions({ favoriteKey: 'k' });
     m.showUsage('favorites');
     expect(m.items).toEqual([]);
-    expect(m.emptyText).toBe('No favorites yet — star a row with ⌘D');
+    expect(m.emptyText).toBe('No favorites yet — star a row with Ctrl+K');
     m.reset();
     m.toggleFavorite(0); // star the first command
     m.showUsage('favorites');
