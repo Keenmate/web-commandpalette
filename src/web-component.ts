@@ -679,6 +679,16 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.#render();
   }
 
+  /** The page-wide `window.components.renderIconCallback` changed (core, rulebook C-CA-40): repaint the item
+   *  icons in place — the open palette keeps its mode, query, active row and list scroll. */
+  protected override iconsChanged(): void {
+    const { results } = this.#shell;
+    const top = results.scrollTop;
+    this.#renderer.invalidate();
+    this.#render();
+    results.scrollTop = top;
+  }
+
   protected override connect(): void {
     connected.add(this);
     if (!keyOwner) {

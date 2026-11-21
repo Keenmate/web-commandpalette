@@ -11,6 +11,11 @@ Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the 
 candidate — but `^1.0.0-rc02` consumers will pull it: the event,
 callback and item API below is breaking.
 
+### Added — icons repaint when the page-wide icon hook changes (core `iconsChanged()`, rulebook C-CA-40, 2026-11-22)
+
+- Assigning `window.components.renderIconCallback` after the palette rendered repaints the item icons in place;
+  an open palette keeps its query, active row and list scroll.
+
 ### Changed — BREAKING — public engine `CommandPaletteEngine`, settings one way (rulebook C-CA-37 / C-CA-39, 2026-11-20 – 11-21)
 
 - **BREAKING (rename, no alias):** `PaletteEngine` → `CommandPaletteEngine`, `PaletteEngineHost` →

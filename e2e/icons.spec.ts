@@ -1,4 +1,4 @@
-import { expect, test, load, open, palette } from './fixtures';
+import { expect, test, load, open, palette, activeTitle } from './fixtures';
 
 test.beforeEach(async ({ page }) => load(page, 'icons'));
 
@@ -47,4 +47,33 @@ test('item icons: assigning renderIconCallback re-renders the rows', async ({ pa
   });
   await expect(p.items.filter({ hasText: 'Shared' }).locator('u.swapped')).toHaveText('shared-gear');
   await expect(p.items.filter({ hasText: 'Builtin' }).locator('.km-icon.cp__icon--search')).toHaveCount(1);
+});
+
+test('item icons: a later page-wide renderIconCallback repaints an open palette, keeping query, active row and scroll (C-CA-40)', async ({ page }) => {
+  const p = palette(page);
+  await page.evaluate(() => {
+    const el = document.getElementById('palette') as HTMLElement & { commands: unknown[]; renderIconCallback: unknown };
+    el.renderIconCallback = null;
+    (window as unknown as { components: { renderIconCallback: unknown } }).components.renderIconCallback = null;
+    el.commands = Array.from({ length: 30 }, (_, i) => ({ id: `cmd${i}`, trigger: `/cmd${i}`, text: `Command ${i}`, icon: 'late-icon' }));
+  });
+  await open(page);
+  await p.input.fill('/cmd');
+  await expect(p.items).toHaveCount(30);
+  await expect(p.items.locator('[data-test-icon]')).toHaveCount(0);
+  for (let i = 0; i < 12; i++) await page.keyboard.press('ArrowDown');
+  const before = await activeTitle(page);
+  const results = p.host.locator('.cp__results');
+  const top = await results.evaluate((el) => el.scrollTop);
+  expect(top).toBeGreaterThan(0);
+
+  await page.evaluate(() => {
+    (window as unknown as { components: { renderIconCallback: unknown } }).components.renderIconCallback = (name: string) => (name === 'late-icon' ? '<b data-test-icon>x</b>' : null);
+  });
+  await expect(p.items.locator('[data-test-icon]')).toHaveCount(30);
+  await expect(p.root).toHaveClass(/cp--active/);
+  await expect(p.input).toHaveValue('/cmd');
+  expect(await activeTitle(page)).toBe(before);
+  expect(await results.evaluate((el) => el.scrollTop)).toBe(top);
+  await page.evaluate(() => { (window as unknown as { components: { renderIconCallback: unknown } }).components.renderIconCallback = null; });
 });

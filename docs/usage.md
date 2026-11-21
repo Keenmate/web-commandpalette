@@ -421,6 +421,9 @@ palette.renderIconCallback = (name) =>
   name.startsWith('lucide-') ? `<svg class="lucide"><use href="/lucide.svg#${name.slice(7)}"/></svg>` : null;
 ```
 
+Changing `window.components.renderIconCallback` later repaints the icons (an open palette keeps its query,
+active row and scroll).
+
 ## Labels
 
 ```js
