@@ -47,12 +47,27 @@ test.describe('feedback countdown bar', () => {
       el.setAttribute('motion', 'none');
       el.setAttribute('feedback-duration', '600');
     });
+    // Timestamp, in the page, when the feedback line starts and when the dialog closes — load can
+    // only stretch that span, so a lower bound checks "the timer keeps its time" without a fixed wait.
+    await p.host.evaluate((el) => {
+      const root = el.shadowRoot!.querySelector('.cp')!;
+      const w = window as unknown as { feedbackAt?: number; closedAt?: number };
+      new MutationObserver(() => {
+        if (w.feedbackAt === undefined && root.classList.contains('cp--confirming')) w.feedbackAt = performance.now();
+        if (w.feedbackAt !== undefined && w.closedAt === undefined && !root.classList.contains('cp--active')) {
+          w.closedAt = performance.now();
+        }
+      }).observe(root, { attributes: true, attributeFilter: ['class'] });
+    });
     await runReload(page);
     await expect(bar(page)).toHaveCount(0);
     // Still the full feedback time, then closed.
-    await page.waitForTimeout(300);
-    await expect(p.root).toHaveClass(/--active/);
-    await expect(p.root).not.toHaveClass(/--active/, { timeout: 1500 });
+    await expect(p.root).not.toHaveClass(/--active/, { timeout: 3000 });
+    const span = await page.evaluate(() => {
+      const w = window as unknown as { feedbackAt: number; closedAt: number };
+      return w.closedAt - w.feedbackAt;
+    });
+    expect(span).toBeGreaterThanOrEqual(550);
   });
 
   test('hidden with data-motion="none" on an ancestor section', async ({ page }) => {
