@@ -155,7 +155,7 @@ unit-testable without the DOM.
 > **API names updated (2026-10, interaction model).** The names below follow the Keenmate
 > interaction model (web-components-core `/actions`): events without the `cp-` prefix, one
 > `action` event per command run, single-ctx callbacks, commands as core action items,
-> `el.controller`. `docs/usage.md` is the reference; the CHANGELOG `[Unreleased]` section has the
+> `el.controller`. `docs/usage.md` is the reference; the CHANGELOG `[1.0.0-rc03]` section has the
 > old → new table.
 
 ### Tag
