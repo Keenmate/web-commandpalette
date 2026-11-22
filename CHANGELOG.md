@@ -87,6 +87,8 @@ No stable 1.0.0 is published, so the break ships as the next release candidate �
 - `examples-localization.html` — the shared localization page (LO01–LO06): instance `labels`, the page-wide
   dictionary, `translateCallback` (own → page-wide), aria-label / tooltip twins, locale-formatted counts,
   `shouldEscapeLabels`; linked from the index and `docs/examples.md`, smoke in `e2e/examples.spec.ts`.
+- The LO01 / LO02 code blocks are reference snippets (`data-kmwc-snippet`; the live code is toggled by the page script),
+  so devkit doctor `[pages]` no longer flags them as hand-copied (2026-11-22).
 
 ### Added — `translateCallback` on the element (core `/locale`, rulebook C-CA-33, 2026-11-20)
 
