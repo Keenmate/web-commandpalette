@@ -119,6 +119,10 @@ No stable 1.0.0 is published, so the break ships as the next release candidate �
   `shouldEscapeLabels`; linked from the index and `docs/examples.md`, smoke in `e2e/examples.spec.ts`.
 - The LO01 / LO02 code blocks are reference snippets (`data-kmwc-snippet`; the live code is toggled by the page script),
   so devkit doctor `[pages]` no longer flags them as hand-copied (2026-11-22).
+- LO03 shows the real i18next setup (`pageOf_one` / `_few` / `_other`) + the one generic bridge
+  (`{ ...params, count: params.ctx?.count }` into `exists()` / `t()`; the page picks the same Slovak forms with
+  `Intl.PluralRules`); new LO07 — the result count in Czech plural forms ("1 výsledek / 3 výsledky / 5 výsledků") via
+  the palette's own `translateCallback`, a 1 / 3 / 5 switch; e2e asserts both (2026-11-23).
 
 ### Added — `translateCallback` on the element (core `/locale`, rulebook C-CA-33, 2026-11-20)
 

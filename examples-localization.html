@@ -1,5 +1,5 @@
 <meta name="kmwc:title" content="Localization">
-<meta name="kmwc:subtitle" content="The shared localization page — instance <code>labels</code>, the page-wide dictionary, <code>translateCallback</code>, screen-reader / tooltip twins, locale number formatting and <code>shouldEscapeLabels</code>, in the same six sections every Keenmate component has.">
+<meta name="kmwc:subtitle" content="The shared localization page — instance <code>labels</code>, the page-wide dictionary, <code>translateCallback</code>, screen-reader / tooltip twins, locale number formatting and <code>shouldEscapeLabels</code>, in the same six sections every Keenmate component has — plus a result count in Czech plural forms.">
 
 <div class="note">
     Every UI string goes through core <code>/locale</code>. Keys are flat <code>&lt;elementType&gt;.&lt;name&gt;</code>
@@ -76,22 +76,46 @@ window.components.locale = {
         <code>{ component, key, template, params, locale }</code> — <code>key</code> is the full
         <code>web-command-palette.&lt;elementType&gt;.&lt;name&gt;</code> — and returns the text, or <code>null</code> = not mine.
         The element's own <code>translateCallback</code> is asked first (German, only <code>labels.select</code> here); its
-        <code>null</code> passes the key on to the page-wide one (a small Slovak i18next-like lookup). A key the instance
-        <code>labels</code> set (the second palette's <code>labels.select</code>) is never sent to any callback.
+        <code>null</code> passes the key on to the page-wide one — the app's i18next (Slovak, with plural forms for
+        <code>labels.pageOf</code>: the bridge hands i18next <code>params.ctx.count</code> as its <code>count</code>, the
+        template reads <code>{{ctx.page}}</code> / <code>{{ctx.total}}</code>). The page itself runs without i18next: the same
+        forms are picked with <code>Intl.PluralRules('sk')</code>. A key the instance <code>labels</code> set (the second
+        palette's <code>labels.select</code>) is never sent to any callback.
     </p>
     <div class="controls">
         <label><input type="checkbox" id="lo03-page"> page-wide <code>translateCallback</code> (Slovak)</label>
         <label><input type="checkbox" id="lo03-own"> first palette's own <code>translateCallback</code> (German)</label>
         <button type="button" class="btn-outline" data-open="lo03a" data-term="/">Open own callback</button>
+        <button type="button" class="btn-outline" data-open="lo03a" data-term=":n 1">Open the Numbers context</button>
         <button type="button" class="btn-outline" data-open="lo03b" data-term="/">Open instance <code>labels</code></button>
     </div>
     <div class="output"><div class="output-label">rendered strings</div><pre id="lo03-out"></pre></div>
-    <div class="code-block" data-language="js"><pre><code>// an i18next-like lookup: a dictionary + t(key, params)
-const sk = { 'web-command-palette.labels.select': 'Vybrať', 'web-command-palette.labels.navigate': 'Pohyb', … };
-const t = (key, params) =&gt; sk[key]?.replace(/\{\{(\w+)\}\}/g, (_, p) =&gt; params?.[p] ?? '');
+    <div class="code-block" data-language="js" data-kmwc-snippet><pre><code>// the app's own i18next — its JSON, plural forms as i18next's _one / _few / _other suffixes
+i18next.init({
+  lng: 'sk',
+  interpolation: { escapeValue: false },   // the component escapes what goes into HTML
+  resources: { sk: { translation: {
+    'web-command-palette': {
+      labels: {
+        select: 'Vybrať',
+        navigate: 'Pohyb',
+        close: 'Zavrieť',
+        pageOf_one: 'Strana {{ctx.page}} z {{ctx.total, number}} · {{count, number}} výsledok',
+        pageOf_few: 'Strana {{ctx.page}} z {{ctx.total, number}} · {{count, number}} výsledky',
+        pageOf_other: 'Strana {{ctx.page}} z {{ctx.total, number}} · {{count, number}} výsledkov',
+      },
+    },
+  } } },
+});
 
-// page-wide — every component on the page
-window.components.locale = { translateCallback: ({ key, params }) =&gt; (key in sk ? t(key, params) : null) };
+// page-wide — ONE generic bridge for every key of every component. params.ctx = the label's context;
+// ctx.count = the number the text's noun agrees with → i18next's `count` (exists() needs it too)
+window.components.locale = {
+  translateCallback: ({ key, params }) =&gt; {
+    const options = { ...params, count: params.ctx?.count };
+    return i18next.exists(key, options) ? i18next.t(key, options) : null;   // null = not mine
+  },
+};
 
 // one element — asked BEFORE the page-wide callback; null = not mine
 el.translateCallback = ({ key }) =&gt; (key === 'web-command-palette.labels.select' ? 'Auswählen' : null);
@@ -179,15 +203,49 @@ window.components.security = { shouldEscapeLabels: true };
 // → Type to search &amp;lt;b&amp;gt;&amp;lt;i&amp;gt;Ann…   (the whole label is text)</code></pre></div>
 </div>
 
+<!-- ============================================================= -->
+<!-- LO07 · Result count in Czech (plural rules)                    -->
+<!-- ============================================================= -->
+<div class="card">
+    <h2>LO07 · Result count in Czech (plural rules)</h2>
+    <p>
+        The palette's own <code>translateCallback</code> translates the result count — the screen-reader announcement
+        (<code>ariaLabels.resultsCount</code>) and the pagination row (<code>labels.pageOf</code>, two rows per page here).
+        <code>params.ctx.count</code> is the number the noun agrees with — the results — so <code>Intl.PluralRules('cs')</code>
+        picks the form: "1 výsledek / 3 výsledky / 5 výsledků". No i18n library needed; with i18next it is the one generic
+        bridge of LO03 (<code>resultsCount_one</code> / <code>_few</code> / <code>_other</code> in the app's JSON).
+        One result fits one page, so there is no pagination row then.
+    </p>
+    <div class="controls"><strong class="muted">the <em>Files</em> context returns</strong>
+        <label><input type="radio" name="lo07-count" value="1"> 1 result</label>
+        <label><input type="radio" name="lo07-count" value="3" checked> 3 results</label>
+        <label><input type="radio" name="lo07-count" value="5"> 5 results</label>
+        <button type="button" class="btn-outline" data-open="lo07" data-term=":files a">Open the Files context</button>
+    </div>
+    <div class="output"><div class="output-label">announced count + pagination row</div><pre id="lo07-out"></pre></div>
+    <div class="code-block" data-language="js" data-kmwc-snippet><pre><code>const plural = new Intl.PluralRules('cs');
+const forms = { one: 'výsledek', few: 'výsledky', many: 'výsledku', other: 'výsledků' };
+const results = (n) =&gt; `${n} ${forms[plural.select(n)]}`;
+
+el.translateCallback = ({ key, params }) =&gt; {
+  if (key === 'web-command-palette.ariaLabels.resultsCount') return results(params.ctx.count);
+  if (key === 'web-command-palette.labels.pageOf') return `Strana ${params.ctx.page}/${params.ctx.total} · ${results(params.ctx.count)}`;
+  return null;   // null = not mine → the next layer / English
+};
+
+// with i18next: the one generic bridge of LO03 (resultsCount_one / _few / _other in the app's JSON)</code></pre></div>
+</div>
+
 <!-- The demo palettes. Only the first connected one owns the global Ctrl/⌘+K hotkey. -->
 <web-command-palette id="lo01" class="lo-palette" motion="none"></web-command-palette>
 <web-command-palette id="lo01-plain" class="lo-palette" motion="none"></web-command-palette>
 <web-command-palette id="lo02" class="lo-palette" motion="none"></web-command-palette>
-<web-command-palette id="lo03a" class="lo-palette" motion="none"></web-command-palette>
+<web-command-palette id="lo03a" class="lo-palette" motion="none" search-debounce="0"></web-command-palette>
 <web-command-palette id="lo03b" class="lo-palette" motion="none"></web-command-palette>
 <web-command-palette id="lo04" class="lo-palette" motion="none"></web-command-palette>
 <web-command-palette id="lo05" class="lo-palette" motion="none" search-debounce="0"></web-command-palette>
 <web-command-palette id="lo06" class="lo-palette" motion="none"></web-command-palette>
+<web-command-palette id="lo07" class="lo-palette" motion="none" search-debounce="0" page-size="2"></web-command-palette>
 
 <script type="module">
     const $ = (id) => document.getElementById(id);
@@ -221,6 +279,12 @@ window.components.security = { shouldEscapeLabels: true };
         ];
         el.searchCallback = () => [];
     }
+    let lo07Count = 3;
+    const FILES = Array.from({ length: 5 }, (_, i) => ({ id: `f${i}`, title: `report-${i + 1}.pdf` }));
+    $('lo07').contexts = [
+        ...$('lo07').contexts,
+        { id: 'files', trigger: ':files', text: 'Files', icon: '📄', searchCallback: () => FILES.slice(0, lo07Count) },
+    ];
 
     // ── Readouts: open the palette for a moment, read the shadow root, close it (one at a time).
     const sr = (id) => $(id).shadowRoot;
@@ -241,6 +305,7 @@ window.components.security = { shouldEscapeLabels: true };
     const placeholder = (s) => s.querySelector('.cp__input')?.placeholder ?? '';
     const hints = (s) => [...s.querySelectorAll('.cp__hint')].map((h) => h.lastElementChild.textContent.trim()).join(' · ');
     const empty = (s) => s.querySelector('.cp__empty')?.textContent.trim() ?? '(none)';
+    const pagination = (s) => s.querySelector('.cp__pagination')?.textContent.trim() ?? '(none)';
     const commandsView = (s) => [`placeholder: ${placeholder(s)}`, `hints:       ${hints(s)}`];
     const write = (id, lines) => { $(id).textContent = lines.join('\n'); };
 
@@ -261,6 +326,7 @@ window.components.security = { shouldEscapeLabels: true };
         write('lo03-out', [
             `#lo03a  hints: ${await probe('lo03a', '/', hints)}`,
             `#lo03b  hints: ${await probe('lo03b', '/', hints)}`,
+            `#lo03a  pages: ${await probe('lo03a', ':n 1', pagination, (s) => s.querySelector('.cp__pagination'))}`,
         ]);
         write('lo04-out', await probe('lo04', '/', (s) => {
             const star = s.querySelector('.cp__star');
@@ -270,12 +336,12 @@ window.components.security = { shouldEscapeLabels: true };
                 `close aria-label: ${s.querySelector('.cp__close')?.getAttribute('aria-label') ?? '(none)'}`,
             ];
         }));
-        write('lo05-out', [await probe('lo05', ':n 1', (s) => s.querySelector('.cp__pagination')?.textContent.trim() ?? '(none)',
-            (s) => s.querySelector('.cp__pagination'))]);
+        write('lo05-out', [await probe('lo05', ':n 1', pagination, (s) => s.querySelector('.cp__pagination'))]);
         write('lo06-out', await probe('lo06', ':ann ', (s) => {
             const row = s.querySelector('.cp__empty');
             return row ? [`markup: ${row.innerHTML.trim()}`, `text:   ${row.textContent.trim()}`] : ['(none)'];
         }));
+        write('lo07-out', await readLo07());
         const again = refreshing.again;
         refreshing = null;
         if (again) refreshAll();
@@ -308,13 +374,27 @@ window.components.security = { shouldEscapeLabels: true };
     $('lo02-dict').addEventListener('change', (e) => { page.labels = e.target.checked ? CS : null; applyPage(); });
 
     // ── LO03 · translateCallback.
-    const sk = {
+    // The snippet's i18next setup without loading i18next: the same Slovak forms, picked with Intl.PluralRules.
+    const skPlural = new Intl.PluralRules('sk');
+    const skNumber = new Intl.NumberFormat('sk');   // i18next's {{x, number}} formats in lng
+    const SK = {
         'web-command-palette.labels.select': 'Vybrať',
         'web-command-palette.labels.navigate': 'Pohyb',
         'web-command-palette.labels.close': 'Zavrieť',
+        'web-command-palette.labels.pageOf': {
+            one: 'Strana {page} z {total} · {count} výsledok',
+            few: 'Strana {page} z {total} · {count} výsledky',
+            other: 'Strana {page} z {total} · {count} výsledkov',
+        },
     };
-    const t = (key, params) => sk[key].replace(/\{\{(\w+)\}\}/g, (_, p) => String(params?.[p] ?? ''));
-    const pageTranslate = ({ key, params }) => (key in sk ? t(key, params) : null);
+    const pageTranslate = ({ key, params }) => {
+        const entry = SK[key];
+        if (entry === undefined) return null;   // not mine
+        if (typeof entry === 'string') return entry;
+        const ctx = params.ctx;
+        return (entry[skPlural.select(ctx.count)] ?? entry.other)
+            .replace(/\{(\w+)\}/g, (_, p) => (p === 'page' ? String(ctx.page) : skNumber.format(ctx[p])));
+    };
     const ownTranslate = ({ key }) => (key === 'web-command-palette.labels.select' ? 'Auswählen' : null);
     $('lo03-page').addEventListener('change', (e) => { page.translateCallback = e.target.checked ? pageTranslate : null; applyPage(); });
     $('lo03b').labels = { 'labels.select': 'Instance wins' };
@@ -345,6 +425,34 @@ window.components.security = { shouldEscapeLabels: true };
         window.components.security = { shouldEscapeLabels: e.target.checked };
         refreshAll();
     });
+
+    // ── LO07 · result count in Czech (the palette's own translateCallback + Intl.PluralRules).
+    const csPlural = new Intl.PluralRules('cs');
+    const csForms = { one: 'výsledek', few: 'výsledky', many: 'výsledku', other: 'výsledků' };
+    const csResults = (n) => `${n} ${csForms[csPlural.select(n)]}`;
+    // With i18next: the generic bridge shown in LO03.
+    $('lo07').translateCallback = ({ key, params }) => {
+        if (key === 'web-command-palette.ariaLabels.resultsCount') return csResults(params.ctx.count);
+        if (key === 'web-command-palette.labels.pageOf') return `Strana ${params.ctx.page}/${params.ctx.total} · ${csResults(params.ctx.count)}`;
+        return null;
+    };
+    for (const radio of document.querySelectorAll('input[name="lo07-count"]')) {
+        radio.addEventListener('change', (e) => { lo07Count = Number(e.target.value); refreshAll(); });
+    }
+    // The count is announced through core's page-wide live region (announce(), written a moment later) — read it there.
+    const liveRegion = () => document.querySelector('body > [data-km-announcer="polite"]');
+    const readLo07 = () => (queue = queue.then(async () => {
+        await new Promise((r) => setTimeout(r, 100));   // let the earlier probes' announcements land first
+        const region = liveRegion();
+        if (region) region.textContent = '';
+        const el = $('lo07');
+        await el.whenSettled();
+        el.openWith(':files a');
+        await waitFor(() => sr('lo07').querySelector('.cp__item') && /výsled/.test(liveRegion()?.textContent ?? ''));
+        const rows = sr('lo07').querySelector('.cp__pagination')?.textContent.trim() ?? '(one page — no pagination row)';
+        el.close();
+        return [`announced:  ${liveRegion()?.textContent ?? '(none)'}`, `pagination: ${rows}`];
+    }));
 
     refreshAll();
 </script>

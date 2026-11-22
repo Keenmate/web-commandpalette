@@ -64,8 +64,11 @@ test('examples-localization.html: every toggle changes the shown text', async ({
   await expect(out('2')).toContainText('Nic nenalezeno');
   await page.locator('#lo03-page').check();
   await expect(out('3')).toContainText('#lo03b  hints: Pohyb · Instance wins');
+  // the page-wide i18next stand-in: Slovak plural form of labels.pageOf (Intl.PluralRules('sk'), sk number format)
+  await expect(out('3')).toContainText(/#lo03a {2}pages: Strana 1 z 1\s544 · 12\s345 výsledkov/);
   await page.locator('#lo03-own').check();
   await expect(out('3')).toContainText('#lo03a  hints: Pohyb · Auswählen');
+  await page.locator('#lo03-page').uncheck();   // page-wide: its Slovak labels.pageOf would win in LO05 too
   await page.locator('#lo04-caption').check();
   await expect(out('4')).toContainText('star  aria-label: Přidat do oblíbených');
   await expect(out('4')).toContainText('close aria-label: Zavřít');
@@ -78,6 +81,12 @@ test('examples-localization.html: every toggle changes the shown text', async ({
   await expect(out('5')).toHaveText('Page 1 of 1.544 · Results: 12.345');
   await page.locator('#lo06-escape').check();
   await expect(out('6')).toContainText('text:   Type to search <b><i>Ann</i></b>');
+  // LO07: a real result count switches the Czech plural form (own translateCallback + Intl.PluralRules('cs'))
+  await expect(out('7')).toHaveText('announced:  3 výsledky\npagination: Strana 1/2 · 3 výsledky');
+  await page.locator('input[name="lo07-count"][value="1"]').check();
+  await expect(out('7')).toHaveText('announced:  1 výsledek\npagination: (one page — no pagination row)');
+  await page.locator('input[name="lo07-count"][value="5"]').check();
+  await expect(out('7')).toHaveText('announced:  5 výsledků\npagination: Strana 1/3 · 5 výsledků');
   expect(errors).toEqual([]);
 });
 
