@@ -53,21 +53,6 @@ when `loadUsageCallback` is set; otherwise the core state store (`storage-key`; 
 used, save callback not called). Open question for the user: warn (`console.warn`
 once when `saveUsageCallback` is set without `loadUsageCallback`) or document it.
 
-## 4. CP-4 — `open` is reflected but not an input
-
-**Where:** `src/web-component.ts` — `open()` / `close()` toggle the `open` attribute
-on the host, but `open` is not in the `INPUTS` table (not observed).
-
-**Symptom:** `<web-command-palette open>` in markup does nothing (and the attribute
-then lies: it says open while the palette is closed); `el.setAttribute('open', '')` /
-`removeAttribute('open')` don't open/close it either.
-
-**Test status:** `e2e/api.spec.ts` — `test.fail(true, 'NOTES.md #4')`.
-
-**Suggested fix:** an `isOpen`/`open` input (`toBool`, `on: 'none'`) whose setter
-calls `open()` / `close()`, guarded against the reflection loop; or stop reflecting
-and document `open` as read-only state.
-
 ## 5. `page-size` changed while open doesn't re-page the current results — FIXED
 
 **Where:** `src/web-component.ts` `update()` → `'pageSize' in partial` →

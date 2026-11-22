@@ -91,17 +91,18 @@ Objects and functions are **properties only** — set them from JS (or a framewo
 | `favoritesHotkey` / `recentHotkey` | `string` | Key sequence (`'g f'`, palette closed) that opens on that list. Defaults `'g f'` / off. |
 | `onOpen` / `onClose` / `onResultSelect` / `onAction` / `onReady` | `(detail) => void` | Event twins — see [Events](#events). |
 | `controller` *(read-only)* | `CommandPaletteController` | The public facade. |
-| `isOpen` *(read-only)* | `boolean` | |
+| `isOpen` | `boolean` | Whether the palette is open (attribute `open`, reflected). Assigning opens / closes it like `open()` / `close()` (the events fire); reading it returns the live state. |
 
 Callbacks are read **live** on every call, so they can be (re)assigned at any time — e.g. by a
 LiveView bridge after `connectedCallback`.
 
 ## Attributes
 
-`display`, `size`, `labels` (JSON), `locale`, `page-size`, `open-key`, `search-debounce`, `search-behavior`, `search-match`, `presentation`,
+`open`, `display`, `size`, `labels` (JSON), `locale`, `page-size`, `open-key`, `search-debounce`, `search-behavior`, `search-match`, `presentation`,
 `usage-storage`, `storage-key`, `max-favorite-count`, `max-recent-count`, `favorite-key`, `favorites-key`,
 `recent-key`, `favorites-hotkey`, `recent-hotkey`, `show-feedback`, `feedback-duration`, `custom-styles`.
-`open` is **reflected** (present while open) — use the controller to open/close.
+`open` is **reflected** (present while open, also when the user opens / closes the palette): `<web-command-palette open>` opens
+at the first build, `setAttribute('open', '')` / `removeAttribute('open')` open / close it. `open="false"` = closed.
 Core (`BlissElement`): `defer` holds the first build until `el.release()`; `ready` is set once built
 (see [Lifecycle](#lifecycle)); `responsive` takes a JSON instance rules map (`responsive='{"breakpoint":{"mobile":{"display":"tokens"}}}'`,
 keys are configKeys — see [README → Responsive rules](../README.md#responsive-rules)).

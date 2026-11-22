@@ -139,11 +139,54 @@ test('commands reassigned while a wizard runs keep the current step usable', asy
   await expect(p.titles.first()).toHaveText('Reload Data');
 });
 
-test('the `open` attribute opens / closes the palette (CP-4)', async ({ page }) => {
-  test.fail(true, 'NOTES.md #4');
+test('the `open` attribute opens / closes the palette, one event each (CP-4)', async ({ page }) => {
   const p = palette(page);
   await p.host.evaluate((el) => el.setAttribute('open', ''));
-  await expect(p.root).toHaveClass(/--active/, { timeout: 1000 });
+  await expect(p.root).toHaveClass(/--active/);
+  expect(await isOpen(page)).toBe(true);
   await p.host.evaluate((el) => el.removeAttribute('open'));
-  await expect(p.root).not.toHaveClass(/--active/, { timeout: 1000 });
+  await expect(p.root).not.toHaveClass(/--active/);
+  expect(await isOpen(page)).toBe(false);
+  await page.evaluate(() => (document.getElementById('palette') as unknown as { whenSettled(): Promise<void> }).whenSettled());
+  expect(await names(page)).toEqual(['open', 'close']);
+});
+
+test('`el.isOpen = true / false` opens / closes and reflects `open` (CP-4)', async ({ page }) => {
+  const p = palette(page);
+  await page.evaluate(() => { (document.getElementById('palette') as unknown as El).isOpen = true; });
+  await expect(p.root).toHaveClass(/--active/);
+  await expect(p.host).toHaveAttribute('open', '');
+  await page.evaluate(() => { (document.getElementById('palette') as unknown as El).isOpen = false; });
+  await expect(p.root).not.toHaveClass(/--active/);
+  await expect(p.host).not.toHaveAttribute('open');
+  expect(await names(page)).toEqual(['open', 'close']);
+});
+
+test('a user open / close keeps reflecting `open` with no extra events (CP-4)', async ({ page }) => {
+  const p = palette(page);
+  await open(page);
+  await expect(p.host).toHaveAttribute('open', '');
+  await page.evaluate(() => (document.getElementById('palette') as unknown as { whenSettled(): Promise<void> }).whenSettled());
+  await page.keyboard.press('Escape');
+  await expect(p.root).not.toHaveClass(/--active/);
+  await expect(p.host).not.toHaveAttribute('open');
+  await page.evaluate(() => (document.getElementById('palette') as unknown as { whenSettled(): Promise<void> }).whenSettled());
+  expect(await names(page)).toEqual(['open', 'close']);
+  expect(await isOpen(page)).toBe(false);
+});
+
+test('`<web-command-palette open>` in markup opens at the first build (CP-4)', async ({ page }) => {
+  const state = await page.evaluate(async () => {
+    const el = document.createElement('web-command-palette') as unknown as El & { whenReady(): Promise<void> };
+    el.id = 'markup-open';
+    el.setAttribute('open', '');
+    let opened = 0;
+    el.addEventListener('open', () => opened++);
+    document.body.append(el);
+    await el.whenReady();
+    const result = { isOpen: el.isOpen, active: !!el.shadowRoot?.querySelector('.cp--active'), opened };
+    el.close();
+    return { ...result, attrAfterClose: el.hasAttribute('open') };
+  });
+  expect(state).toEqual({ isOpen: true, active: true, opened: 1, attrAfterClose: false });
 });

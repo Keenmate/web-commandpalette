@@ -43,6 +43,7 @@ import {
   type CustomStylesCallback,
   type CustomStylesHandle,
   type EnvironmentSnapshot,
+  type Converter,
   type InputDef,
   type Presentation,
   type ModalSession,
@@ -91,6 +92,13 @@ const isPlainObject = (v: unknown): v is Record<string, string> => typeof v === 
 // ============================================================================
 // INPUT TABLE — the whole public configuration surface, one row each
 // ============================================================================
+/**
+ * `open`: parsed as the usual flag (`toBool('default-false')`: `open` / `open="true"` → open, `open="false"` /
+ * absent → closed) but reflected as presence (`open=""` while open, removed while closed) — like `<dialog open>`,
+ * so `[open]` selectors work. Core's `toBool` would write `open="false"` when closed.
+ */
+const OPEN_STATE: Converter<boolean | null> = { ...toBool('default-false'), toAttribute: (value) => (value ? '' : null) };
+
 const INPUTS: readonly InputDef[] = [
   // ── Data (property-only) ─────────────────────────────────────────────────
   { configKey: 'commands', converter: toObjectArray(), on: 'update', type: 'Command[]',
@@ -137,6 +145,9 @@ const INPUTS: readonly InputDef[] = [
   // ── Attributes ───────────────────────────────────────────────────────────
   { configKey: 'display', attribute: 'display', converter: toEnum(['inline', 'tokens'] as const, { default: ENGINE_DEFAULTS.display }), shouldReflect: true, on: 'update',
     description: 'Wizard display: `inline` keeps the accumulated sentence in the input (`/assign iPad to `, prefix locked); `tokens` shows prior answers as removable badges above an empty input.' },
+  { configKey: 'isOpen', attribute: 'open', converter: OPEN_STATE, shouldReflect: true, on: 'update',
+    getLiveValue: (el) => readIsOpen(el as CommandPaletteElement),
+    description: 'Whether the palette is open. Reflected as `open` (present while open, also when the user opens / closes it). Setting it — the `open` attribute in markup, `el.isOpen = true`, `removeAttribute("open")` — opens / closes the palette like `open()` / `close()` (the `open` / `close` events fire). Reading it returns the live state.' },
   { configKey: 'size', attribute: 'size', converter: toEnum(['sm', 'lg', 'xl'] as const, { isNullable: true }), shouldReflect: true, on: 'update',
     description: 'Width/height preset (`sm` | `lg` | `xl`). Unset = default. For arbitrary sizes set `--cp-width` / `--cp-results-max-height`.' },
   { configKey: 'pageSize', attribute: 'page-size', converter: toInt({ min: 1, default: ENGINE_DEFAULTS.pageSize }), on: 'update',
@@ -216,6 +227,9 @@ interface Trigger {
   element?: HTMLElement;
 }
 
+/** Reads the live open state (the `isOpen` row's `getLiveValue`); set by the class's static block. */
+let readIsOpen: (el: CommandPaletteElement) => boolean = () => false;
+
 /** The element that owns the document-level keys (one palette per page). */
 let keyOwner: CommandPaletteElement | null = null;
 const connected = new Set<CommandPaletteElement>();
@@ -223,6 +237,10 @@ const connected = new Set<CommandPaletteElement>();
 export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, CommandPaletteController> {
   protected static override inputs = INPUTS;
   protected static override events = EVENTS;
+
+  static {
+    readIsOpen = (el) => el.#isOpen;
+  }
 
   // The inputs are typed through the `CommandPaletteElement` interface merge below
   // (core docs/usage.md "Typing the properties", rulebook C-CA-16); core installs
@@ -244,6 +262,8 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   #unbindGlobalKeys: (() => void) | null = null;
   #usage: UsageStore | null = null;
   #isOpen = false;
+  /** `connect()` ran once (the markup `open` is honoured only then). */
+  #hasConnected = false;
   #isFullscreen = false;
   /** The open dialog's core modal session (SPEC §12.19): trap, inert page, backdrop, Escape, Back, scroll lock. */
   #modal: ModalSession | null = null;
@@ -650,6 +670,14 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   }
 
   protected override update(partial: Record<string, unknown>): void {
+    // `open` attribute / `el.isOpen` (CP-4). `open()` / `close()` reflect the attribute themselves, so a user
+    // open/close comes back here as a no-op (no event loop).
+    if ('isOpen' in partial) {
+      // Only a real change: a user open that already ran (a `g d` wizard may be in its feedback) stays as it is.
+      if (partial.isOpen && !this.#isOpen) this.open();
+      else if (!partial.isOpen && this.#isOpen) this.close();
+      if (Object.keys(partial).length === 1) return;
+    }
     // The engine settings this batch changed, first — `setOptions` applies each (the list, wizard step, paging,
     // search) and the chrome labels below resolve through the engine's resolver.
     const engineOptions = this.#engineOptions(partial);
@@ -697,11 +725,18 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     } else if (keyOwner !== this) {
       this.log.INIT.warn('more than one <web-command-palette> is connected; only the first owns the global hotkeys');
     }
+    // `<web-command-palette open>` in markup (or `isOpen` set before the first build). Only the first connect:
+    // a move closes the palette (CP-1) and must not re-open it; a later `isOpen` change goes through `update()`.
+    if (!this.#hasConnected) {
+      this.#hasConnected = true;
+      if (this.config.isOpen && !this.#isOpen) this.open();
+    }
   }
 
   protected override disconnect(): void {
-    this.close();
-    this.#finishClosingNow();
+    // The live side goes first, `close()` last: on a DOM move `close()` removes the observed `open` attribute, and
+    // that DOM write makes the browser run the queued `connectedCallback` → `connect()` right there, inside this
+    // hook. Done in this order, that nested `connect()` re-registers what was just stopped.
     connected.delete(this);
     if (keyOwner === this) {
       this.#unbindGlobalKeys?.();
@@ -714,6 +749,8 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
         next.#unbindGlobalKeys = bindGlobalKeys(next.#globalKeys);
       }
     }
+    this.close();
+    this.#finishClosingNow();
   }
 
   protected override destroyCallback(): void {
@@ -813,11 +850,6 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   }
 
   // ── public API (also on `el.controller`) ──────────────────────────────────
-
-  /** Whether the palette is open. (Also reflected as the `open` attribute.) */
-  get isOpen(): boolean {
-    return this.#isOpen;
-  }
 
   /** Open on the home screen. No-op when already open. */
   open(): void {
@@ -961,6 +993,7 @@ export interface CommandPaletteConfig {
   customStyles: string | null;
   getCustomStylesCallback: CustomStylesCallback<PaletteContext> | null;
   // attributes
+  isOpen: boolean;
   display: Display;
   size: 'sm' | 'lg' | 'xl' | null;
   pageSize: number;

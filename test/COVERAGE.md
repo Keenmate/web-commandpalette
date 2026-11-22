@@ -39,7 +39,7 @@ Known bugs are in `test/NOTES.md`.
 | `reset()` returns home while open | ✓ | `api.spec.ts` | `api.html` |
 | `openFavorites()` / `openRecent()` | ✓ | `api.spec.ts` | `api.html` |
 | `commands` / `contexts` reassignment (element + `el.controller`) while open | ✓ | `api.spec.ts` | `api.html` |
-| `open` attribute opens/closes (CP-4, `test.fail`) | ✗ | `api.spec.ts` | `api.html` |
+| `open` attribute / `el.isOpen` open + close, reflected on user open/close, markup `open` at first build (CP-4) | ✓ | `api.spec.ts` | `api.html` |
 | `el.controller` facade, ctx `controller` / `element` | ✓ | `interaction-model.spec.ts` | `interaction-model.html` |
 
 ## 3. Keyboard

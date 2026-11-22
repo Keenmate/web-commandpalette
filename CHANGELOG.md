@@ -10,6 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 No stable 1.0.0 is published, so the break ships as the next release candidate — but
 `^1.0.0-rc02` consumers will pull it: the event, callback and item API below is breaking.
 
+### Fixed — the `open` attribute opens / closes the palette (CP-4, 2026-11-22)
+
+- `open` is now an input (`isOpen`, attribute `open`, reflected) instead of a reflect-only attribute:
+  `<web-command-palette open>` in markup opens the palette at the first build, `setAttribute('open', '')` /
+  `removeAttribute('open')` and `el.isOpen = true / false` open / close it (the `open` / `close` events fire once).
+  A user open / close keeps reflecting `open=""` / no attribute, with no extra events. Before, the attribute did
+  nothing and then lied (present while the palette was closed).
+- A DOM move while open still closes cleanly and keeps the global hotkeys (`disconnect()` stops the live side
+  before `close()`).
+
 ### Added — icons repaint when the page-wide icon hook changes (core `iconsChanged()`, rulebook C-CA-40, 2026-11-22)
 
 - Assigning `window.components.renderIconCallback` after the palette rendered repaints the item icons in place;
