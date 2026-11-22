@@ -5,11 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.0-rc03] - 2026-11-22
 
-Target: **1.0.0-rc03**. No stable 1.0.0 is published, so the break ships as the next release
-candidate — but `^1.0.0-rc02` consumers will pull it: the event,
-callback and item API below is breaking.
+No stable 1.0.0 is published, so the break ships as the next release candidate — but
+`^1.0.0-rc02` consumers will pull it: the event, callback and item API below is breaking.
 
 ### Added — icons repaint when the page-wide icon hook changes (core `iconsChanged()`, rulebook C-CA-40, 2026-11-22)
 
@@ -665,9 +664,10 @@ the `--cp-*` input, so the palette looks the same with or without the contract, 
 - `display="tokens"`: an answer containing a `$` replacement pattern (`$&`, `$'`, `$$`) no longer
   garbles its badge's "Remove …" label (test/NOTES.md #6).
 
-## [1.0.0-rc02] - 2026-10-19
+### Changed — the palette owns its CSS on the `@keenmate/base-css-variables` 2.0 contract (2026-10-19 – 10-24)
 
-### Changed
+Listed under 1.0.0-rc02 before; that version was already on npm (2026-10-12) without these changes, so
+they ship first in this release.
 
 - **Search placeholder falls back to text step 3** (`--cp-text-color-1` 55% into the surface, was
   40%), matching `@keenmate/base-css-variables` 2.0.0-rc03, which moved
@@ -721,14 +721,32 @@ the `--cp-*` input, so the palette looks the same with or without the contract, 
 - New `--cp-*` knobs (all listed in the manifest): colors (`--cp-accent-color`, `--cp-bg`,
   `--cp-text-color-1…3`, `--cp-border-color`, …), input (`--cp-input-*`), badges
   (`--cp-badge-*`), `--cp-z-index`, `--cp-rem`, plus the type / spacing / motion scale.
+- **Browser floor raised** to Chrome / Edge 123+, Firefox 128+, Safari 17.5+ (was Chrome / Edge 111+,
+  Firefox 113+, Safari 16.2+): the CSS now uses `light-dark()`, and the `@keenmate/base-css-variables`
+  2.0 themes use relative color syntax (README → Browser support).
+
+### Fixed (2026-10-24)
+
+- The narrow-window `max-height: 60vh` results cap applies again, and reduced motion also
+  stops the open animations.
+
+### Internal (2026-10-12 – 11-09)
+
+- The devkit comes from npm (`@keenmate/web-components-devkit` `^1.0.0-rc01`), so
+  the examples image builds from the registry like every other dependency.
+- devDependency `@keenmate/base-css-variables` `^2.0.1` (was `^2.0.0-rc06`; `--base-dropdown-offset`, read by
+  core rc21's anchor default).
+
+## [1.0.0-rc02] - 2026-10-12 [PUBLISHED]
+
+### Changed
+
 - **Moved onto `@keenmate/web-components-devkit`.** The Vite and Playwright configs are the
   devkit presets (`defineComponentConfig` / `definePlaywrightConfig`), configured once in
   `package.json#kmwc`. `Dockerfile`, `nginx.conf`, `Makefile` and `.dockerignore` are generated
   by `kmwc sync` (vitest targets moved to `Makefile.local`). The library output is unchanged:
   `dist/web-commandpalette.js`, `.umd.js` and `index.d.ts`.
 - **Vite 7** (from 5) and **Vitest 3** (from 2).
-- The devkit comes from npm (`@keenmate/web-components-devkit` `^1.0.0-rc01`), so
-  the examples image builds from the registry like every other dependency.
 - **Dev port 12400** (examples image 12410), the repo's block in the Keenmate component registry.
   It was 12300, which belongs to web-treeview.
 - **Example pages are fragments.** The devkit layout adds the head, header and back link, and
@@ -739,13 +757,9 @@ the `--cp-*` input, so the palette looks the same with or without the contract, 
 - **The examples site is a Vite multi-page build** (`npm run build:examples` → `dist-examples/`),
   which the image serves. It replaces the `sed` rewrites of `/src/index.ts` and the version badge.
 - **`check:vars` is `kmwc check-vars`** against the built bundle (`consumed` mode), so it now runs
-  after `vite build`.
+  after `vite build`. The `--pa-*` / `--pc-*` leak guard moved into the shadow-CSS plugin and
+  fails the build itself.
 - `custom-elements` added to the package keywords.
-
-### Fixed
-
-- The narrow-window `max-height: 60vh` results cap applies again, and reduced motion also
-  stops the open animations.
 
 ### Removed
 
