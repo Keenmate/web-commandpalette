@@ -70,12 +70,12 @@ test('examples-localization.html: every toggle changes the shown text', async ({
   await expect(out('4')).toContainText('star  aria-label: Přidat do oblíbených');
   await expect(out('4')).toContainText('close aria-label: Zavřít');
   await page.locator('input[name="lo05-locale"][value="de-DE"]').check();
-  await expect(out('5')).toHaveText('Page 1 of 1.544 · 12.345 results');
+  await expect(out('5')).toHaveText('Page 1 of 1.544 · Results: 12.345');
   // the element's own locale wins over the page one; unset follows the page again
   await page.locator('input[name="lo05-el-locale"][value="en"]').check();
-  await expect(out('5')).toHaveText('Page 1 of 1,544 · 12,345 results');
+  await expect(out('5')).toHaveText('Page 1 of 1,544 · Results: 12,345');
   await page.locator('input[name="lo05-el-locale"][value=""]').check();
-  await expect(out('5')).toHaveText('Page 1 of 1.544 · 12.345 results');
+  await expect(out('5')).toHaveText('Page 1 of 1.544 · Results: 12.345');
   await page.locator('#lo06-escape').check();
   await expect(out('6')).toContainText('text:   Type to search <b><i>Ann</i></b>');
   expect(errors).toEqual([]);

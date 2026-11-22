@@ -13,7 +13,7 @@ import { findHighlightRanges, wrapRanges } from '@keenmate/web-components-core/s
 import { NO_SEARCH_QUERY, type SearchQuery } from './helpers/filter';
 import { chordKeycap } from './keyboard';
 import type { HomeSection, CommandPaletteEngine, TokenView, UsageView, ViewItem } from './palette';
-import { DEFAULT_PALETTE_KEYS, type CommandPaletteLabels, type PaletteKeys, type PaletteLabels } from './types';
+import { DEFAULT_PALETTE_KEYS, type CommandPaletteLabels, type PaletteKeys, type PaletteLabels, type ResultsCountLabelContext, type ShowAllLabelContext, type TokenLabelContext } from './types';
 
 export interface Shell {
   root: HTMLDivElement;
@@ -164,7 +164,7 @@ function sectionHtml(heading: Heading, rows: string, more = ''): string {
 /** "+2 · Ctrl+F" on a capped home section: click/tap (or the chord) opens the full list. */
 function moreHtml(view: UsageView, hidden: number, heading: string, ctx: RenderContext): string {
   const cap = chordKeycap(view === 'favorites' ? ctx.keys.favorites : ctx.keys.recent);
-  const count = hidden > 0 ? ctx.labels.html('buttons.showAll', { count: hidden }) : '';
+  const count = hidden > 0 ? ctx.labels.html('buttons.showAll', { ctx: { count: hidden, view } satisfies ShowAllLabelContext }) : '';
   if (!count && !cap) return '';
   return (
     `<button type="button" class="cp__more" tabindex="-1" data-view="${view}" aria-label="${escapeHtml(heading)}${cap ? ` (${escapeHtml(cap)})` : ''}">` +
@@ -225,7 +225,7 @@ function tokensHtml(tokens: TokenView[] | null, labels: PaletteLabels): string {
         case 'selection':
           return (
             `<span class="cp__badge"><bdi>${escapeHtml(t.label)}</bdi>` +
-            `<button type="button" class="cp__badge-remove" data-token="${t.index}" aria-label="${escapeHtml(labels.text('ariaLabels.removeToken', { name: t.label }))}">` +
+            `<button type="button" class="cp__badge-remove" data-token="${t.index}" aria-label="${escapeHtml(labels.text('ariaLabels.removeToken', { ctx: { name: t.label, index: t.index } satisfies TokenLabelContext }))}">` +
             `<span class="km-icon cp__icon cp__icon--remove" aria-hidden="true"></span></button></span>`
           );
       }
@@ -398,7 +398,7 @@ export class Renderer {
     }
     // Core's one page-wide live region (SPEC §12.23) — stays readable while the modal makes the page inert.
     // Silent while a provider call is pending (debounce / loader); tracked across '' so the same count after a new search is read again.
-    const text = m.mode === 'idle' || m.isLoading || m.isPending ? '' : m.items.length ? labels.text('ariaLabels.resultsCount', { count: m.totalResults }) : m.emptyText ?? '';
+    const text = m.mode === 'idle' || m.isLoading || m.isPending ? '' : m.items.length ? labels.text('ariaLabels.resultsCount', { ctx: { count: m.totalResults } satisfies ResultsCountLabelContext }) : m.emptyText ?? '';
     if (text !== this.#announce) {
       this.#announce = text;
       announce(text);

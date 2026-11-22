@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 No stable 1.0.0 is published, so the break ships as the next release candidate — but
 `^1.0.0-rc02` consumers will pull it: the event, callback and item API below is breaking.
 
+### Changed — BREAKING — labels read the spot's context, `{ctx.*}` (rulebook D-NC-24, 2026-11-23)
+
+- **BREAKING (no aliases):** every dynamic label passes its values as `{ ctx }` and the templates read
+  dotted `{ctx.*}` placeholders: `{name}` → `{ctx.name}` (`labels.scopeSearchingIn`, `messages.typeToSearch`,
+  `ariaLabels.removeToken`), `{page}` / `{total}` / `{count}` → `{ctx.page}` / `{ctx.total}` / `{ctx.count}`
+  (`labels.pageOf`, `buttons.showAll`, `ariaLabels.resultsCount`), `{key}` → `{ctx.key}` (`messages.noFavorites`).
+  A custom label with a bare `{name}` / `{count}` now prints it literally.
+- A `translateCallback` gets the values as `params.ctx` (was flat `params.count`, …); `ctx.count` is the number the
+  text's noun agrees with (results, hidden rows), so an app's i18n (i18next `count`) picks the plural form — core
+  never pluralizes.
+- New exported types: `ScopeLabelContext` (`id`, `name`, `trigger`), `PageLabelContext` (`page`, `total`, `count`),
+  `ShowAllLabelContext` (`count`, `view`), `TokenLabelContext` (`name`, `index`), `ResultsCountLabelContext` (`count`),
+  `NoFavoritesLabelContext` (`key`), `LabelContextParams` (`LabelRef.params`).
+- English defaults avoid a plural noun right after a number: `labels.pageOf` "Page {ctx.page} of {ctx.total} ·
+  Results: {ctx.count}" (was "… · {count} results"), `ariaLabels.resultsCount` "Results: {ctx.count}" (was
+  "{count} results").
+
 ### Fixed — the `open` attribute opens / closes the palette (CP-4, 2026-11-22)
 
 - `open` is now an input (`isOpen`, attribute `open`, reflected) instead of a reflect-only attribute:

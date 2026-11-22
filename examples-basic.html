@@ -74,7 +74,7 @@ palette.searchCallback = async ({ scope, term, signal }) =&gt; fetchResults(scop
     <h2>BU04 · Labels (i18n)</h2>
     <p>
         Every visible string comes from <code>labels</code>. It's partial: unset keys fall back to English, and
-        <code>{name}</code>, <code>{page}</code>, <code>{total}</code> and <code>{count}</code> are filled in.
+        dynamic labels read their spot's context: <code>{ctx.name}</code>, <code>{ctx.page}</code>, <code>{ctx.total}</code> and <code>{ctx.count}</code> are filled in.
     </p>
     <div class="controls">
         <span><code>labels</code>:</span>
@@ -97,7 +97,7 @@ palette.searchCallback = async ({ scope, term, signal }) =&gt; fetchResults(scop
         English. Keys are <code>&lt;elementType&gt;.&lt;name&gt;</code> (<code>placeholders.idle</code>,
         <code>messages.noResults</code>, <code>labels.pageOf</code>, …). Assigning the
         page object re-renders an open palette in place — try it with the palette open. The numbers in
-        <code>{count}</code>, <code>{page}</code> and <code>{total}</code> are formatted for the locale: the
+        <code>{ctx.count}</code>, <code>{ctx.page}</code> and <code>{ctx.total}</code> are formatted for the locale: the
         <em>Numbers</em> context returns 12,345 rows, so the pagination reads <code>12 345</code> in Czech.
     </p>
     <div class="controls">
@@ -111,7 +111,7 @@ palette.searchCallback = async ({ scope, term, signal }) =&gt; fetchResults(scop
     <div class="code-block" data-language="js"><pre><code>window.components.locale = {
     locale: 'cs',
     labels: {
-        'web-command-palette.labels.pageOf': 'Strana {page} z {total} · {count} výsledků',
+        'web-command-palette.labels.pageOf': 'Strana {ctx.page} z {ctx.total} · Výsledky: {ctx.count}',
         'web-command-palette.messages.noResults': 'Nic nenalezeno',
         …
     },
@@ -129,12 +129,12 @@ palette.searchCallback = async ({ scope, term, signal }) =&gt; fetchResults(scop
         'placeholders.idle': 'Napište / pro příkazy, : pro hledání, nebo cokoli…',
         'messages.noResults': 'Nic nenalezeno',
         'messages.searching': 'Hledám…',
-        'labels.scopeSearchingIn': 'Hledání v: {name}',
-        'messages.typeToSearch': 'Začněte psát pro hledání v: {name}',
+        'labels.scopeSearchingIn': 'Hledání v: {ctx.name}',
+        'messages.typeToSearch': 'Začněte psát pro hledání v: {ctx.name}',
         'headers.commands': 'Příkazy', 'headers.search': 'Hledání',
         'labels.scopeCommands': 'Příkazy', 'labels.scopeContexts': 'Oblasti hledání',
         'labels.navigate': 'Pohyb', 'labels.select': 'Vybrat', 'labels.back': 'Zpět', 'labels.close': 'Zavřít', 'labels.pages': 'Stránky',
-        'labels.pageOf': 'Strana {page} z {total} · {count} výsledků',
+        'labels.pageOf': 'Strana {ctx.page} z {ctx.total} · Výsledky: {ctx.count}',
     };
     /** The same Czech strings as full keys, for the page-wide flat dictionary. */
     const toFullKeys = (map) => Object.fromEntries(Object.entries(map).map(([k, v]) => [`web-command-palette.${k}`, v]));
@@ -167,7 +167,7 @@ palette.searchCallback = async ({ scope, term, signal }) =&gt; fetchResults(scop
             labels: toFullKeys({
                 ...CS,
                 'headers.favorites': 'Oblíbené', 'headers.recent': 'Nedávné',
-                'ariaLabels.resultsCount': '{count} výsledků', 'headers.done': 'Hotovo', 'ariaLabels.done': 'Hotovo',
+                'ariaLabels.resultsCount': 'Výsledky: {ctx.count}', 'headers.done': 'Hotovo', 'ariaLabels.done': 'Hotovo',
             }),
         };
         document.querySelectorAll('input[name="bu05-lang"]').forEach((r) =>

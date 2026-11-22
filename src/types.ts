@@ -13,7 +13,7 @@
 import type { ActionEventDetail as CoreActionEventDetail, ActionItem, ComponentContext } from '@keenmate/web-components-core/actions';
 import type { PresentationContext } from '@keenmate/web-components-core';
 import type { SearchBehavior, SearchCallbackContext, SearchEntry, SearchMatch } from '@keenmate/web-components-core/search';
-import type { LabelParams, Labels } from '@keenmate/web-components-core/locale';
+import type { Labels } from '@keenmate/web-components-core/locale';
 
 export type { SearchBehavior, SearchMatch };
 
@@ -353,9 +353,10 @@ export type BeforeActionCallback = (detail: ActionEventDetail) => unknown;
  * `tooltips`, `ariaLabels`, `placeholders`, `headers`, `labels`, `messages`. Order: the instance
  * `labels` (short `placeholders.filter` or full `web-command-palette.placeholders.filter` keys) →
  * the page-wide flat dictionary `window.components.locale.labels['web-command-palette.<key>']` →
- * the English default. `{name}`, `{key}`, `{page}`, `{total}`, `{count}` are placeholders (numbers
- * passed raw; core formats them for the locale — `12 345` in Czech, a `translateCallback` gets the
- * number); a page-wide `translateCallback` (ICU / i18next) translates every label. A label drawn
+ * the English default. A dynamic label reads its spot's context through `{ctx.*}` placeholders
+ * (`{ctx.name}`, `{ctx.count}`, …; the typed `*LabelContext` named on each key — a `translateCallback`
+ * gets it as `params.ctx`, so `ctx.count` drives its plural forms). Numbers are passed raw; core
+ * formats them for the locale (`12 345` in Czech); a page-wide `translateCallback` (ICU / i18next) translates every label. A label drawn
  * as content (headings, hints, empty / loading / page text, the feedback heading) is an HTML
  * template whose `{…}` values are escaped; one used as an attribute, placeholder, badge or
  * announcement is plain text. `window.components.security = { shouldEscapeLabels: true }` makes
@@ -383,13 +384,13 @@ export interface CommandPaletteLabels {
   'labels.scopeCommands': string;
   /** Context pill under `:`. */
   'labels.scopeContexts': string;
-  /** Context pill in context search; `{name}`. */
+  /** Context pill in context search; `{ctx.name}` ({@link ScopeLabelContext}). */
   'labels.scopeSearchingIn': string;
   /** Context pill in the full favorites list. */
   'labels.scopeFavorites': string;
   /** Context pill in the full recent list. */
   'labels.scopeRecent': string;
-  /** Pagination row; `{page}`, `{total}`, `{count}`. */
+  /** Pagination row; `{ctx.page}`, `{ctx.total}`, `{ctx.count}` ({@link PageLabelContext}). */
   'labels.pageOf': string;
   /** Badge on a replayed step's remembered answer. */
   'labels.lastUsed': string;
@@ -411,7 +412,7 @@ export interface CommandPaletteLabels {
   'labels.addFavorite': string;
   /** Footer hint for the star chord, when the active row is starred. */
   'labels.removeFavorite': string;
-  /** Home section-heading link to the full list; `{count}` = rows not shown on the home screen. */
+  /** Home section-heading link to the full list; `{ctx.count}` = rows not shown on the home screen ({@link ShowAllLabelContext}). */
   'buttons.showAll': string;
   /** Star button tooltip (the chord is appended), when the row is not starred. */
   'tooltips.addFavorite': string;
@@ -423,13 +424,13 @@ export interface CommandPaletteLabels {
   'ariaLabels.input': string;
   /** Accessible name of the close button (fullscreen sheet). */
   'ariaLabels.close': string;
-  /** Accessible name of a token's remove button; `{name}`. */
+  /** Accessible name of a token's remove button; `{ctx.name}` ({@link TokenLabelContext}). */
   'ariaLabels.removeToken': string;
   /** Accessible name of the star button, when the row is not starred. */
   'ariaLabels.addFavorite': string;
   /** Accessible name of the star button, when the row is starred. */
   'ariaLabels.removeFavorite': string;
-  /** Live-region announcement of the result count; `{count}`. */
+  /** Live-region announcement of the result count; `{ctx.count}` ({@link ResultsCountLabelContext}). */
   'ariaLabels.resultsCount': string;
   /** Live-region announcement prefix after a command ran (`Done: /deploy …`). */
   'ariaLabels.done': string;
@@ -437,9 +438,9 @@ export interface CommandPaletteLabels {
   'messages.noResults': string;
   /** Loader text — also the loader's accessible name (role="status"; one text, one key). */
   'messages.searching': string;
-  /** Empty-query prompt in context search; `{name}`. */
+  /** Empty-query prompt in context search; `{ctx.name}` ({@link ScopeLabelContext}). */
   'messages.typeToSearch': string;
-  /** Favorites list with nothing starred; `{key}` = the star shortcut. */
+  /** Favorites list with nothing starred; `{ctx.key}` = the star shortcut ({@link NoFavoritesLabelContext}). */
   'messages.noFavorites': string;
   /** Recent list with nothing used yet. */
   'messages.noRecent': string;
@@ -456,10 +457,10 @@ export const DEFAULT_LABELS: CommandPaletteLabels = {
   'headers.done': 'Done',
   'labels.scopeCommands': 'Commands',
   'labels.scopeContexts': 'Search contexts',
-  'labels.scopeSearchingIn': 'Searching in {name}',
+  'labels.scopeSearchingIn': 'Searching in {ctx.name}',
   'labels.scopeFavorites': 'Favorites',
   'labels.scopeRecent': 'Recent',
-  'labels.pageOf': 'Page {page} of {total} · {count} results',
+  'labels.pageOf': 'Page {ctx.page} of {ctx.total} · Results: {ctx.count}',
   'labels.lastUsed': 'Last used',
   'labels.navigate': 'Navigate',
   'labels.pages': 'Pages',
@@ -470,31 +471,82 @@ export const DEFAULT_LABELS: CommandPaletteLabels = {
   'labels.close': 'Close',
   'labels.addFavorite': 'Add to favorites',
   'labels.removeFavorite': 'Remove from favorites',
-  'buttons.showAll': '+{count}',
+  'buttons.showAll': '+{ctx.count}',
   'tooltips.addFavorite': 'Add to favorites',
   'tooltips.removeFavorite': 'Remove from favorites',
   'ariaLabels.dialog': 'Command palette',
   'ariaLabels.input': 'Command palette',
   'ariaLabels.close': 'Close',
-  'ariaLabels.removeToken': 'Remove {name}',
+  'ariaLabels.removeToken': 'Remove {ctx.name}',
   'ariaLabels.addFavorite': 'Add to favorites',
   'ariaLabels.removeFavorite': 'Remove from favorites',
-  'ariaLabels.resultsCount': '{count} results',
+  'ariaLabels.resultsCount': 'Results: {ctx.count}',
   'ariaLabels.done': 'Done',
   'messages.noResults': 'No results found',
   'messages.searching': 'Searching…',
-  'messages.typeToSearch': 'Type to search {name}',
-  'messages.noFavorites': 'No favorites yet — star a row with {key}',
+  'messages.typeToSearch': 'Type to search {ctx.name}',
+  'messages.noFavorites': 'No favorites yet — star a row with {ctx.key}',
   'messages.noRecent': 'Nothing used yet',
 };
+
+/** `{ctx.*}` of `labels.scopeSearchingIn` / `messages.typeToSearch`: the context being searched. */
+export interface ScopeLabelContext {
+  /** The context's id. */
+  id: string;
+  /** Its display text (`Context.text`). */
+  name: string;
+  /** Its colon token, e.g. `":products"`. */
+  trigger: string;
+}
+
+/** `{ctx.*}` of `labels.pageOf`: the pagination row. */
+export interface PageLabelContext {
+  /** The current page (1-based). */
+  page: number;
+  /** The number of pages. */
+  total: number;
+  /** The number of results (the noun the text agrees with). */
+  count: number;
+}
+
+/** `{ctx.*}` of `buttons.showAll`: a capped home section's link to its full list. */
+export interface ShowAllLabelContext {
+  /** Rows not shown on the home screen. */
+  count: number;
+  /** The section: `'favorites'` or `'recent'`. */
+  view: 'favorites' | 'recent';
+}
+
+/** `{ctx.*}` of `ariaLabels.removeToken`: a chosen wizard answer shown as a token. */
+export interface TokenLabelContext {
+  /** The token's text. */
+  name: string;
+  /** Its position among the selections (0-based). */
+  index: number;
+}
+
+/** `{ctx.*}` of `ariaLabels.resultsCount`: the live-region result count. */
+export interface ResultsCountLabelContext {
+  /** The number of results. */
+  count: number;
+}
+
+/** `{ctx.*}` of `messages.noFavorites`. */
+export interface NoFavoritesLabelContext {
+  /** The star shortcut as shown (keycap text, e.g. `Ctrl+S`). */
+  key: string;
+}
+
+/** The params of a dynamic label: its spot's context, read by `{ctx.*}` placeholders. */
+export type LabelContextParams = { readonly ctx: object };
 
 /** One palette's resolved labels (core `createLabels`): `.text(key, params)` / `.html(key, params)`. */
 export type PaletteLabels = Labels<CommandPaletteLabels>;
 
-/** A label key + its placeholder values, resolved when drawn (`.text()` for text, `.html()` for markup). */
+/** A label key + its spot's context (`{ ctx }`), resolved when drawn (`.text()` for text, `.html()` for markup). */
 export interface LabelRef {
   key: keyof CommandPaletteLabels & string;
-  params?: LabelParams;
+  params?: LabelContextParams;
 }
 
 /** Palette modes (IMPLEMENTATION_PLAN §10). */

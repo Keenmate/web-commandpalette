@@ -67,7 +67,7 @@ Objects and functions are **properties only** — set them from JS (or a framewo
 | `loadStateCallback` | `LoadStateCallback<PaletteUsageState>` | Core state store (SPEC §12.17): `({ key }) => { entries } \| null` (async OK) — the page keeps the whole list. Set both state callbacks; either one alone switches `localStorage` off. |
 | `saveStateCallback` | `SaveStateCallback<PaletteUsageState>` | `({ key, state })`, `state` = the WHOLE `{ entries }` on every use / star toggle. |
 | `labels` | `Partial<CommandPaletteLabels>` | UI strings (core `/locale`); unset keys fall back to the page-wide labels, then English. Also a JSON attribute (`labels='{"placeholders.idle":"Hledat…"}'`). See [Labels](#labels). |
-| `locale` | `string \| null` | BCP-47 locale for the numbers in labels (`{count}` / `{page}` / `{total}`) and `translateCallback`'s `ctx.locale` (attribute `locale`). Unset (default, or `'auto'`) = the page-wide `window.components.locale.locale`, else the browser language. A change re-renders the labels in place. See [Labels](#labels). |
+| `locale` | `string \| null` | BCP-47 locale for the numbers in labels (`{ctx.count}` / `{ctx.page}` / `{ctx.total}`) and `translateCallback`'s `ctx.locale` (attribute `locale`). Unset (default, or `'auto'`) = the page-wide `window.components.locale.locale`, else the browser language. A change re-renders the labels in place. See [Labels](#labels). |
 | `display` | `'inline' \| 'tokens'` | Wizard display. Default `inline`. |
 | `size` | `'sm' \| 'lg' \| 'xl' \| null` | Width/height preset. |
 | `pageSize` | `number` | Search results per page. Default `8`. |
@@ -430,7 +430,7 @@ active row and scroll).
 ```js
 palette.labels = {
   'placeholders.idle': 'Hledat…',
-  'messages.typeToSearch': 'Začněte psát pro hledání v {name}',
+  'messages.typeToSearch': 'Začněte psát pro hledání v {ctx.name}',
   'headers.favorites': 'Oblíbené',
   'headers.recent': 'Nedávné',
 };
@@ -450,25 +450,25 @@ pill, a footer hint and the star button's name / tooltip) has one key per place.
 | `headers.fullscreen` | Search | Title of the phone fullscreen sheet |
 | `headers.done` | Done | Feedback panel heading after a command ran |
 | `labels.scopeCommands` / `labels.scopeContexts` | Commands / Search contexts | Context pill under `/` / `:` |
-| `labels.scopeSearchingIn` | Searching in {name} | Context pill in a context search |
+| `labels.scopeSearchingIn` | Searching in {ctx.name} | Context pill in a context search; ctx `ScopeLabelContext` (`id`, `name`, `trigger`) |
 | `labels.scopeFavorites` / `labels.scopeRecent` | Favorites / Recent | Context pill in the full favorites / recent list |
-| `labels.pageOf` | Page {page} of {total} · {count} results | Pagination row |
+| `labels.pageOf` | Page {ctx.page} of {ctx.total} · Results: {ctx.count} | Pagination row; ctx `PageLabelContext` (`page`, `total`, `count` = results) |
 | `labels.lastUsed` | Last used | Badge on a replayed step's remembered answer |
 | `labels.navigate` / `labels.pages` / `labels.next` / `labels.run` / `labels.select` / `labels.back` / `labels.close` | Navigate / Pages / Next / Run / Select / Back / Close | Footer hints |
 | `labels.addFavorite` / `labels.removeFavorite` | Add to favorites / Remove from favorites | Footer hint for the star chord |
-| `buttons.showAll` | +{count} | Home heading link to the full favorites / recent list |
+| `buttons.showAll` | +{ctx.count} | Home heading link to the full favorites / recent list; ctx `ShowAllLabelContext` (`count` = rows not shown, `view`) |
 | `tooltips.addFavorite` / `tooltips.removeFavorite` | Add to favorites / Remove from favorites | Star button tooltip (the chord is appended) |
 | `ariaLabels.addFavorite` / `ariaLabels.removeFavorite` | Add to favorites / Remove from favorites | Star button accessible name |
 | `ariaLabels.dialog` | Command palette | Dialog accessible name |
 | `ariaLabels.input` | Command palette | Search input accessible name |
 | `ariaLabels.close` | Close | Close button (fullscreen sheet) |
-| `ariaLabels.removeToken` | Remove {name} | A token's remove button |
-| `ariaLabels.resultsCount` | {count} results | Live-region announcement of the result count |
+| `ariaLabels.removeToken` | Remove {ctx.name} | A token's remove button; ctx `TokenLabelContext` (`name`, `index`) |
+| `ariaLabels.resultsCount` | Results: {ctx.count} | Live-region announcement of the result count; ctx `ResultsCountLabelContext` (`count`) |
 | `ariaLabels.done` | Done | Live-region announcement prefix after a command ran (`Done: …`) |
 | `messages.noResults` | No results found | A search / filter matched nothing |
 | `messages.searching` | Searching… | Loader text — also the loader's accessible name |
-| `messages.typeToSearch` | Type to search {name} | Empty query in a context search |
-| `messages.noFavorites` | No favorites yet — star a row with {key} | Favorites list with nothing starred |
+| `messages.typeToSearch` | Type to search {ctx.name} | Empty query in a context search; ctx `ScopeLabelContext` |
+| `messages.noFavorites` | No favorites yet — star a row with {ctx.key} | Favorites list with nothing starred; ctx `NoFavoritesLabelContext` (`key` = the star shortcut) |
 | `messages.noRecent` | Nothing used yet | Recent list with nothing used yet |
 
 Labels resolve per key through core `/locale` (`createLabels`, tag `web-command-palette`): the instance
@@ -481,7 +481,10 @@ translates every label the instance `labels` did not set (`key` is the full key;
 `window.components.locale.translateCallback` — one palette on a page needs no `window.components` setup.
 
 ```js
-palette.translateCallback = ({ key, params }) => i18next.exists(key) ? i18next.t(key, params) : null;
+palette.translateCallback = ({ key, params }) => {
+  const options = { ...params, count: params.ctx?.count }; // i18next picks the plural form by `count`
+  return i18next.exists(key, options) ? i18next.t(key, options) : null;
+};
 ```
 
 ```js
@@ -489,23 +492,29 @@ window.components.locale = {
   locale: 'cs',
   labels: {
     'web-command-palette.messages.noResults': 'Nic nenalezeno',
-    'web-command-palette.labels.pageOf': 'Strana {page} z {total} · {count} výsledků',
+    'web-command-palette.labels.pageOf': 'Strana {ctx.page} z {ctx.total} · Výsledky: {ctx.count}',
   },
 };
 ```
 
-**Numbers** filled into `{count}`, `{page}` and `{total}` are passed as numbers; core formats them for
+**Dynamic labels read their spot's context.** Every value a label shows comes in as `{ ctx }` — the typed
+`*LabelContext` named in the table — and the template reads it with dotted `{ctx.*}` placeholders
+(`{ctx.name}`, `{ctx.count}`). `ctx.count` is the number the text's noun agrees with, so a
+`translateCallback` can pick plural forms from `params.ctx.count`; core itself never pluralizes, which is
+why the English defaults avoid a plural noun right after a number (`Results: {ctx.count}`).
+
+**Numbers** filled into `{ctx.count}`, `{ctx.page}` and `{ctx.total}` are passed as numbers; core formats them for
 the resolved locale (the palette's own `locale`, else the page-wide `locale` / `thousandsSeparator`, else
 the browser language) — `12 345` in Czech, `12,345` in English. A `translateCallback` receives the raw
-numbers (for plurals) and the resolved locale as `ctx.locale`.
+numbers (`params.ctx`, for plurals) and the resolved locale as `ctx.locale`.
 
 ```html
-<web-command-palette locale="de"></web-command-palette>  <!-- "Page 1 of 1.544 · 12.345 results" -->
+<web-command-palette locale="de"></web-command-palette>  <!-- "Page 1 of 1.544 · Results: 12.345" -->
 ```
 
 **HTML or text.** A label drawn as content — `headers.*`, footer hints, the `messages.*` empty /
 loading text, `labels.pageOf`, `buttons.showAll` — is an HTML template: markup in it renders,
-the `{name}` / `{key}` values filled into it are escaped (they are data). A label used as an
+the `{ctx.name}` / `{ctx.key}` values filled into it are escaped (they are data). A label used as an
 attribute (`ariaLabels.*`, `tooltips.*`), the input placeholder, the context pill, the `labels.lastUsed` badge or a screen-reader
 announcement is plain text. `window.components.security = { shouldEscapeLabels: true }` makes every
 label plain text. A key set to `''` is deliberately empty — the string is not rendered (an `''`

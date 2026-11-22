@@ -430,7 +430,7 @@ describe('global search', () => {
     await vi.advanceTimersByTimeAsync(150);
     expect(m.totalPages).toBe(3);
     expect(m.isPaginated).toBe(true);
-    expect(m.pageText).toBe('Page 1 of 3 · 20 results');
+    expect(m.pageText).toBe('Page 1 of 3 · Results: 20');
     expect(m.turnPage(1)).toBe(true);
     expect(titles(m)[0]).toBe('Hit 8');
     expect(m.turnPage(1)).toBe(true);
@@ -448,7 +448,7 @@ describe('global search', () => {
     await vi.advanceTimersByTimeAsync(150);
     m.turnPage(1); // rows 8..15
     m.setOptions({ pageSize: 5 });
-    expect(m.pageText).toBe('Page 2 of 4 · 20 results');
+    expect(m.pageText).toBe('Page 2 of 4 · Results: 20');
     expect(titles(m)).toEqual(['Hit 5', 'Hit 6', 'Hit 7', 'Hit 8', 'Hit 9']);
     m.setOptions({ pageSize: 50 });
     expect(m.pageText).toBeNull();

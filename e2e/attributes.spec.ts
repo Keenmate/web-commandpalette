@@ -16,7 +16,7 @@ test('page-size sets the results per page', async ({ page }) => {
   await attr(page, 'page-size', '5');
   await open(page);
   await p.input.fill('many');
-  await expect(p.pagination).toHaveText('Page 1 of 4 · 20 results');
+  await expect(p.pagination).toHaveText('Page 1 of 4 · Results: 20');
   await expect(p.items).toHaveCount(5);
 });
 
@@ -24,9 +24,9 @@ test('page-size changed while open re-pages the current results', async ({ page 
   const p = palette(page);
   await open(page);
   await p.input.fill('many');
-  await expect(p.pagination).toHaveText('Page 1 of 3 · 20 results');
+  await expect(p.pagination).toHaveText('Page 1 of 3 · Results: 20');
   await attr(page, 'page-size', '10');
-  await expect(p.pagination).toHaveText('Page 1 of 2 · 20 results');
+  await expect(p.pagination).toHaveText('Page 1 of 2 · Results: 20');
   await expect(p.items).toHaveCount(10);
 });
 
@@ -35,7 +35,7 @@ test('an invalid page-size falls back to the default (8)', async ({ page }) => {
   await attr(page, 'page-size', '0');
   await open(page);
   await p.input.fill('many');
-  await expect(p.pagination).toHaveText('Page 1 of 3 · 20 results');
+  await expect(p.pagination).toHaveText('Page 1 of 3 · Results: 20');
 });
 
 test('removing page-size resets it to the default (8)', async ({ page }) => {
@@ -43,9 +43,9 @@ test('removing page-size resets it to the default (8)', async ({ page }) => {
   await attr(page, 'page-size', '4');
   await open(page);
   await p.input.fill('many');
-  await expect(p.pagination).toHaveText('Page 1 of 5 · 20 results');
+  await expect(p.pagination).toHaveText('Page 1 of 5 · Results: 20');
   await attr(page, 'page-size', null);
-  await expect(p.pagination).toHaveText('Page 1 of 3 · 20 results');
+  await expect(p.pagination).toHaveText('Page 1 of 3 · Results: 20');
   await expect(p.items).toHaveCount(8);
 });
 

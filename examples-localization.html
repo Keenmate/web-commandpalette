@@ -130,7 +130,7 @@ other.labels = { 'labels.select': 'Instance wins' };</code></pre></div>
 <div class="card">
     <h2>LO05 · <code>locale</code> + formatting</h2>
     <p>
-        Numbers in labels (<code>{page}</code> / <code>{total}</code> / <code>{count}</code> in <code>labels.pageOf</code>,
+        Numbers in labels (<code>{ctx.page}</code> / <code>{ctx.total}</code> / <code>{ctx.count}</code> in <code>labels.pageOf</code>,
         <code>ariaLabels.resultsCount</code>, <code>buttons.showAll</code>) are formatted for the palette's
         <code>locale</code> → <code>window.components.locale.locale</code> → the browser. The element's own
         <code>locale</code> wins over the page locale; unset (or <code>auto</code>) follows it. The palette formats no
@@ -151,7 +151,7 @@ other.labels = { 'labels.select': 'Instance wins' };</code></pre></div>
     </div>
     <div class="output"><div class="output-label">pagination row</div><pre id="lo05-out"></pre></div>
     <div class="code-block" data-language="js"><pre><code>window.components.locale = { locale: 'de-DE' };
-// "Page 1 of 1.544 · 12.345 results"   (cs-CZ: "12 345", en-IN: "12,345")
+// "Page 1 of 1.544 · Results: 12.345"   (cs-CZ: "12 345", en-IN: "12,345")
 palette.locale = 'en';   // this palette only (attribute: &lt;web-command-palette locale="en"&gt;): "12,345"</code></pre></div>
 </div>
 
@@ -162,7 +162,7 @@ palette.locale = 'en';   // this palette only (attribute: &lt;web-command-palett
     <h2>LO06 · <code>shouldEscapeLabels</code></h2>
     <p>
         Content labels (headings, hints, empty / loading / page texts) are HTML templates: the template's own
-        <code>&lt;b&gt;</code> renders bold, while a <code>{name}</code> value — here the context's text
+        <code>&lt;b&gt;</code> renders bold, while a <code>{ctx.name}</code> value — here the context's text
         <code>&lt;i&gt;Ann&lt;/i&gt;</code>, DATA from the app — is always escaped, so its tags show as text instead of turning
         italic. With <code>window.components.security.shouldEscapeLabels</code> the whole label is text: the template's
         <code>&lt;b&gt;</code> shows as characters too (for apps whose translators must not inject markup).
@@ -173,7 +173,7 @@ palette.locale = 'en';   // this palette only (attribute: &lt;web-command-palett
     </div>
     <div class="output"><div class="output-label">the empty-state row: markup → shown text</div><pre id="lo06-out"></pre></div>
     <div class="code-block" data-language="js"><pre><code>el.contexts = [{ id: 'ann', trigger: ':ann', text: '&lt;i&gt;Ann&lt;/i&gt;' }];
-el.labels = { 'messages.typeToSearch': 'Type to search &lt;b&gt;{name}&lt;/b&gt;' };
+el.labels = { 'messages.typeToSearch': 'Type to search &lt;b&gt;{ctx.name}&lt;/b&gt;' };
 // → Type to search &lt;b&gt;&amp;lt;i&amp;gt;Ann&amp;lt;/i&amp;gt;&lt;/b&gt;   (bold, tags of the data as text)
 window.components.security = { shouldEscapeLabels: true };
 // → Type to search &amp;lt;b&amp;gt;&amp;lt;i&amp;gt;Ann…   (the whole label is text)</code></pre></div>
@@ -340,7 +340,7 @@ window.components.security = { shouldEscapeLabels: true };
     }
 
     // ── LO06 · shouldEscapeLabels.
-    $('lo06').labels = { 'messages.typeToSearch': 'Type to search <b>{name}</b>' };
+    $('lo06').labels = { 'messages.typeToSearch': 'Type to search <b>{ctx.name}</b>' };
     $('lo06-escape').addEventListener('change', (e) => {
         window.components.security = { shouldEscapeLabels: e.target.checked };
         refreshAll();

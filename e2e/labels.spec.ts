@@ -17,7 +17,7 @@ test('custom labels render; unset keys fall back to English', async ({ page }) =
   await expect(p.input).toHaveAttribute('placeholder', 'Befehl eingeben…');
   await expect(p.container).toHaveAttribute('aria-label', 'Befehlspalette');
   await p.input.fill(':p ');
-  await expect(p.empty).toHaveText('Suche in Products'); // {name} interpolated
+  await expect(p.empty).toHaveText('Suche in Products'); // {ctx.name} interpolated
   // An unset key (labels.scopeContexts) keeps the English default.
   await p.input.fill(':');
   await expect(p.context).toHaveText('Search contexts');
@@ -81,7 +81,7 @@ test("'' renders nothing; undefined keeps the English default", async ({ page })
 /**
  * Page-wide labels (core /locale): the flat `window.components.locale.labels['web-command-palette.<key>']` sits
  * between the instance `labels` and English; assigning the page object re-renders the open palette
- * in place (core `localeChanged()`), and `{count}` / `{page}` / `{total}` are locale-formatted.
+ * in place (core `localeChanged()`), and `{ctx.count}` / `{ctx.page}` / `{ctx.total}` are locale-formatted.
  */
 test.describe('page-wide locale', () => {
   test.afterEach(async ({ page }) => {
@@ -135,7 +135,7 @@ test.describe('page-wide locale', () => {
 
     await page.evaluate(() => {
       (window as any).components.locale = {
-        labels: { 'web-command-palette.labels.scopeSearchingIn': 'Hledám v {name}', 'web-command-palette.ariaLabels.close': 'Zavřít', 'web-command-palette.headers.fullscreen': 'Hledat' },
+        labels: { 'web-command-palette.labels.scopeSearchingIn': 'Hledám v {ctx.name}', 'web-command-palette.ariaLabels.close': 'Zavřít', 'web-command-palette.headers.fullscreen': 'Hledat' },
       };
     });
     await expect(p.context).toHaveText('Hledám v Products');
@@ -155,14 +155,14 @@ test.describe('page-wide locale', () => {
     await page.evaluate(() => { (window as any).components.locale = { locale: 'cs' }; });
     await open(page);
     await p.input.fill(':p row');
-    await expect(p.pagination).toHaveText(/^Page 1 of 1\s544 · 12\s345 results$/);
-    await expect(page.locator('[data-km-announcer="polite"]')).toHaveText(/^12\s345 results$/);
+    await expect(p.pagination).toHaveText(/^Page 1 of 1\s544 · Results: 12\s345$/);
+    await expect(page.locator('[data-km-announcer="polite"]')).toHaveText(/^Results: 12\s345$/);
 
     await page.evaluate(() => { (window as any).components.locale = { locale: 'en-US' }; });
-    await expect(p.pagination).toHaveText('Page 1 of 1,544 · 12,345 results');
+    await expect(p.pagination).toHaveText('Page 1 of 1,544 · Results: 12,345');
   });
 
-  test('a page-wide translateCallback gets the raw numbers', async ({ page }) => {
+  test('a page-wide translateCallback gets the spot context with raw numbers (params.ctx)', async ({ page }) => {
     const p = palette(page);
     await p.host.evaluate((el: any) => {
       el.searchCallback = () => Array.from({ length: 12345 }, (_, i) => ({ id: `r${i}`, title: `Row ${i}` }));
@@ -173,7 +173,7 @@ test.describe('page-wide locale', () => {
         locale: 'cs',
         translateCallback: ({ key, params }: any) => {
           if (key === 'web-command-palette.labels.pageOf') (window as any).seen.push(params);
-          return key === 'web-command-palette.labels.pageOf' ? `typeof ${typeof params.count} ${params.count}` : undefined;
+          return key === 'web-command-palette.labels.pageOf' ? `typeof ${typeof params.ctx.count} ${params.ctx.count}` : undefined;
         },
       };
     });
@@ -181,7 +181,7 @@ test.describe('page-wide locale', () => {
     await p.input.fill(':p row');
     await expect(p.pagination).toHaveText('typeof number 12345');
     const seen = await page.evaluate(() => (window as any).seen.at(-1));
-    expect(seen).toEqual({ page: 1, total: 1544, count: 12345 });
+    expect(seen).toEqual({ ctx: { page: 1, total: 1544, count: 12345 } });
   });
 });
 
@@ -203,19 +203,19 @@ test.describe('locale input', () => {
     expect(await p.host.evaluate((el: any) => el.locale)).toBe('de');
     await open(page);
     await p.input.fill(':p row');
-    await expect(p.pagination).toHaveText('Page 1 of 1.544 · 12.345 results');
+    await expect(p.pagination).toHaveText('Page 1 of 1.544 · Results: 12.345');
 
     // unset → the page-wide locale
     await page.evaluate(() => { (window as any).components.locale = { locale: 'cs' }; });
     await p.host.evaluate(async (el: any) => { el.removeAttribute('locale'); await el.whenSettled(); });
     expect(await p.host.evaluate((el: any) => el.locale)).toBeNull();
-    await expect(p.pagination).toHaveText(/^Page 1 of 1\s544 · 12\s345 results$/);
+    await expect(p.pagination).toHaveText(/^Page 1 of 1\s544 · Results: 12\s345$/);
 
     // the element's own locale wins over the page one; 'auto' = unset
     await p.host.evaluate(async (el: any) => { el.locale = 'en-US'; await el.whenSettled(); });
-    await expect(p.pagination).toHaveText('Page 1 of 1,544 · 12,345 results');
+    await expect(p.pagination).toHaveText('Page 1 of 1,544 · Results: 12,345');
     await p.host.evaluate(async (el: any) => { el.locale = 'auto'; await el.whenSettled(); });
-    await expect(p.pagination).toHaveText(/^Page 1 of 1\s544 · 12\s345 results$/);
+    await expect(p.pagination).toHaveText(/^Page 1 of 1\s544 · Results: 12\s345$/);
     await expect(p.input).toHaveValue(':products row'); // mode + query kept
   });
 });

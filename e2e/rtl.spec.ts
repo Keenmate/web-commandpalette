@@ -29,12 +29,12 @@ test('RTL paging: → (toward the inline start) is "previous", ← is "next"', a
   await p.host.evaluate((el) => el.setAttribute('dir', 'rtl'));
   await open(page);
   await p.input.fill('many');
-  await expect(p.pagination).toHaveText('Page 1 of 3 · 20 results');
+  await expect(p.pagination).toHaveText('Page 1 of 3 · Results: 20');
   await page.keyboard.press('ArrowLeft'); // caret at the end → next page
-  await expect(p.pagination).toHaveText('Page 2 of 3 · 20 results');
+  await expect(p.pagination).toHaveText('Page 2 of 3 · Results: 20');
   await p.input.evaluate((el: HTMLInputElement) => el.setSelectionRange(0, 0));
   await page.keyboard.press('ArrowRight'); // caret at the start → previous page
-  await expect(p.pagination).toHaveText('Page 1 of 3 · 20 results');
+  await expect(p.pagination).toHaveText('Page 1 of 3 · Results: 20');
 });
 
 test('the confirmation line starts at the inline start in RTL', async ({ page }) => {

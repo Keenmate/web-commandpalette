@@ -36,10 +36,13 @@ import type {
   Display,
   LabelRef,
   Mode,
+  NoFavoritesLabelContext,
   Option,
+  PageLabelContext,
   PaletteLabels,
   Result,
   Scope,
+  ScopeLabelContext,
   SearchBehavior,
   SearchCallback,
   SearchContext,
@@ -51,6 +54,11 @@ import type {
   StepOptionsContext,
   UsageEntry,
 } from './types';
+
+/** The `{ctx.*}` of the context-search labels (`labels.scopeSearchingIn`, `messages.typeToSearch`). */
+function scopeLabelContext(context: Context): ScopeLabelContext {
+  return { id: context.id, name: context.text, trigger: context.trigger };
+}
 
 /** PgUp/PgDn jump (matches all three legacy implementations). */
 export const PAGE_STEP = 8;
@@ -89,7 +97,7 @@ export interface CommandPaletteEngineOptions {
   /** This palette's own translation hook (core `TranslateCallback`), asked before the page-wide one; `null` = not mine. */
   translateCallback: TranslateCallback | null;
   /**
-   * `locale`: BCP-47 locale for the numbers in labels (`{count}` / `{page}` / `{total}`) and `translateCallback`'s
+   * `locale`: BCP-47 locale for the numbers in labels (`{ctx.count}` / `{ctx.page}` / `{ctx.total}`) and `translateCallback`'s
    * `ctx.locale`. Default `null` (the page-wide `window.components.locale`, else the browser).
    */
   locale: string | null;
@@ -540,7 +548,7 @@ export class CommandPaletteEngine {
       case 'command-list': return labels.text('labels.scopeCommands');
       case 'context-list': return labels.text('labels.scopeContexts');
       case 'command-step': return this.command ? this.#resolve(this.command).text : null;
-      case 'context-search': return this.context ? labels.text('labels.scopeSearchingIn', { name: this.context.text }) : null;
+      case 'context-search': return this.context ? labels.text('labels.scopeSearchingIn', { ctx: scopeLabelContext(this.context) }) : null;
       case 'favorites-list': return labels.text('labels.scopeFavorites');
       case 'recent-list': return labels.text('labels.scopeRecent');
       default: return null;
@@ -597,7 +605,7 @@ export class CommandPaletteEngine {
     if (this.totalPages <= 1) return null;
     return {
       key: 'labels.pageOf',
-      params: { page: this.page, total: this.totalPages, count: this.totalResults }, // numbers: core formats them
+      params: { ctx: { page: this.page, total: this.totalPages, count: this.totalResults } satisfies PageLabelContext }, // numbers: core formats them
     };
   }
 
@@ -862,7 +870,7 @@ export class CommandPaletteEngine {
     this.emptyLabel = all.length
       ? { key: 'messages.noResults' }
       : view === 'favorites'
-        ? { key: 'messages.noFavorites', params: { key: chordKeycap(this.#options.favoriteKey) } }
+        ? { key: 'messages.noFavorites', params: { ctx: { key: chordKeycap(this.#options.favoriteKey) } satisfies NoFavoritesLabelContext } }
         : { key: 'messages.noRecent' };
     this.#setItems(q ? all.filter((i) => matchesAny([i.title, i.meta], this.#query(q))) : all);
   }
@@ -1252,7 +1260,7 @@ export class CommandPaletteEngine {
       // The rule that started this project: an empty context query NEVER hits the
       // provider — prompt instead of dumping "top N" results.
       this.isLoading = false;
-      this.emptyLabel = { key: 'messages.typeToSearch', params: { name: this.context!.text } };
+      this.emptyLabel = { key: 'messages.typeToSearch', params: { ctx: scopeLabelContext(this.context!) } };
       this.#setResults([]);
       if (!isEntry) this.#changed();
       return;

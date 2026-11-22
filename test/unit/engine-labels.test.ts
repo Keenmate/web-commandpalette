@@ -54,6 +54,19 @@ describe('engine labels (no element)', () => {
     expect(own).not.toHaveBeenCalledWith(expect.objectContaining({ key: 'web-command-palette.placeholders.idle' }));
   });
 
+  it('{ctx.*}: a dynamic label reads its spot context; translateCallback gets it as params.ctx', () => {
+    const seen: unknown[] = [];
+    const own: TranslateCallback = ({ key, params }) => {
+      if (key === 'web-command-palette.labels.scopeSearchingIn') seen.push(params);
+      return null;
+    };
+    const { m } = harness({ labels: { 'messages.typeToSearch': 'Hledej v {ctx.name} ({ctx.trigger})' }, translateCallback: own });
+    m.setInput(':p ');
+    expect(m.contextText).toBe('Searching in Products');
+    expect(seen.at(-1)).toEqual({ ctx: { id: 'products', name: 'Products', trigger: ':products' } });
+    expect(m.emptyText).toBe('Hledej v Products (:products)');
+  });
+
   it('setOptions: a changed option applies on the next read', () => {
     const { m } = harness();
     m.setOptions({ translateCallback: upper });
@@ -72,7 +85,7 @@ describe('engine labels (no element)', () => {
 });
 
 describe('engine locale (no element, C-CA-38)', () => {
-  const showAll = (m: ReturnType<typeof harness>['m']): string => m.labels.text('buttons.showAll', { count: 1234 });
+  const showAll = (m: ReturnType<typeof harness>['m']): string => m.labels.text('buttons.showAll', { ctx: { count: 1234, view: 'favorites' } });
 
   it('the default is ENGINE_DEFAULTS.locale (null) — the same value the element row uses', () => {
     expect(ENGINE_DEFAULTS.locale).toBeNull();

@@ -218,7 +218,7 @@ test('announcer: the shared core region gets the result count (and the palette h
   await p.input.fill(':p ipad');
   await expect(p.titles).toHaveText(['ipad hit 0', 'ipad hit 1']);
   const region = page.locator('body > [data-km-announcer="polite"]');
-  await expect(region).toHaveText('2 results');
+  await expect(region).toHaveText('Results: 2');
   await expect(region).toHaveAttribute('role', 'status');
   await expect(p.host.locator('.cp__sr-only')).toHaveCount(0);
   // The modal's inert background skips core's region — it stays readable while the palette is open.

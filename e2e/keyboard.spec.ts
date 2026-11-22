@@ -64,19 +64,19 @@ test('←→ page through results (client-side) when the caret is at the edge', 
   const p = palette(page);
   await open(page);
   await p.input.fill('many');
-  await expect(p.pagination).toHaveText('Page 1 of 3 · 20 results');
+  await expect(p.pagination).toHaveText('Page 1 of 3 · Results: 20');
   expect(await hints(p.footer)).toContain('←→ Pages');
   await page.keyboard.press('ArrowRight');
-  await expect(p.pagination).toHaveText('Page 2 of 3 · 20 results');
+  await expect(p.pagination).toHaveText('Page 2 of 3 · Results: 20');
   await expect(p.titles.first()).toHaveText('Global many 8');
   await page.keyboard.press('ArrowLeft'); // caret mid-text → normal caret move, no paging
-  await expect(p.pagination).toHaveText('Page 2 of 3 · 20 results');
+  await expect(p.pagination).toHaveText('Page 2 of 3 · Results: 20');
   await page.keyboard.press('ArrowRight'); // caret back to the end
   await page.keyboard.press('ArrowRight');
-  await expect(p.pagination).toHaveText('Page 3 of 3 · 20 results');
+  await expect(p.pagination).toHaveText('Page 3 of 3 · Results: 20');
   await p.input.evaluate((el: HTMLInputElement) => el.setSelectionRange(0, 0));
   await page.keyboard.press('ArrowLeft'); // caret at 0 → previous page
-  await expect(p.pagination).toHaveText('Page 2 of 3 · 20 results');
+  await expect(p.pagination).toHaveText('Page 2 of 3 · Results: 20');
   expect((await calls(page)).search.length).toBe(1);
 });
 
