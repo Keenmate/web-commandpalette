@@ -7,7 +7,7 @@ test('Ctrl+K toggles the palette, focuses the input, fires open/close', async ({
   await expect(p.root).not.toHaveClass(/--active/);
   await open(page);
   await expect(p.input).toBeFocused();
-  await expect(p.host).toHaveAttribute('open', '');
+  await expect(p.host).toHaveAttribute('open', 'true');
   await page.keyboard.press('Control+k');
   await expect(p.root).not.toHaveClass(/--active/);
   await expect(p.host).not.toHaveAttribute('open');

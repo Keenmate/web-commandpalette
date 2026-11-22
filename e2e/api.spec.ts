@@ -155,7 +155,7 @@ test('`el.isOpen = true / false` opens / closes and reflects `open` (CP-4)', asy
   const p = palette(page);
   await page.evaluate(() => { (document.getElementById('palette') as unknown as El).isOpen = true; });
   await expect(p.root).toHaveClass(/--active/);
-  await expect(p.host).toHaveAttribute('open', '');
+  await expect(p.host).toHaveAttribute('open', 'true');
   await page.evaluate(() => { (document.getElementById('palette') as unknown as El).isOpen = false; });
   await expect(p.root).not.toHaveClass(/--active/);
   await expect(p.host).not.toHaveAttribute('open');
@@ -165,7 +165,7 @@ test('`el.isOpen = true / false` opens / closes and reflects `open` (CP-4)', asy
 test('a user open / close keeps reflecting `open` with no extra events (CP-4)', async ({ page }) => {
   const p = palette(page);
   await open(page);
-  await expect(p.host).toHaveAttribute('open', '');
+  await expect(p.host).toHaveAttribute('open', 'true');
   await page.evaluate(() => (document.getElementById('palette') as unknown as { whenSettled(): Promise<void> }).whenSettled());
   await page.keyboard.press('Escape');
   await expect(p.root).not.toHaveClass(/--active/);

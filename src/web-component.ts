@@ -43,7 +43,6 @@ import {
   type CustomStylesCallback,
   type CustomStylesHandle,
   type EnvironmentSnapshot,
-  type Converter,
   type InputDef,
   type Presentation,
   type ModalSession,
@@ -92,13 +91,6 @@ const isPlainObject = (v: unknown): v is Record<string, string> => typeof v === 
 // ============================================================================
 // INPUT TABLE — the whole public configuration surface, one row each
 // ============================================================================
-/**
- * `open`: parsed as the usual flag (`toBool('default-false')`: `open` / `open="true"` → open, `open="false"` /
- * absent → closed) but reflected as presence (`open=""` while open, removed while closed) — like `<dialog open>`,
- * so `[open]` selectors work. Core's `toBool` would write `open="false"` when closed.
- */
-const OPEN_STATE: Converter<boolean | null> = { ...toBool('default-false'), toAttribute: (value) => (value ? '' : null) };
-
 const INPUTS: readonly InputDef[] = [
   // ── Data (property-only) ─────────────────────────────────────────────────
   { configKey: 'commands', converter: toObjectArray(), on: 'update', type: 'Command[]',
@@ -145,9 +137,9 @@ const INPUTS: readonly InputDef[] = [
   // ── Attributes ───────────────────────────────────────────────────────────
   { configKey: 'display', attribute: 'display', converter: toEnum(['inline', 'tokens'] as const, { default: ENGINE_DEFAULTS.display }), shouldReflect: true, on: 'update',
     description: 'Wizard display: `inline` keeps the accumulated sentence in the input (`/assign iPad to `, prefix locked); `tokens` shows prior answers as removable badges above an empty input.' },
-  { configKey: 'isOpen', attribute: 'open', converter: OPEN_STATE, shouldReflect: true, on: 'update',
+  { configKey: 'isOpen', attribute: 'open', converter: toBool('default-false'), shouldReflect: true, on: 'update',
     getLiveValue: (el) => readIsOpen(el as CommandPaletteElement),
-    description: 'Whether the palette is open. Reflected as `open` (present while open, also when the user opens / closes it). Setting it — the `open` attribute in markup, `el.isOpen = true`, `removeAttribute("open")` — opens / closes the palette like `open()` / `close()` (the `open` / `close` events fire). Reading it returns the live state.' },
+    description: 'Whether the palette is open. Reflected as `open` (`open="true"` while open, removed while closed — `[open]` matches; also when the user opens / closes it). Setting it — the `open` attribute in markup, `el.isOpen = true`, `removeAttribute("open")` — opens / closes the palette like `open()` / `close()` (the `open` / `close` events fire). Reading it returns the live state.' },
   { configKey: 'size', attribute: 'size', converter: toEnum(['sm', 'lg', 'xl'] as const, { isNullable: true }), shouldReflect: true, on: 'update',
     description: 'Width/height preset (`sm` | `lg` | `xl`). Unset = default. For arbitrary sizes set `--cp-width` / `--cp-results-max-height`.' },
   { configKey: 'pageSize', attribute: 'page-size', converter: toInt({ min: 1, default: ENGINE_DEFAULTS.pageSize }), on: 'update',
@@ -734,9 +726,6 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   }
 
   protected override disconnect(): void {
-    // The live side goes first, `close()` last: on a DOM move `close()` removes the observed `open` attribute, and
-    // that DOM write makes the browser run the queued `connectedCallback` → `connect()` right there, inside this
-    // hook. Done in this order, that nested `connect()` re-registers what was just stopped.
     connected.delete(this);
     if (keyOwner === this) {
       this.#unbindGlobalKeys?.();
@@ -865,7 +854,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.#openedFrom = deepActiveElement();
     this.#engine.reset();
     this.#shell.root.classList.add('cp--active');
-    this.toggleAttribute('open', true);
+    this.setAttribute('open', 'true'); // same text core's toBool reflection writes
     this.#renderer.invalidate();
     this.#render();
     this.#startModal(true);
@@ -886,7 +875,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.#renderer.clearLoader();
     this.#engine.dispose();
     this.#engine.reset();
-    this.toggleAttribute('open', false);
+    this.removeAttribute('open');
     // Blur first: when focus came from <body> (not focusable), it would otherwise stay
     // in the hidden input — and `g <letter>` sequences ignore keys while typing.
     this.#shell.input.blur();

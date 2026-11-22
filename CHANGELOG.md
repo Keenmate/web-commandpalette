@@ -15,10 +15,9 @@ No stable 1.0.0 is published, so the break ships as the next release candidate �
 - `open` is now an input (`isOpen`, attribute `open`, reflected) instead of a reflect-only attribute:
   `<web-command-palette open>` in markup opens the palette at the first build, `setAttribute('open', '')` /
   `removeAttribute('open')` and `el.isOpen = true / false` open / close it (the `open` / `close` events fire once).
-  A user open / close keeps reflecting `open=""` / no attribute, with no extra events. Before, the attribute did
+  A user open / close keeps reflecting `open="true"` / no attribute (`[open]` matches while open), with no extra events. Before, the attribute did
   nothing and then lied (present while the palette was closed).
-- A DOM move while open still closes cleanly and keeps the global hotkeys (`disconnect()` stops the live side
-  before `close()`).
+- A DOM move while open still closes cleanly and keeps the global hotkeys.
 
 ### Added — icons repaint when the page-wide icon hook changes (core `iconsChanged()`, rulebook C-CA-40, 2026-11-22)
 
@@ -77,6 +76,12 @@ No stable 1.0.0 is published, so the break ships as the next release candidate �
   one source with the element's input row); the element passes its `locale` through.
 - **Docs:** usage.md (input table, attributes, Labels, "Build your own UI" option table + example);
   `examples-localization.html` LO05 has an element `locale` toggle next to the page locale.
+
+### Internal — core `toBool` reflection + lifecycle guard replace local workarounds (core rc25, 2026-11-22)
+
+- The local `OPEN_STATE` converter is gone: `open` uses core `toBool('default-false')`, which now removes the
+  attribute at the default (`open="true"` while open, no attribute while closed). `disconnect()` no longer has to
+  order its steps around a nested `connect()` — core serializes re-entrant connect / disconnect callbacks.
 
 ### Internal — variables manifest matches the code (rulebook C-BV-3 / C-BV-6, 2026-11-22)
 

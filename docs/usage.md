@@ -101,7 +101,7 @@ LiveView bridge after `connectedCallback`.
 `open`, `display`, `size`, `labels` (JSON), `locale`, `page-size`, `open-key`, `search-debounce`, `search-behavior`, `search-match`, `presentation`,
 `usage-storage`, `storage-key`, `max-favorite-count`, `max-recent-count`, `favorite-key`, `favorites-key`,
 `recent-key`, `favorites-hotkey`, `recent-hotkey`, `show-feedback`, `feedback-duration`, `custom-styles`.
-`open` is **reflected** (present while open, also when the user opens / closes the palette): `<web-command-palette open>` opens
+`open` is **reflected** (`open="true"` while open, removed while closed — style with `[open]`; also when the user opens / closes the palette): `<web-command-palette open>` opens
 at the first build, `setAttribute('open', '')` / `removeAttribute('open')` open / close it. `open="false"` = closed.
 Core (`BlissElement`): `defer` holds the first build until `el.release()`; `ready` is set once built
 (see [Lifecycle](#lifecycle)); `responsive` takes a JSON instance rules map (`responsive='{"breakpoint":{"mobile":{"display":"tokens"}}}'`,
