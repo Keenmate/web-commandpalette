@@ -499,11 +499,13 @@
     {
       "name": "base-z-modal-backdrop",
       "required": false,
-      "usage": "Stacking of core's modal backdrop (startModalSession; the palette passes its own backdrop)"
+      "readBy": "@keenmate/web-components-core",
+      "usage": "Stacking of core's own modal backdrop (Z_INDEX.modalBackdrop, bundled with core). The palette passes its own backdrop to startModalSession, so it has no effect here"
     },
     {
       "name": "base-elevated-bg",
       "required": false,
+      "readBy": "@keenmate/web-components-core",
       "usage": "Phone fullscreen sheet bar background (core SHEET_CHROME_CSS)"
     },
     {
@@ -529,6 +531,7 @@
     {
       "name": "base-touch-target-min",
       "required": false,
+      "readBy": "@keenmate/web-components-core",
       "usage": "Phone fullscreen sheet bar: close chip size (core's sheet chrome, --km-sheet-close-size default)"
     }
   ],
@@ -943,78 +946,97 @@
     },
     {
       "name": "cp-sheet-header-gap",
+      "input": true,
       "usage": "Phone fullscreen sheet bar: gap between the title and the close button. Unset by default; maps onto core's --_km-sheet-header-gap (then --km-sheet-header-gap, then the --base-* default)"
     },
     {
       "name": "cp-sheet-header-padding-block",
+      "input": true,
       "usage": "Phone fullscreen sheet bar: block padding of the bar. Unset by default; maps onto core's --_km-sheet-header-padding-block (then --km-sheet-header-padding-block, then the --base-* default)"
     },
     {
       "name": "cp-sheet-header-padding-inline",
+      "input": true,
       "usage": "Phone fullscreen sheet bar: inline padding of the bar. Unset by default; maps onto core's --_km-sheet-header-padding-inline (then --km-sheet-header-padding-inline, then the --base-* default)"
     },
     {
       "name": "cp-sheet-header-min-height",
+      "input": true,
       "usage": "Phone fullscreen sheet bar: minimum height of the bar. Unset by default; maps onto core's --_km-sheet-header-min-height (then --km-sheet-header-min-height, then the --base-* default)"
     },
     {
       "name": "cp-sheet-header-bg",
+      "input": true,
       "usage": "Phone fullscreen sheet bar: bar background. Unset by default; maps onto core's --_km-sheet-header-bg (then --km-sheet-header-bg, then the --base-* default)"
     },
     {
       "name": "cp-sheet-header-border",
+      "input": true,
       "usage": "Phone fullscreen sheet bar: bar bottom divider (border shorthand). Unset by default; maps onto core's --_km-sheet-header-border (then --km-sheet-header-border, then the --base-* default)"
     },
     {
       "name": "cp-sheet-title-color",
+      "input": true,
       "usage": "Phone fullscreen sheet bar: title text colour. Unset by default; maps onto core's --_km-sheet-title-color (then --km-sheet-title-color, then the --base-* default)"
     },
     {
       "name": "cp-sheet-title-font-size",
+      "input": true,
       "usage": "Phone fullscreen sheet bar: title font size. Unset by default; maps onto core's --_km-sheet-title-font-size (then --km-sheet-title-font-size, then the --base-* default)"
     },
     {
       "name": "cp-sheet-title-font-weight",
+      "input": true,
       "usage": "Phone fullscreen sheet bar: title font weight. Unset by default; maps onto core's --_km-sheet-title-font-weight (then --km-sheet-title-font-weight, then the --base-* default)"
     },
     {
       "name": "cp-sheet-close-size",
+      "input": true,
       "usage": "Phone fullscreen sheet bar: close chip size (touch target). Unset by default; maps onto core's --_km-sheet-close-size (then --km-sheet-close-size, then the --base-* default)"
     },
     {
       "name": "cp-sheet-close-icon-size",
+      "input": true,
       "usage": "Phone fullscreen sheet bar: ✕ glyph size. Unset by default; maps onto core's --_km-sheet-close-icon-size (then --km-sheet-close-icon-size, then the --base-* default)"
     },
     {
       "name": "cp-sheet-close-icon",
+      "input": true,
       "usage": "Phone fullscreen sheet bar: ✕ glyph (any url(...)). Unset by default; maps onto core's --_km-sheet-close-icon (then --km-sheet-close-icon, then the --base-* default)"
     },
     {
       "name": "cp-sheet-close-color",
+      "input": true,
       "usage": "Phone fullscreen sheet bar: ✕ colour. Unset by default; maps onto core's --_km-sheet-close-color (then --km-sheet-close-color, then the --base-* default)"
     },
     {
       "name": "cp-sheet-close-bg",
+      "input": true,
       "usage": "Phone fullscreen sheet bar: close chip background. Unset by default; maps onto core's --_km-sheet-close-bg (then --km-sheet-close-bg, then the --base-* default)"
     },
     {
       "name": "cp-sheet-close-bg-hover",
+      "input": true,
       "usage": "Phone fullscreen sheet bar: close chip hover background. Unset by default; maps onto core's --_km-sheet-close-bg-hover (then --km-sheet-close-bg-hover, then the --base-* default)"
     },
     {
       "name": "cp-sheet-close-border",
+      "input": true,
       "usage": "Phone fullscreen sheet bar: close chip border (border shorthand). Unset by default; maps onto core's --_km-sheet-close-border (then --km-sheet-close-border, then the --base-* default)"
     },
     {
       "name": "cp-sheet-close-border-radius",
+      "input": true,
       "usage": "Phone fullscreen sheet bar: close chip corner radius. Unset by default; maps onto core's --_km-sheet-close-border-radius (then --km-sheet-close-border-radius, then the --base-* default)"
     },
     {
       "name": "cp-sheet-close-edge-nudge",
+      "input": true,
       "usage": "Phone fullscreen sheet bar: how far the chip slides toward the trailing edge. Unset by default; maps onto core's --_km-sheet-close-edge-nudge (then --km-sheet-close-edge-nudge, then the --base-* default)"
     },
     {
       "name": "cp-sheet-close-focus-color",
+      "input": true,
       "usage": "Phone fullscreen sheet bar: close chip focus outline colour. Unset by default; maps onto core's --_km-sheet-close-focus-color (then --km-sheet-close-focus-color, then the --base-* default)"
     }
   ]

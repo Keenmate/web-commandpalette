@@ -78,6 +78,14 @@ No stable 1.0.0 is published, so the break ships as the next release candidate �
 - **Docs:** usage.md (input table, attributes, Labels, "Build your own UI" option table + example);
   `examples-localization.html` LO05 has an element `locale` toggle next to the page locale.
 
+### Internal — variables manifest matches the code (rulebook C-BV-3 / C-BV-6, 2026-11-22)
+
+- `component-variables.manifest.json`: the 19 `--cp-sheet-*` knobs are marked `"input": true` (unset by design —
+  they forward to core's `--_km-sheet-*` slots, so a `:host` default would cut the page-wide `--km-sheet-*` chain);
+  `--base-elevated-bg`, `--base-touch-target-min` and `--base-z-modal-backdrop` are marked
+  `"readBy": "@keenmate/web-components-core"` (core's sheet chrome / `Z_INDEX`, not the palette's CSS). No CSS
+  changed — every variable renders as before.
+
 ### Internal — engine defaults from one source (rulebook C-CA-37, 2026-11-21)
 
 - `ENGINE_DEFAULTS` (`src/types.ts`, not exported) is the one source of every input default: the element's input rows, its engine host and `CommandPaletteEngine`'s fallbacks read it (replaces `DEFAULT_LOCALE`; `DEFAULT_PALETTE_KEYS` / `DEFAULT_SEARCH_RULES` derive from it). No behaviour change.
