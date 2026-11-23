@@ -26,7 +26,6 @@ import {
   getEnvironment,
   isMotionOff,
   observeTextInput,
-  dismissAllOverlays,
   deepActiveElement,
   resolvePresentation,
   startModalSession,
@@ -846,8 +845,6 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.#finishClosingNow();
     if (this.#isOpen) return;
     this.flush();
-    // One overlay at a time: dismiss any open KM popovers (closed palette ignores its own dismiss).
-    dismissAllOverlays();
     this.#isOpen = true;
     this.#openedFrom = deepActiveElement();
     this.#engine.reset();

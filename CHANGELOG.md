@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 No stable 1.0.0 is published, so the break ships as the next release candidate — but
 `^1.0.0-rc02` consumers will pull it: the event, callback and item API below is breaking.
 
+### Changed — opening closes page overlays through the core modal session (core rc26, 2026-11-23)
+
+- `open()` no longer calls `dismissAllOverlays()` by hand: core's `startModalSession` now closes the page's
+  open popovers / dropdowns itself. It closes the default (ungrouped) overlay group only — an overlay in a
+  named group stays open (before: every group was dismissed).
+
 ### Internal — on core `^1.0.0-rc26`, its final v1 names (2026-11-23)
 
 - Peer + dev dependency `@keenmate/web-components-core` → `^1.0.0-rc26`.
