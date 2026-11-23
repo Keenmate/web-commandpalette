@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 No stable 1.0.0 is published, so the break ships as the next release candidate — but
 `^1.0.0-rc02` consumers will pull it: the event, callback and item API below is breaking.
 
+### Internal — `open()` / `close()` write `isOpen` through core (Q4, 2026-11-23)
+
+- The user-driven open / close sets `setProperties({ isOpen })` instead of hand-writing
+  `setAttribute('open', 'true')` / `removeAttribute('open')`: core reflects `open` in its own format and
+  `this.config.isOpen` follows the live state. Same attribute, same events.
+
 ### Changed — opening closes page overlays through the core modal session (core rc26, 2026-11-23)
 
 - `open()` no longer calls `dismissAllOverlays()` by hand: core's `startModalSession` now closes the page's

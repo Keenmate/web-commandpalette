@@ -659,8 +659,8 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   }
 
   protected override update(partial: Record<string, unknown>): void {
-    // `open` attribute / `el.isOpen` (CP-4). `open()` / `close()` reflect the attribute themselves, so a user
-    // open/close comes back here as a no-op (no event loop).
+    // `open` attribute / `el.isOpen` (CP-4). `open()` / `close()` write `isOpen` themselves (setProperties), so a
+    // user open/close comes back here as a no-op (no event loop).
     if ('isOpen' in partial) {
       // Only a real change: a user open that already ran (a `g d` wizard may be in its feedback) stays as it is.
       if (partial.isOpen && !this.#isOpen) this.open();
@@ -849,7 +849,8 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.#openedFrom = deepActiveElement();
     this.#engine.reset();
     this.#shell.root.classList.add('cp--active');
-    this.setAttribute('open', 'true'); // same text core's toBool reflection writes
+    // Through the input (core reflects `open` in its own format); the update() it triggers is a no-op.
+    this.setProperties({ isOpen: true });
     this.#renderer.invalidate();
     this.#render();
     this.#startModal(true);
@@ -870,7 +871,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.#renderer.clearLoader();
     this.#engine.dispose();
     this.#engine.reset();
-    this.removeAttribute('open');
+    this.setProperties({ isOpen: false });
     // Blur first: when focus came from <body> (not focusable), it would otherwise stay
     // in the hidden input — and `g <letter>` sequences ignore keys while typing.
     this.#shell.input.blur();
