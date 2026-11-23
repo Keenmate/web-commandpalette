@@ -7,7 +7,7 @@
  * Behavioural sources of truth: pure-admin `command-palette.js` (routing, wizard,
  * keyboard) and keen `live.ex` (step-back, pagination, global prepend).
  */
-import { resolveActionItem, shortcutKeycaps, type ResolvedActionItem } from '@keenmate/web-components-core/actions';
+import { resolveActionItem, getShortcutKeycaps, type ResolvedActionItem } from '@keenmate/web-components-core/actions';
 import { createAsyncRunner, type AsyncRunner } from '@keenmate/web-components-core';
 import { createRegexCompiler } from '@keenmate/web-components-core/search';
 import { createLabels, type TranslateCallback } from '@keenmate/web-components-core/locale';
@@ -241,11 +241,11 @@ export type NavDirection = 'up' | 'down' | 'pageUp' | 'pageDown' | 'home' | 'end
 
 
 /**
- * A shortcut's keycaps, one per cap — core `shortcutKeycaps` in the platform format: `"g d"` → `[G, D]`,
+ * A shortcut's keycaps, one per cap — core `getShortcutKeycaps` in the platform format: `"g d"` → `[G, D]`,
  * `"Mod+K"` → `[Ctrl, K]` / Apple `[⌘, K]`. Free text that isn't a shortcut shows as one cap.
  */
 export const hotkeyKeys = (hotkey: string): string[] => {
-  const caps = shortcutKeycaps(hotkey).flat();
+  const caps = getShortcutKeycaps(hotkey).flat();
   return caps.length ? caps : [hotkey];
 };
 
@@ -432,12 +432,12 @@ export class CommandPaletteEngine {
     });
     this.#runner = createAsyncRunner({
       debounceMs: () => this.#debounce,
-      onLoadingChange: (isLoading) => {
+      loadingChangeCallback: (isLoading) => {
         this.isLoading = isLoading;
         // The loader going off is followed by the result / failure, which re-renders.
         if (isLoading) this.#changed();
       },
-      onError: (err) => {
+      errorCallback: (err) => {
         this.#host.error?.('provider failed', err);
         this.#onFail?.();
       },

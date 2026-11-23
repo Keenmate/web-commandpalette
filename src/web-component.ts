@@ -25,7 +25,7 @@ import {
   createPresentationContext,
   getEnvironment,
   isMotionOff,
-  onTextInput,
+  observeTextInput,
   dismissAllOverlays,
   deepActiveElement,
   resolvePresentation,
@@ -47,7 +47,7 @@ import {
   type Presentation,
   type ModalSession,
   type RenderIconCallback,
-  type RenderLoaderCallback,
+  type RenderLoadingCallback,
   type ResponsiveCallback,
   type ResponsiveMap,
 } from '@keenmate/web-components-core';
@@ -556,9 +556,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
    * `loadStateCallback` / `saveStateCallback`, default `localStorage['km-state:web-command-palette:<key>']`.
    */
   readonly #stateStore = createStateStore<PaletteUsageState>(this, {
-    getKey: () => this.config.storageKey as string,
-    getLoadCallback: () => this.config.loadStateCallback as LoadStateCallback<PaletteUsageState> | null,
-    getSaveCallback: () => this.config.saveStateCallback as SaveStateCallback<PaletteUsageState> | null,
+    getConfig: () => this.config,
     toContext: (data) => this.#ctx(data),
   });
 
@@ -595,7 +593,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     const { input, results, tokens, closeButton, container } = this.#shell;
 
     // Committed text only (SPEC §12.30): no half-typed IME syllables, no Firefox duplicate.
-    onTextInput(input, (value) => this.#engine.setInput(value));
+    observeTextInput(input, (value) => this.#engine.setInput(value));
     input.addEventListener('keydown', (e) => {
       this.#withTrigger({ event: e, element: this.#activeRow() }, () => {
         if (handleInputKeydown(e, this.#engine, input, this.#keys(), this.isRtl)) this.log.INTERACTION.trace('key', e.key);
@@ -821,13 +819,13 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
       backdrop,
       trigger: this.#openedFrom,
       initialFocus: shouldFocusInput ? input : false,
-      shouldObserveKeyboardInset: this.#isFullscreen,
+      shouldFitToVisibleViewport: this.#isFullscreen,
       beforeEscapeCallback: () => {
         if (!canStepBack() || deepActiveElement() !== input) return true;
         this.#engine.back();
         return false;
       },
-      onDismiss: (reason) => {
+      dismissCallback: (reason) => {
         if (reason === 'back' && canStepBack()) {
           this.#engine.back();
           this.#modal?.rearmBack();
@@ -894,7 +892,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     const { container, backdrop } = this.#shell;
     this.#closing = animateOut([container, backdrop], {
       className: (el) => (el === backdrop ? 'cp__backdrop--closing' : 'cp__container--closing'),
-      onDone: () => this.#removeDialog(),
+      doneCallback: () => this.#removeDialog(),
     });
   }
 
@@ -972,7 +970,7 @@ export interface CommandPaletteConfig {
   beforeResultSelectCallback: BeforeResultSelectCallback | null;
   loadUsageCallback: LoadUsageCallback | null;
   renderFeedbackCallback: RenderFeedbackCallback | null;
-  renderLoadingCallback: RenderLoaderCallback | null;
+  renderLoadingCallback: RenderLoadingCallback | null;
   renderIconCallback: RenderIconCallback | null;
   translateCallback: TranslateCallback | null;
   saveUsageCallback: SaveUsageCallback | null;

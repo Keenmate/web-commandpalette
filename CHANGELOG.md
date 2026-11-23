@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 No stable 1.0.0 is published, so the break ships as the next release candidate — but
 `^1.0.0-rc02` consumers will pull it: the event, callback and item API below is breaking.
 
+### Internal — on core `^1.0.0-rc26`, its final v1 names (2026-11-23)
+
+- Peer + dev dependency `@keenmate/web-components-core` → `^1.0.0-rc26`.
+- Core renames adopted: `onTextInput` → `observeTextInput`, `shortcutKeycaps` → `getShortcutKeycaps`, type
+  `RenderLoaderCallback` → `RenderLoadingCallback`; option fields `startModalSession({ shouldFitToVisibleViewport,
+  dismissCallback })`, `animateOut({ doneCallback })`, `createAsyncRunner({ loadingChangeCallback, errorCallback })`;
+  `createStateStore({ getConfig: () => this.config })` (was `getKey` / `getLoadCallback` / `getSaveCallback`);
+  `ComponentContext` from core's main entry (no longer on `/actions`). No attribute, property or event changes.
+
 ### Changed — BREAKING — labels read the spot's context, `{ctx.*}` (rulebook D-NC-24, 2026-11-23)
 
 - **BREAKING (no aliases):** every dynamic label passes its values as `{ ctx }` and the templates read

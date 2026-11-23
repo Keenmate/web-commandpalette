@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { publishLocaleHooks, type TranslateCallback } from '@keenmate/web-components-core/locale';
+import { getPageLocale, type TranslateCallback } from '@keenmate/web-components-core/locale';
 import { DEFAULT_LABELS, ENGINE_DEFAULTS } from '../../src/types';
 import { harness } from './helpers';
 
@@ -14,7 +14,7 @@ const upper: TranslateCallback = ({ template }) => template.toUpperCase();
 const pageWide: TranslateCallback = ({ key }) => `page:${key}`;
 
 afterEach(() => {
-  publishLocaleHooks();
+  getPageLocale(); // installs the window.components.locale accessor
   page().locale = null;
   vi.restoreAllMocks();
 });
@@ -34,14 +34,14 @@ describe('engine labels (no element)', () => {
   });
 
   it("translateCallback: the engine's own hook beats the page-wide one", () => {
-    publishLocaleHooks();
+    getPageLocale(); // installs the window.components.locale accessor
     page().locale = { translateCallback: pageWide };
     const { m } = harness({ translateCallback: upper });
     expect(m.placeholder).toBe(DEFAULT_LABELS['placeholders.idle'].toUpperCase());
   });
 
   it('translateCallback: null / not set → the page-wide one answers', () => {
-    publishLocaleHooks();
+    getPageLocale(); // installs the window.components.locale accessor
     page().locale = { translateCallback: pageWide };
     const { m } = harness();
     expect(m.placeholder).toBe('page:web-command-palette.placeholders.idle');

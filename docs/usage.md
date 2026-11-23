@@ -36,7 +36,7 @@ What the user types decides the mode:
 Every key combo goes through core `/actions` (`bindShortcuts` / `matchesShortcut`): a `shortcut` uses core's
 syntax — a chord `'Ctrl+K'` / `'Mod+K'` (⌘ on Apple, Ctrl elsewhere) or a sequence `'g d'` (each next key within
 core's 1000 ms window). Ctrl/⌘ above is `Mod`: ⌘ on a Mac, Ctrl elsewhere, other modifiers must be up. Keycaps show core's
-platform format (`shortcutKeycaps` / `formatShortcut`): `G` `D`, `Ctrl+D`, Apple `⌘D`.
+platform format (`getShortcutKeycaps` / `formatShortcut`): `G` `D`, `Ctrl+D`, Apple `⌘D`.
 
 ## Callback contexts
 

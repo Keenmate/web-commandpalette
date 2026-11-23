@@ -18,7 +18,7 @@ beforeEach(() => localStorage.clear());
 
 describe('stateStorePersistence', () => {
   it('stores the whole list as { entries } under km-state:<tag>:<key>; a new store loads it', async () => {
-    const store = createStateStore<PaletteUsageState>(host(), { getKey: () => 'u1' });
+    const store = createStateStore<PaletteUsageState>(host(), { getConfig: () => ({ storageKey: 'u1' }) });
     const usage = new UsageStore(stateStorePersistence(store), () => {});
     usage.load();
     await flush();
@@ -28,7 +28,7 @@ describe('stateStorePersistence', () => {
     const saved = JSON.parse(localStorage.getItem('km-state:web-command-palette:u1')!);
     expect(saved.entries.map((e: { key: string }) => e.key).sort()).toEqual(['command:go', 'command:reload']);
 
-    const again = new UsageStore(stateStorePersistence(createStateStore<PaletteUsageState>(host(), { getKey: () => 'u1' })), () => {});
+    const again = new UsageStore(stateStorePersistence(createStateStore<PaletteUsageState>(host(), { getConfig: () => ({ storageKey: 'u1' }) })), () => {});
     again.load();
     await flush();
     expect(again.isFavorite('command:go')).toBe(true);
@@ -38,9 +38,11 @@ describe('stateStorePersistence', () => {
   it('with the state callbacks: load gets { key }, save gets { key, state } = the whole list; localStorage untouched', async () => {
     const saves: { key: string; state: PaletteUsageState }[] = [];
     const store = createStateStore<PaletteUsageState>(host(), {
-      getKey: () => 'k',
-      getLoadCallback: () => ({ key }) => (key === 'k' ? { entries: [{ key: 'command:a', kind: 'command', label: 'A', commandId: 'a', count: 2, lastUsed: 1, isFavorite: false }] } : null),
-      getSaveCallback: () => (ctx) => { saves.push(ctx); },
+      getConfig: () => ({
+        storageKey: 'k',
+        loadStateCallback: ({ key }) => (key === 'k' ? { entries: [{ key: 'command:a', kind: 'command', label: 'A', commandId: 'a', count: 2, lastUsed: 1, isFavorite: false }] } : null),
+        saveStateCallback: (ctx) => { saves.push(ctx); },
+      }),
     });
     const usage = new UsageStore(stateStorePersistence(store), () => {});
     usage.load();

@@ -10,7 +10,8 @@
  * (`onClick`, `get*Callback`, `searchCallback`, `getOptionsCallback`) are JS-only
  * conveniences; server-driven hosts omit them.
  */
-import type { ActionEventDetail as CoreActionEventDetail, ActionItem, ComponentContext } from '@keenmate/web-components-core/actions';
+import type { ActionEventDetail as CoreActionEventDetail, ActionItem } from '@keenmate/web-components-core/actions';
+import type { ComponentContext } from '@keenmate/web-components-core';
 import type { PresentationContext } from '@keenmate/web-components-core';
 import type { SearchBehavior, SearchCallbackContext, SearchEntry, SearchMatch } from '@keenmate/web-components-core/search';
 import type { Labels } from '@keenmate/web-components-core/locale';
