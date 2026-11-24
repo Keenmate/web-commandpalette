@@ -403,7 +403,7 @@ export class Renderer {
     } else {
       this.#paintActive(m.activeIndex);
     }
-    this.#syncActiveDescendant(m.activeIndex);
+    this.#reconcileActiveDescendant(m.activeIndex);
 
     // ── footer + announcements ──
     const footer = footerHtml(m, { labels, keys: this.keys, host: this.#hostEl() });
@@ -459,7 +459,7 @@ export class Renderer {
    * Point core's active descendant at row `index` (by element: the home sections render rows out of
    * index order). Core sets `aria-activedescendant` and scrolls the row into the results list only.
    */
-  #syncActiveDescendant(index: number): void {
+  #reconcileActiveDescendant(index: number): void {
     const el = index >= 0 ? this.#shell.results.querySelector<HTMLElement>(`#${itemId(index)}`) : null;
     this.#activeDescendant.setActive(el);
   }

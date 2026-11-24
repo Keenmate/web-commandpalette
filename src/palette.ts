@@ -1138,7 +1138,7 @@ export class CommandPaletteEngine {
       this.#fetchStepOptions(query, true);
     } else if (step.options) {
       this.#stepOptions = step.options;
-      this.#applyStepFilter();
+      this.#filterStepOptions();
     } else {
       // Static step: fetch the FULL set once (empty query), then filter client-side.
       this.#fetchStepOptions('', false);
@@ -1153,11 +1153,11 @@ export class CommandPaletteEngine {
       this.#changed();
       return;
     }
-    if (this.#stepOptions) this.#applyStepFilter();
+    if (this.#stepOptions) this.#filterStepOptions();
     this.#changed();
   }
 
-  #applyStepFilter(): void {
+  #filterStepOptions(): void {
     const opts = filterOptions(this.#stepOptions ?? [], this.#query(this.#stepQuery));
     this.isLoading = false;
     this.emptyLabel = { key: 'messages.noResults' };
@@ -1171,7 +1171,7 @@ export class CommandPaletteEngine {
     const command = this.command!;
     if (!cb) {
       this.#stepOptions = [];
-      this.#applyStepFilter();
+      this.#filterStepOptions();
       return;
     }
     this.#run(
@@ -1185,7 +1185,7 @@ export class CommandPaletteEngine {
           this.#setItems(this.#stepItems(list));
         } else {
           this.#stepOptions = list;
-          this.#applyStepFilter();
+          this.#filterStepOptions();
         }
       },
       debounceMs,

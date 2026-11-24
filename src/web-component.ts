@@ -575,7 +575,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   /** A value the render callbacks' ctx carries changed (`labels` / `locale` / `translateCallback`, the page-wide
    *  locale): re-run them in place — the command rows (engine), the feedback line, the custom styles. */
   #renderContextChanged(): void {
-    this.#applyLabels();
+    this.#writeLabels();
     this.#customStyles?.refresh();
     this.#refreshFeedback();
     this.#renderer.invalidate();
@@ -609,7 +609,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   });
 
   /** (Re)build the favorites/recents store from `usage-storage` / `storage-key` / the usage callbacks, and load it. */
-  #applyUsage(): void {
+  #installUsage(): void {
     if (this.config.usageStorage === 'none') {
       this.#usage = null;
       this.#engine.setOptions({ usage: null });
@@ -698,11 +698,11 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   protected override reinit(): void {
     // Engine options first — the chrome labels below resolve through the engine's resolver (`#engine.labels`).
     this.#engine.setOptions(this.#engineOptions());
-    this.#applyLabels();
-    this.#applySize();
-    this.#applyUsage();
+    this.#writeLabels();
+    this.#reconcileSize();
+    this.#installUsage();
     this.#renderer.keys = this.#keys();
-    this.#applyCustomStyles();
+    this.#reconcileCustomStyles();
     this.#renderer.invalidate();
     this.#render();
   }
@@ -727,11 +727,11 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
       this.#repaintFeedbackIcon();
       this.#renderer.invalidate();
     }
-    if ('size' in partial) this.#applySize();
+    if ('size' in partial) this.#reconcileSize();
     if ('customStyles' in partial || 'getCustomStylesCallback' in partial) this.#customStyles?.refresh();
-    if ('presentation' in partial) this.#applyPresentation(getEnvironment());
+    if ('presentation' in partial) this.#reconcilePresentation(getEnvironment());
     if ('searchBehavior' in partial || 'searchMatch' in partial) this.#renderer.invalidate();
-    if ('usageStorage' in partial || 'storageKey' in partial || 'loadUsageCallback' in partial || 'loadStateCallback' in partial) this.#applyUsage();
+    if ('usageStorage' in partial || 'storageKey' in partial || 'loadUsageCallback' in partial || 'loadStateCallback' in partial) this.#installUsage();
     if ('favoriteKey' in partial || 'favoritesKey' in partial || 'recentKey' in partial) {
       this.#renderer.keys = this.#keys();
       this.#renderer.invalidate();
@@ -796,7 +796,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
       }
     }
     this.close();
-    this.#finishClosingNow();
+    this.#completeClosingNow();
   }
 
   protected override destroyCallback(): void {
@@ -806,7 +806,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   }
 
   /** Custom CSS, the canonical core adoption (docs/usage.md "Style injection", rulebook C-CA-15). */
-  #applyCustomStyles(): void {
+  #reconcileCustomStyles(): void {
     if (this.#customStyles) return this.#customStyles.refresh();
     this.#customStyles = createCustomStyles<PaletteRenderContext>(this, this.#shadow, { // writes both layers now
       cssClass: 'cp-custom-styles',
@@ -819,7 +819,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   }
 
   protected override environmentChanged(env: EnvironmentSnapshot): void {
-    this.#applyPresentation(env);
+    this.#reconcilePresentation(env);
   }
 
   /** The public facade (`el.controller`): the imperative methods below, never the engine. */
@@ -839,20 +839,20 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   }
 
   /** The shell's own strings (dialog name, close button, sheet title); the rest re-resolve on render. */
-  #applyLabels(): void {
+  #writeLabels(): void {
     const { container, closeButton, fullscreenTitle } = this.#shell;
     setOrRemove(container, 'aria-label', this.#engine.labels.text('ariaLabels.dialog'));
     setOrRemove(closeButton, 'aria-label', this.#engine.labels.text('ariaLabels.close'));
     fullscreenTitle.textContent = this.#engine.labels.text('headers.fullscreen');
   }
 
-  #applySize(): void {
+  #reconcileSize(): void {
     const root = this.#shell.root;
     for (const s of ['sm', 'lg', 'xl']) root.classList.toggle(`cp--${s}`, this.config.size === s);
   }
 
   /** floating vs. the phone fullscreen sheet — capability-first, via core's device classification. */
-  #applyPresentation(env: EnvironmentSnapshot): void {
+  #reconcilePresentation(env: EnvironmentSnapshot): void {
     const mode = (this.config.presentation as Presentation | null) ?? ENGINE_DEFAULTS.presentation;
     const isFullscreen = resolvePresentation(mode, env) !== 'floating';
     if (isFullscreen === this.#isFullscreen) return;
@@ -902,7 +902,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     // Re-opening while the feedback shows (e.g. `g d` right after a run) starts fresh.
     if (this.#feedbackTimer) this.close();
     // Re-opened while the closing animation runs: stop it, the dialog animates in again.
-    this.#finishClosingNow();
+    this.#completeClosingNow();
     if (this.#isOpen) return;
     this.flush();
     this.#isOpen = true;
@@ -965,7 +965,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   }
 
   /** A closing animation in flight ends now (re-open, disconnect). */
-  #finishClosingNow(): void {
+  #completeClosingNow(): void {
     if (!this.#closing) return;
     this.#closing.cancel();
     this.#removeDialog();
