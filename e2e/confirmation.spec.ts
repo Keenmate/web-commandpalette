@@ -110,6 +110,19 @@ test('renderFeedbackCallback follows core renderSlot: null draws the built-in li
   await expect(panel(page).locator('.cp__confirm-body .mounted')).toHaveText('node');
 });
 
+test('a throwing renderFeedbackCallback is logged (core runSafely) and draws the built-in line', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  await palette(page).host.evaluate((el) => {
+    (el as unknown as { renderFeedbackCallback: unknown }).renderFeedbackCallback = () => { throw new Error('boom'); };
+  });
+  await open(page);
+  await page.keyboard.type('/reload');
+  await page.keyboard.press('Enter');
+  await expect(panel(page).locator('.cp__confirm-body')).toHaveText('Reload Data'); // the built-in line (the command text)
+  expect(errors.some((e) => e.includes('renderFeedbackCallback failed'))).toBe(true);
+});
+
 test('feedback-duration="0" closes right away; a custom duration holds the line that long', async ({ page }) => {
   const p = palette(page);
   await p.host.evaluate((el) => el.setAttribute('feedback-duration', '0'));

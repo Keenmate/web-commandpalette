@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 No stable 1.0.0 is published, so the break ships as the next release candidate — but
 `^1.0.0-rc02` consumers will pull it: the event, callback and item API below is breaking.
 
+### Internal — `renderFeedbackCallback` runs through core `runSafely` (Q14, 2026-11-24)
+
+- The hand-written try/catch around the synchronous `renderFeedbackCallback` call is core's exported `runSafely`
+  (logged under the palette's `UI` logger, a throw = the built-in line, as before). No other copies of
+  `runSafely` / `notifyListeners` / `deepActiveElement` / `deepClosest` / `isDeepInside` in the palette (the engine's
+  and the usage store's try/catches report to their host's `error` / `onError` channel — not copies).
+
 ### Added — the `icons` map; the palette's own icons by name (Q12, rulebook C-CA-42, 2026-11-24)
 
 - New `icons` input (property or JSON attribute `icons`): icon overrides by name, like `labels` for icons; the

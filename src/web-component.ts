@@ -30,6 +30,7 @@ import {
   resolvePresentation,
   startModalSession,
   runBeforeCallbackEager,
+  runSafely,
   toBool,
   toEnum,
   toFunction,
@@ -531,16 +532,13 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     return true;
   }
 
-  /** `renderFeedbackCallback(ctx)`, guarded: a throw is logged and counts as `null` (the built-in line). */
+  /** `renderFeedbackCallback(ctx)`, synchronously through core `runSafely`: a throw is logged (this palette's `UI`
+   *  logger) and counts as `null` (the built-in line). */
   #runFeedbackCallback(ctx: FeedbackContext): ReturnType<RenderFeedbackCallback> {
     const cb = this.config.renderFeedbackCallback as RenderFeedbackCallback | null;
     if (!cb) return null;
-    try {
-      return cb(ctx);
-    } catch (err) {
-      this.log.UI.error('renderFeedbackCallback failed', err);
-      return null;
-    }
+    const result = runSafely(() => cb(ctx), { source: this, category: 'UI', message: 'renderFeedbackCallback failed' });
+    return result.isOk ? result.value : null;
   }
 
   /** The feedback line's text: the callback's result through core renderSlot (SPEC §12.35: string = HTML, Node =
