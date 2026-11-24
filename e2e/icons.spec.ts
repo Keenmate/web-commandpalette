@@ -45,7 +45,7 @@ test('item icons: assigning renderIconCallback re-renders the rows', async ({ pa
   await page.evaluate(() => {
     (document.getElementById('palette') as HTMLElement & { renderIconCallback: unknown }).renderIconCallback = (name: string) => `<u class="swapped">${name}</u>`;
   });
-  await expect(p.items.filter({ hasText: 'Shared' }).locator('u.swapped')).toHaveText('shared-gear');
+  await expect(p.items.filter({ hasText: 'Shared' }).locator('.cp__item-icon u.swapped')).toHaveText('shared-gear');
   await expect(p.items.filter({ hasText: 'Builtin' }).locator('.km-icon.cp__icon--search')).toHaveCount(1);
 });
 
@@ -76,4 +76,55 @@ test('item icons: a later page-wide renderIconCallback repaints an open palette,
   expect(await activeTitle(page)).toBe(before);
   expect(await results.evaluate((el) => el.scrollTop)).toBe(top);
   await page.evaluate(() => { (window as unknown as { components: { renderIconCallback: unknown } }).components.renderIconCallback = null; });
+});
+
+/** The palette's own icons by name (C-CA-42): star / starFilled / removeToken / done, through core renderIcon `defaults`. */
+test.describe('own icons (icons map)', () => {
+  const clearHooks = (page: import('@playwright/test').Page) => page.evaluate(() => {
+    (document.getElementById('palette') as HTMLElement & { renderIconCallback: unknown }).renderIconCallback = null;
+    (window as unknown as { components: { renderIconCallback: unknown } }).components.renderIconCallback = null;
+  });
+
+  test('a hook sees the own names (none is built-in); unclaimed, the masked glyph draws', async ({ page }) => {
+    const p = palette(page);
+    await open(page);
+    // The fixture's page hook answers every name it is asked: it draws the star too.
+    expect(await iconCalls(page)).toContain('element:star');
+    await expect(p.host.locator('.cp__star .page-icon').first()).toHaveText('star');
+    await clearHooks(page);
+    await expect(p.host.locator('.cp__star .km-icon.cp__icon--star').first()).toBeAttached();
+  });
+
+  test('el.icons replaces an own icon in place (mode, query, active row kept); removing it restores the glyph', async ({ page }) => {
+    const p = palette(page);
+    await clearHooks(page);
+    await open(page);
+    await p.input.fill('/');
+    await page.keyboard.press('ArrowDown');
+    const before = await activeTitle(page);
+    await p.host.evaluate((el) => { (el as unknown as { icons: unknown }).icons = { star: '<b class="my-star">*</b>' }; });
+    await expect(p.host.locator('.cp__star .my-star').first()).toBeAttached();
+    await expect(p.host.locator('.cp__star .cp__icon--star')).toHaveCount(0);
+    await expect(p.input).toHaveValue('/');
+    expect(await activeTitle(page)).toBe(before);
+    await p.host.evaluate((el) => { (el as unknown as { icons: unknown }).icons = undefined; });
+    await expect(p.host.locator('.cp__star .cp__icon--star').first()).toBeAttached();
+  });
+
+  test('icons JSON attribute + page-wide window.components.icons (tag key first) reach the feedback ✓', async ({ page }) => {
+    const p = palette(page);
+    await clearHooks(page);
+    await page.evaluate(() => {
+      (window as unknown as { components: { icons: unknown } }).components.icons = { 'web-command-palette.done': 'fa-solid fa-check', done: 'ignored' };
+    });
+    await p.host.evaluate((el) => el.setAttribute('icons', JSON.stringify({ starFilled: 'fa-solid fa-star' })));
+    await p.host.evaluate((el) => el.setAttribute('feedback-duration', '60000'));
+    await open(page);
+    await p.input.fill('/builtin');
+    await p.input.press('Enter');
+    await expect(p.host.locator('.cp__confirm-check i.cp__icon.fa-solid.fa-check')).toHaveCount(1);
+    // A later page-wide change repaints the line's ✓ in place.
+    await page.evaluate(() => { (window as unknown as { components: { icons: unknown } }).components.icons = null; });
+    await expect(p.host.locator('.cp__confirm-check .km-icon.cp__icon--check')).toHaveCount(1);
+  });
 });

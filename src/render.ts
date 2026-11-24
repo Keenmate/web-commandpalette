@@ -13,7 +13,8 @@ import { findHighlightRanges, wrapRanges } from '@keenmate/web-components-core/s
 import { NO_SEARCH_QUERY, type SearchQuery } from './helpers/filter';
 import { chordKeycap } from './keyboard';
 import type { HomeSection, CommandPaletteEngine, TokenView, UsageView, ViewItem } from './palette';
-import { DEFAULT_PALETTE_KEYS, type CommandPaletteLabels, type PaletteKeys, type PaletteLabels, type ResultsCountLabelContext, type ShowAllLabelContext, type TokenLabelContext } from './types';
+import { DEFAULT_PALETTE_KEYS, type CommandPaletteIconName, type CommandPaletteLabels, type PaletteKeys, type PaletteLabels, type ResultsCountLabelContext, type ShowAllLabelContext, type TokenLabelContext } from './types';
+import { CP_ICONS } from './icons';
 
 export interface Shell {
   root: HTMLDivElement;
@@ -100,6 +101,14 @@ export interface RenderContext {
   host: HTMLElement | null;
 }
 
+/**
+ * One of the palette's own icons by name (rulebook C-CA-42): `el.icons` / `window.components.icons` / the hooks may
+ * replace it; else {@link CP_ICONS} (the masked `--cp-icon-*` glyph).
+ */
+export function ownIcon(name: CommandPaletteIconName, host: HTMLElement | null): string {
+  return renderIcon(name, { prefix: 'cp', host, defaults: CP_ICONS });
+}
+
 function starHtml(item: ViewItem, index: number, ctx: RenderContext): string {
   if (item.favorite === undefined) return '';
   const on = item.favorite;
@@ -109,7 +118,7 @@ function starHtml(item: ViewItem, index: number, ctx: RenderContext): string {
   return (
     `<button type="button" class="cp__star${on ? ' cp__star--on' : ''}" tabindex="-1" data-star="${index}"` +
     ` aria-pressed="${on}"${name ? ` aria-label="${escapeHtml(name)}"` : ''}` +
-    `${tip || cap ? ` title="${escapeHtml(tip && cap ? `${tip} (${cap})` : tip || cap)}"` : ''}><span class="km-icon cp__icon cp__icon--star${on ? '-filled' : ''}" aria-hidden="true"></span></button>`
+    `${tip || cap ? ` title="${escapeHtml(tip && cap ? `${tip} (${cap})` : tip || cap)}"` : ''}>${ownIcon(on ? 'starFilled' : 'star', ctx.host)}</button>`
   );
 }
 
@@ -213,7 +222,7 @@ function rowsHtml(m: CommandPaletteEngine, ctx: RenderContext): string {
   return out;
 }
 
-function tokensHtml(tokens: TokenView[] | null, labels: PaletteLabels): string {
+function tokensHtml(tokens: TokenView[] | null, labels: PaletteLabels, host: HTMLElement | null): string {
   if (!tokens) return '';
   return tokens
     .map((t) => {
@@ -226,7 +235,7 @@ function tokensHtml(tokens: TokenView[] | null, labels: PaletteLabels): string {
           return (
             `<span class="cp__badge"><bdi>${escapeHtml(t.label)}</bdi>` +
             `<button type="button" class="cp__badge-remove" data-token="${t.index}" aria-label="${escapeHtml(labels.text('ariaLabels.removeToken', { ctx: { name: t.label, index: t.index } satisfies TokenLabelContext }))}">` +
-            `<span class="km-icon cp__icon cp__icon--remove" aria-hidden="true"></span></button></span>`
+            `${ownIcon('removeToken', host)}</button></span>`
           );
       }
     })
@@ -280,9 +289,9 @@ export function confirmationBodyHtml(o: { trigger?: string; text: string; parts:
  * `headingHtml` is markup (`labels.html('headers.done')`). `hasProgress: false` leaves the bar out
  * (motion off — the bar is decorative, SPEC §12.16).
  */
-export function fillConfirmation(el: HTMLElement, headingHtml: string, duration: number, hasProgress = true): HTMLElement {
+export function fillConfirmation(el: HTMLElement, headingHtml: string, checkHtml: string, duration: number, hasProgress = true): HTMLElement {
   el.innerHTML =
-    `<span class="cp__confirm-check km-icon cp__icon cp__icon--check" aria-hidden="true"></span>` +
+    `<span class="cp__confirm-check" aria-hidden="true">${checkHtml}</span>` +
     `<span class="cp__confirm-body" dir="auto"></span>` +
     `<span class="cp__confirm-title">${headingHtml}</span>` +
     (hasProgress ? `<span class="cp__confirm-progress" style="animation-duration: ${Math.max(0, duration)}ms"></span>` : '');
@@ -370,7 +379,7 @@ export class Renderer {
     s.context.textContent = ctx ?? '';
     s.context.classList.toggle('cp__context--visible', !!ctx);
 
-    const tokens = tokensHtml(m.tokens, labels);
+    const tokens = tokensHtml(m.tokens, labels, this.#hostEl());
     if (tokens !== this.#tokens) {
       this.#tokens = tokens;
       s.tokens.innerHTML = tokens; // '' keeps the row :empty (hidden)

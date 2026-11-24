@@ -14,6 +14,7 @@ export { UsageStore, usageKey, frecency, MAX_RECENT_ENTRIES } from './usage';
 export type { UsagePersistence, UsageTarget } from './usage';
 
 export { DEFAULT_LABELS } from './types';
+export { CP_ICONS, CP_ICON_NAMES } from './icons';
 export type {
   IconInput,
   BadgeVariant,
@@ -42,6 +43,8 @@ export type {
   FeedbackContext,
   RenderFeedbackCallback,
   CommandPaletteLabels,
+  CommandPaletteIconName,
+  CommandPaletteIcons,
   PaletteLabels,
   LabelRef,
   LabelContextParams,

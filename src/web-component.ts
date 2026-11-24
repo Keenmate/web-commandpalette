@@ -35,6 +35,7 @@ import {
   toFunction,
   toInt,
   toObject,
+  isIconMap,
   toObjectArray,
   toText,
   type AnimateOutHandle,
@@ -53,7 +54,7 @@ import {
 import { runAction } from '@keenmate/web-components-core/actions';
 import type { TranslateCallback } from '@keenmate/web-components-core/locale';
 import { CommandPaletteEngine, type Effect, type EffectOutcome, type CommandPaletteEngineHost, type CommandPaletteEngineOptions, type TokenView } from './palette';
-import { Renderer, confirmationBodyHtml, createShell, fillConfirmation, type Shell } from './render';
+import { Renderer, confirmationBodyHtml, createShell, fillConfirmation, ownIcon, type Shell } from './render';
 import { bindGlobalKeys, handleInputKeydown, isSequence, type GlobalKeysHost } from './keyboard';
 import { UsageStore, stateStorePersistence, type UsagePersistence } from './usage';
 import {
@@ -65,6 +66,7 @@ import {
   type FeedbackContext,
   type Context,
   type Display,
+  type CommandPaletteIcons,
   type CommandPaletteLabels,
   type PaletteKeys,
   type LoadUsageCallback,
@@ -119,6 +121,8 @@ const INPUTS: readonly InputDef[] = [
     description: 'Draw the searching loader yourself (shared loader, core SPEC §12.14). `ctx = { component, context, containerElement, element, label }`; `context` is `search` (a search / step-options request in flight, label = the `messages.searching` text). Fill `containerElement` (already `role="status"` + `aria-label`); optionally return a cleanup. Beats the page-wide `window.components.renderLoadingCallback`; unset = the default `.cp__loader` (`--cp-loader-*` tokens).' },
   { configKey: 'renderIconCallback', converter: toFunction(), on: 'update', type: '(name: string, ctx: IconRenderContext) => string | null | undefined',
     description: "Map an item `icon` name to markup for this palette (core `renderIcon`, SPEC §12.33). `ctx = { component, element, prefix: 'cp', item, kind }` — `item` = the row's own `Command` / `Context` / `Option` / `Result` / usage entry, `kind` = `'command' | 'context' | 'option' | 'result' | 'usage'`. Asked after a built-in name (`search`, `check`, … — those always draw the masked `--base-icon-<name>` glyph and never reach a hook) and before the page-wide `window.components.renderIconCallback`. A string is used as is (`''` = no icon); `null` / `undefined` = not mine (the page-wide hook, then the icon-font `<i class=\"cp__icon …\">` / text rule decide). Changing it re-renders the rows." },
+  { configKey: 'icons', attribute: 'icons', converter: toObject({ validate: isIconMap }), on: 'update', type: 'CommandPaletteIcons',
+    description: "Icon overrides by name (core `renderIcon`, SPEC §12.33) — like `labels`, for icons. The palette's own icon names: `star` / `starFilled` (a row's favorite toggle, off / on), `removeToken` (the ✕ on a wizard answer token), `done` (the ✓ on the feedback line). A value is an icon string: markup, a built-in name (`check`), icon-font classes (`fa-solid fa-star`) or text; the map also applies to item `icon` names. Order: markup → this map → page-wide `window.components.icons` (`web-command-palette.<name>` before `<name>`) → built-in → `renderIconCallback` → the page hook → the palette's own glyphs (masked from the `--cp-icon-*` tokens). Partial; property (object) or JSON attribute (`icons='{\"star\":\"fa-regular fa-star\"}'`). A change repaints the icons in place (mode, query, active row kept)." },
   { configKey: 'translateCallback', converter: toFunction(), on: 'update', type: 'TranslateCallback',
     description: "Translate this palette's labels (core `/locale`, SPEC §12.24): `(ctx) => string | null | undefined`, `ctx = { component, key, template, params, locale }` — `key` is the FULL `web-command-palette.<elementType>.<name>` key, `params` the raw values (numbers unformatted). Asked for every label key this instance's `labels` did not set, before the page-wide `window.components.locale.translateCallback`; a string is the finished label, `null` / `undefined` = not mine (the page-wide hook, then the page dictionary / English template). Changing it re-renders every label." },
   { configKey: 'saveUsageCallback', converter: toFunction(), on: 'none', type: '(ctx: { entry: UsageEntry }) => void | Promise<void>',
@@ -503,7 +507,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     const { confirm, root } = this.#shell;
     // The countdown bar shows the timer — decorative, so it goes when motion is off (SPEC §12.16);
     // the timer itself keeps `feedback-duration`.
-    const body = fillConfirmation(confirm, this.#engine.labels.html('headers.done'), duration, !isMotionOff(this));
+    const body = fillConfirmation(confirm, this.#engine.labels.html('headers.done'), ownIcon('done', this), duration, !isMotionOff(this));
     this.#fillFeedbackBody(body, custom, done, ctx);
     this.#feedback = { done, ctx };
     // Shrink from the dialog's current height to the feedback's (min-height)
@@ -718,7 +722,11 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     if (Object.keys(engineOptions).length) this.#engine.setOptions(engineOptions);
     // (the engine re-ran the command rows' get*Callbacks in setOptions — `labelsChanged()`)
     if ('labels' in partial || 'translateCallback' in partial || 'locale' in partial) this.#renderContextChanged();
-    if ('renderIconCallback' in partial) this.#renderer.invalidate(); // item icons are drawn into the rows
+    if ('renderIconCallback' in partial) {
+      // item icons are drawn into the rows (an `icons` change comes through iconsChanged(), core)
+      this.#repaintFeedbackIcon();
+      this.#renderer.invalidate();
+    }
     if ('size' in partial) this.#applySize();
     if ('customStyles' in partial || 'getCustomStylesCallback' in partial) this.#customStyles?.refresh();
     if ('presentation' in partial) this.#applyPresentation(getEnvironment());
@@ -739,14 +747,22 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.#render();
   }
 
-  /** The page-wide `window.components.renderIconCallback` changed (core, rulebook C-CA-40): repaint the item
-   *  icons in place — the open palette keeps its mode, query, active row and list scroll. */
+  /** The page-wide `window.components.renderIconCallback` / `window.components.icons` or this palette's `icons` map
+   *  changed (core, rulebook C-CA-40 / C-CA-42): repaint the item icons and the palette's own icons in place — the open
+   *  palette keeps its mode, query, active row and list scroll. */
   protected override iconsChanged(): void {
     const { results } = this.#shell;
     const top = results.scrollTop;
+    this.#repaintFeedbackIcon();
     this.#renderer.invalidate();
     this.#render();
     results.scrollTop = top;
+  }
+
+  /** The feedback line's ✓ (`done`) while it shows — re-resolved after an icon source changed. */
+  #repaintFeedbackIcon(): void {
+    const check = this.#feedback ? this.#shell.confirm.querySelector<HTMLElement>('.cp__confirm-check') : null;
+    if (check) check.innerHTML = ownIcon('done', this);
   }
 
   protected override connect(): void {
@@ -1013,6 +1029,7 @@ export interface CommandPaletteConfig {
   renderFeedbackCallback: RenderFeedbackCallback | null;
   renderLoadingCallback: RenderLoadingCallback | null;
   renderIconCallback: RenderIconCallback | null;
+  icons: CommandPaletteIcons | null;
   translateCallback: TranslateCallback | null;
   saveUsageCallback: SaveUsageCallback | null;
   loadStateCallback: LoadStateCallback<PaletteUsageState> | null;

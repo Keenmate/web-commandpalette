@@ -39,9 +39,13 @@
   display: none;
 }
 
-/* A plain ✓ in the accent color, sized to the text (a mask: `color` paints it). */
+/* The ✓ slot (the palette's `done` icon, core renderIcon): a plain ✓ in the accent color, sized to the text
+   (a mask: `color` paints it); a replacement icon gets the same color and size. */
 .cp__confirm-check {
   --cp-icon-size: 1.1em;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
   color: var(--cp-accent-color);
 }
 

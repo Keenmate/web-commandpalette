@@ -83,6 +83,7 @@ Objects and functions are **properties only** — set them from JS (or a framewo
 | `favoriteKey` / `favoritesKey` / `recentKey` | `string` | Ctrl/⌘ + key while open: star the active row / show all favorites / show all recent. Defaults `d` / `f` / `r`; `''` disables. |
 | `renderFeedbackCallback` | `(ctx) => string \| Node \| null \| false` | Custom feedback content: string = HTML, Node = mounted, `null` = built-in, `false` = hidden (skipped). `ctx.labels` ([render ctx](#render-callback-ctx--ctxlabels)). See [Feedback](#feedback). |
 | `renderLoadingCallback` | `(ctx) => void \| (() => void)` | Draw the searching loader yourself — `ctx = { component, context: 'search', containerElement, element, label }`; fill `containerElement` (already `role="status"` + `aria-label` = the `messages.searching` text), optionally return a cleanup. Beats the page-wide `window.components.renderLoadingCallback` (one hook for every Keenmate component); unset = the default `.cp__loader` (`--cp-loader-icon` / `-rotate` / `-duration` / `-size` / `-color`, chained to `--base-loader-*`). |
+| `icons` | `CommandPaletteIcons` | Icon overrides by name (attribute `icons`, JSON): the own names `star` / `starFilled` / `removeToken` / `done`, and item `icon` names. See [Icons](#the-palettes-own-icons--icons). |
 | `renderIconCallback` | `(name, ctx) => string \| null \| undefined` | This palette's own icon hook — map an item `icon` name to markup. `ctx = { component, element, prefix: 'cp', item, kind }` (`item` = the row's own command / context / option / result / usage entry). Asked after a built-in name, before the page-wide `window.components.renderIconCallback`; `null` / `undefined` = not mine. See [Icons](#icons). |
 | `translateCallback` | `(ctx) => string \| null \| undefined` | This palette's own translation hook (core `TranslateCallback`). `ctx = { component, key, template, params, locale }`, `key` = the full `web-command-palette.<elementType>.<name>` key, `params` = the raw values. Asked for every label key this palette's `labels` did not set, before the page-wide `window.components.locale.translateCallback`; `null` / `undefined` = not mine. Changing it re-renders every label. See [Labels](#labels). |
 | `customStyles` / `getCustomStylesCallback` | `string \| null` / `(ctx) => string \| null \| undefined` | Extra CSS for this palette's shadow root (attribute `custom-styles`), after the component CSS and after the page-wide `window.components['web-command-palette'].customStyles` / `.getCustomStylesCallback`, so the instance wins. The callback wins over `customStyles`. See [Theming → Custom CSS](theming.md#custom-css-shadow-root). |
@@ -429,16 +430,19 @@ the effective direction, also when it changes at runtime.
 `icon` is data, read by core's one icon rule (`renderIcon`, core SPEC §12.33) — first match wins:
 
 1. starts with `<` → inserted raw (`<svg>`, `<img>`, `<i class="fa …">`; **the host vouches for this markup**)
-2. a built-in name (`search`, `check`, `settings`, `delete`, … core `BUILT_IN_ICON_NAMES`) →
+2. the palette's `icons` map, then the page-wide flat `window.components.icons` (`'web-command-palette.<name>'`
+   before `'<name>'`) → the mapped icon string, read by these same rules
+3. a built-in name (`search`, `check`, `settings`, `delete`, … core `BUILT_IN_ICON_NAMES`) →
    `<span class="km-icon cp__icon cp__icon--NAME">`, a glyph masked from the `--base-icon-<name>` token in
    `currentColor` — set by a `:root` theme (`@keenmate/base-css-variables`) or on the element; nothing is drawn
-   when the token is unset. Reserved: no hook sees a built-in name
-3. the palette's own `renderIconCallback(name, ctx)`, then the page-wide `window.components.renderIconCallback`
+   when the token is unset. No hook sees a built-in name (a map can replace it)
+4. the palette's own `renderIconCallback(name, ctx)`, then the page-wide `window.components.renderIconCallback`
    → markup (`''` = no icon; `null` / `undefined` = not mine, the next rule decides)
-4. ASCII class names (`fa-solid fa-folder`, `bi-gear`, `gear`) → an icon font,
+5. the palette's own icons (below) — its glyphs by name
+6. ASCII class names (`fa-solid fa-folder`, `bi-gear`, `gear`) → an icon font,
    `<i class="cp__icon fa-solid fa-folder" aria-hidden="true">` — the font's CSS must reach the shadow root
    (`custom-styles` / the page-wide `customStyles`, see [Theming → Custom CSS](theming.md#custom-css-shadow-root))
-5. anything else (an emoji, `1 < 2`) → escaped text
+7. anything else (an emoji, `1 < 2`) → escaped text
 
 ```js
 // one palette, no page setup: map your icon set's names to markup
@@ -448,6 +452,26 @@ palette.renderIconCallback = (name) =>
 
 Changing `window.components.renderIconCallback` later repaints the icons (an open palette keeps its query,
 active row and scroll).
+
+### The palette's own icons — `icons`
+
+The palette's chrome glyphs have names, so you replace them like labels (rulebook C-CA-42):
+
+| Name | Where | Default |
+| --- | --- | --- |
+| `star` / `starFilled` | a row's favorite toggle, off / on | ☆ / ★ masked from `--cp-icon-star` / `--cp-icon-star-filled` |
+| `removeToken` | the ✕ on a wizard answer token (`display="tokens"`) | masked from `--cp-icon-remove` |
+| `done` | the ✓ on the feedback line | masked from `--cp-icon-check` |
+
+```js
+palette.icons = { star: 'fa-regular fa-star', starFilled: 'fa-solid fa-star' };   // or the JSON attribute icons='{…}'
+window.components.icons = { 'web-command-palette.done': '<svg …>…</svg>' };       // page-wide, tag key first
+```
+
+A value is any icon string (markup, a built-in name, icon-font classes, text); the map also applies to item `icon`
+names. None of the names is a core built-in, so the `renderIconCallback` hooks see them too (an unclaimed name keeps
+the glyph). A change of `icons`, `window.components.icons` or a hook repaints them in place (exported types
+`CommandPaletteIconName` / `CommandPaletteIcons`; `CP_ICONS` = the defaults).
 
 ## Labels
 

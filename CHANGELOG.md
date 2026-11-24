@@ -10,6 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 No stable 1.0.0 is published, so the break ships as the next release candidate — but
 `^1.0.0-rc02` consumers will pull it: the event, callback and item API below is breaking.
 
+### Added — the `icons` map; the palette's own icons by name (Q12, rulebook C-CA-42, 2026-11-24)
+
+- New `icons` input (property or JSON attribute `icons`): icon overrides by name, like `labels` for icons; the
+  page-wide flat `window.components.icons` (`'web-command-palette.<name>'` before `'<name>'`) applies too (core rc26
+  order: markup → maps → built-in → hooks → own defaults → icon font → text). Also applies to item `icon` names.
+- The palette's own glyphs render through core `renderIcon` with `CP_ICONS` as `defaults`: `star` / `starFilled`
+  (favorite toggle), `removeToken` (a token's ✕), `done` (the feedback ✓). Default look unchanged (masked from the
+  same `--cp-icon-*` tokens). None is a core built-in name, so the `renderIconCallback` hooks now see these names
+  too — a hook that answers every name now also draws them.
+- A change of `icons`, `window.components.icons` or a hook repaints the rows, tokens and an open feedback ✓ in place.
+  The ✓ is now a `.cp__confirm-check` slot around the icon (was the icon itself). Exported: types
+  `CommandPaletteIconName` / `CommandPaletteIcons`, `CP_ICONS`, `CP_ICON_NAMES`.
+
 ### Added — render callbacks get `ctx.labels` and re-run in place when the labels change (2026-11-24)
 
 - Every render / display callback ctx (new exported type `PaletteRenderContext`: a command's `get*Callback`s,

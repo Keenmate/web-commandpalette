@@ -21,9 +21,11 @@ export type { SearchBehavior, SearchMatch };
 /**
  * An item icon, read by core `renderIcon` (SPEC §12.33), first match wins:
  *  - starts with `<`              → raw SVG/HTML markup, injected as-is (host-trusted)
+ *  - the element's `icons` map, then the page-wide `window.components.icons` (`'web-command-palette.<name>'`
+ *    before `'<name>'`) → the mapped icon string, read by these same rules
  *  - a built-in name (`search`, `check`, `settings`, … core `BUILT_IN_ICON_NAMES`) → a glyph masked from
  *    `--base-icon-<name>` in `currentColor` (`<span class="km-icon cp__icon cp__icon--NAME">`; nothing drawn
- *    when the token is unset). Reserved — no hook sees it
+ *    when the token is unset). No hook sees it
  *  - the element's `renderIconCallback(name, ctx)`, then the page-wide `window.components.renderIconCallback`
  *    → markup (`null` / `undefined` = not mine)
  *  - ASCII class names (`fa-solid fa-folder`, `gear`) → an icon font, `<i class="cp__icon fa-solid fa-folder">`
@@ -31,6 +33,19 @@ export type { SearchBehavior, SearchMatch };
  *  - anything else                → escaped text (emoji / glyph)
  */
 export type IconInput = string;
+
+/**
+ * The palette's own icon names (core `renderIcon` `defaults`, rulebook C-CA-42) — replace one through `el.icons`,
+ * the page-wide `window.components.icons` or the `renderIconCallback` hooks:
+ *  - `star` / `starFilled` — a row's favorite toggle, off / on;
+ *  - `removeToken` — the ✕ on a wizard answer token (`display="tokens"`);
+ *  - `done` — the ✓ on the feedback line.
+ */
+export type CommandPaletteIconName = 'star' | 'starFilled' | 'removeToken' | 'done';
+
+/** The `icons` input: icon overrides by name (an icon string each — markup, a built-in name, icon-font classes, text).
+ *  Applies to the palette's own icons ({@link CommandPaletteIconName}) and to item `icon` names alike. */
+export type CommandPaletteIcons = Partial<Record<CommandPaletteIconName, string>> & Record<string, string>;
 
 /** Badge colour variants (pure-admin `cp__badge--*`). */
 export type BadgeVariant = 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'secondary';
