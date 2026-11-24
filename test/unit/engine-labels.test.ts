@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getPageLocale, type TranslateCallback } from '@keenmate/web-components-core/locale';
-import { DEFAULT_LABELS, ENGINE_DEFAULTS } from '../../src/types';
+import { DEFAULT_LABELS, ENGINE_DEFAULTS, type Command } from '../../src/types';
+import { COMMANDS } from './helpers';
 import { harness } from './helpers';
 
 /**
@@ -110,5 +111,37 @@ describe('engine locale (no element, C-CA-38)', () => {
     const own = vi.fn<TranslateCallback>(() => null);
     harness({ locale: 'cs', translateCallback: own }).m.placeholder;
     expect(own).toHaveBeenCalledWith(expect.objectContaining({ locale: 'cs' }));
+  });
+});
+
+describe('render ctx: ctx.labels (no element)', () => {
+  const labelled = (): Command => ({
+    id: 'lab', trigger: '/lab', text: 'Lab',
+    getTextCallback: (ctx) => `${ctx.labels.text('headers.commands')}: lab`,
+  });
+
+  it('a command get*Callback reads ctx.labels (non-enumerable); a labels change re-runs it in place', () => {
+    let keys: string[] = [];
+    const cmd: Command = { ...labelled(), getTooltipCallback: (ctx) => { keys = Object.keys(ctx); return ''; } };
+    const { m } = harness({ commands: [cmd] });
+    m.setInput('/la');
+    const title = () => m.items.find((i) => i.kind === 'command')?.title;
+    expect(title()).toBe('Commands: lab');
+    expect(keys).not.toContain('labels');
+    const before = m.listVersion;
+    m.setOptions({ labels: { 'headers.commands': 'Příkazy' } });
+    expect(title()).toBe('Příkazy: lab');
+    expect(m.input).toBe('/la');
+    expect(m.listVersion).toBeGreaterThan(before);
+  });
+
+  it('labelsChanged() keeps the home screen active row', () => {
+    const { m } = harness({ commands: [...COMMANDS, labelled()] });
+    m.move('down');
+    m.move('down');
+    const active = m.items[m.activeIndex]!.key;
+    m.setOptions({ translateCallback: ({ key }) => (key.endsWith('headers.commands') ? 'X' : null) });
+    expect(m.items.find((i) => i.ref && (i.ref as Command).id === 'lab')?.title).toBe('X: lab');
+    expect(m.items[m.activeIndex]!.key).toBe(active);
   });
 });

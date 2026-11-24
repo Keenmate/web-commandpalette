@@ -10,7 +10,7 @@
 import { resolveActionItem, getShortcutKeycaps, type ResolvedActionItem } from '@keenmate/web-components-core/actions';
 import { createAsyncRunner, type AsyncRunner } from '@keenmate/web-components-core';
 import { createRegexCompiler } from '@keenmate/web-components-core/search';
-import { createLabels, type TranslateCallback } from '@keenmate/web-components-core/locale';
+import { createLabels, createLabelsView, type LabelsView, type TranslateCallback } from '@keenmate/web-components-core/locale';
 import {
   filterCommands,
   filterContexts,
@@ -413,6 +413,9 @@ export class CommandPaletteEngine {
    */
   readonly labels: PaletteLabels;
 
+  /** What a render ctx carries as `ctx.labels` (core `createLabelsView` over {@link labels} — the whole chain, read live). */
+  readonly labelsView: LabelsView<CommandPaletteLabels>;
+
   /** The merged settings (defaults ← constructor options ← every `setOptions`). */
   #options: CommandPaletteEngineOptions;
 
@@ -430,6 +433,7 @@ export class CommandPaletteEngine {
       getTranslateCallback: () => this.#options.translateCallback,
       getLocale: () => this.#options.locale,
     });
+    this.labelsView = createLabelsView(this.labels);
     this.#runner = createAsyncRunner({
       debounceMs: () => this.#debounce,
       loadingChangeCallback: (isLoading) => {
@@ -475,7 +479,9 @@ export class CommandPaletteEngine {
     if (has('pageSize')) { this.#pageSizeChanged(); isApplied = true; }
     if (has('searchBehavior') || has('searchMatch')) { this.#searchRulesChanged(); isApplied = true; }
     // Labels / locale / translateCallback are resolved when drawn — just re-render.
-    if (!isApplied && (has('labels') || has('translateCallback') || has('locale'))) this.#changed();
+    // Labels / locale / translateCallback are resolved when drawn; the command rows' get*Callbacks get them on the
+    // ctx (`ctx.labels`) — re-run those in place.
+    if (!isApplied && (has('labels') || has('translateCallback') || has('locale'))) this.labelsChanged();
   }
 
   // ── host helpers ──────────────────────────────────────────────────────────
@@ -485,9 +491,15 @@ export class CommandPaletteEngine {
     return this.#host.context ? this.#host.context(fields) : fields;
   }
 
+  /** A render ctx (`PaletteRenderContext`): the component context + `labels` (non-enumerable — the ctx stays plain JSON). */
+  #renderCtx<T extends object>(fields: T): T {
+    Object.defineProperty(fields, 'labels', { value: this.labelsView, enumerable: false, configurable: true });
+    return this.#ctx(fields);
+  }
+
   /** Resolve a command's action-item fields (`get*Callback` wins) against the render-time ctx. */
   #resolve(c: Command): ResolvedActionItem {
-    return resolveActionItem(c, this.#ctx<CommandContext>({ selections: [] } as unknown as CommandContext));
+    return resolveActionItem(c, this.#renderCtx({ selections: [] }) as CommandContext);
   }
 
   /** The commands to offer: the host's list minus hidden ones (`isVisible` / `getIsVisibleCallback`). */
@@ -679,6 +691,41 @@ export class CommandPaletteEngine {
 
   /** Favorites/recents changed — rebuild the home screen, or re-sync the stars on the current list. */
   usageChanged(): void {
+    if (this.#rebuildHomeOrUsage()) {
+      this.#changed();
+      return;
+    }
+    const store = this.#options.usage;
+    for (const item of this.#allResults) {
+      if (item.favorite !== undefined && item.key) item.favorite = store?.isFavorite(item.key) ?? false;
+    }
+    this.listVersion++;
+    this.#changed();
+  }
+
+  /**
+   * A value the render ctx carries changed (`labels` / `locale` / `translateCallback`, the page-wide locale — the
+   * element calls this from `localeChanged()`): re-run the shown command rows' `get*Callback`s IN PLACE — the mode,
+   * the query, the wizard answers and the active row are kept; no provider is called again.
+   */
+  labelsChanged(): void {
+    if (!this.#rebuildHomeOrUsage()) {
+      for (const item of new Set([...this.items, ...this.#allResults])) {
+        if (item.kind !== 'command') continue;
+        delete item.tooltip;
+        delete item.cssClass;
+        delete item.isDisabled;
+        delete item.isDanger;
+        Object.assign(item, commandState(this.#resolve(item.ref as Command)));
+      }
+      this.listVersion++;
+    }
+    this.#changed();
+  }
+
+  /** The home screen / a full favorites-recent list: rebuilt (the command rows re-resolved), the active row kept.
+   *  False in any other mode. */
+  #rebuildHomeOrUsage(): boolean {
     const view = this.usageView;
     if (this.mode === 'idle' || view) {
       const active = this.items[this.activeIndex];
@@ -689,14 +736,9 @@ export class CommandPaletteEngine {
         const sameKey = same >= 0 ? same : this.items.findIndex((i) => i.key === active.key);
         if (sameKey >= 0) this.activeIndex = sameKey;
       }
-    } else {
-      const store = this.#options.usage;
-      for (const item of this.#allResults) {
-        if (item.favorite !== undefined && item.key) item.favorite = store?.isFavorite(item.key) ?? false;
-      }
-      this.listVersion++;
+      return true;
     }
-    this.#changed();
+    return false;
   }
 
   /**
@@ -1024,7 +1066,7 @@ export class CommandPaletteEngine {
     for (let i = from + 1; i < steps.length; i++) {
       const s = steps[i];
       if (typeof s.getIsVisibleCallback !== 'function') return i;
-      const ctx = this.#ctx({ commandId: this.command?.id ?? '', stepId: s.id, selections: cloneSelections(this.selections) }) as StepContext;
+      const ctx = this.#renderCtx({ commandId: this.command?.id ?? '', stepId: s.id, selections: cloneSelections(this.selections) }) as StepContext;
       let isVisible = true;
       try {
         isVisible = s.getIsVisibleCallback(ctx) !== false;
@@ -1130,7 +1172,7 @@ export class CommandPaletteEngine {
     }
     this.#run(
       (signal) =>
-        cb(this.#ctx(withSignal({ commandId: command.id, stepId: step.id, term: query, selections: cloneSelections(this.selections) }, signal)) as StepOptionsContext),
+        cb(this.#renderCtx(withSignal({ commandId: command.id, stepId: step.id, term: query, selections: cloneSelections(this.selections) }, signal)) as StepOptionsContext),
       (options) => {
         const list = (options ?? []) as Option[];
         if (isLive) {

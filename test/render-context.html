@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>e2e fixture — render-callback ctx (labels)</title>
+</head>
+<body>
+  <input id="outside" placeholder="outside input">
+  <web-command-palette id="palette" feedback-duration="60000"></web-command-palette>
+
+  <script type="module">
+    import { setupStandard, commands, ready } from './fixture-common.js';
+    const el = setupStandard('render-context');
+    // Every render ctx carries `labels` (ctx.labels.text / .html); calls counted per callback.
+    window.calls.text = 0;
+    window.calls.feedback = 0;
+    window.calls.styles = 0;
+    window.calls.stepCtx = [];
+    el.commands = commands().map((c) => c.id === 'reload'
+      ? { ...c, getTextCallback: (ctx) => { window.calls.text++; return `${ctx.labels.text('headers.commands')}: reload`; } }
+      : c);
+    el.getStepOptionsCallback = (ctx) => {
+      window.calls.stepCtx.push({ hasLabels: typeof ctx.labels?.text === 'function', keys: Object.keys(ctx) });
+      return [];
+    };
+    el.renderFeedbackCallback = (ctx) => { window.calls.feedback++; return `${ctx.labels.text('headers.done')} → ${ctx.sentence}`; };
+    el.getCustomStylesCallback = (ctx) => { window.calls.styles++; return `/* ${ctx.labels.text('headers.commands')} */`; };
+    ready();
+  </script>
+</body>
+</html>

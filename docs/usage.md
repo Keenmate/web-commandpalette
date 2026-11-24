@@ -81,7 +81,7 @@ Objects and functions are **properties only** — set them from JS (or a framewo
 | `storageKey` | `string` | Key of the persisted favorites/recents (attribute `storage-key`): `localStorage` `km-state:web-command-palette:<key>`, or `ctx.key` of the state callbacks. Default `'web-commandpalette:usage'` — put the user id in it. |
 | `maxFavoriteCount` / `maxRecentCount` | `number` | Rows each home section shows. Default `3`; `0` hides the section. |
 | `favoriteKey` / `favoritesKey` / `recentKey` | `string` | Ctrl/⌘ + key while open: star the active row / show all favorites / show all recent. Defaults `d` / `f` / `r`; `''` disables. |
-| `renderFeedbackCallback` | `(ctx) => string \| Node \| null \| false` | Custom feedback content: string = HTML, Node = mounted, `null` = built-in, `false` = hidden (skipped). See [Feedback](#feedback). |
+| `renderFeedbackCallback` | `(ctx) => string \| Node \| null \| false` | Custom feedback content: string = HTML, Node = mounted, `null` = built-in, `false` = hidden (skipped). `ctx.labels` ([render ctx](#render-callback-ctx--ctxlabels)). See [Feedback](#feedback). |
 | `renderLoadingCallback` | `(ctx) => void \| (() => void)` | Draw the searching loader yourself — `ctx = { component, context: 'search', containerElement, element, label }`; fill `containerElement` (already `role="status"` + `aria-label` = the `messages.searching` text), optionally return a cleanup. Beats the page-wide `window.components.renderLoadingCallback` (one hook for every Keenmate component); unset = the default `.cp__loader` (`--cp-loader-icon` / `-rotate` / `-duration` / `-size` / `-color`, chained to `--base-loader-*`). |
 | `renderIconCallback` | `(name, ctx) => string \| null \| undefined` | This palette's own icon hook — map an item `icon` name to markup. `ctx = { component, element, prefix: 'cp', item, kind }` (`item` = the row's own command / context / option / result / usage entry). Asked after a built-in name, before the page-wide `window.components.renderIconCallback`; `null` / `undefined` = not mine. See [Icons](#icons). |
 | `translateCallback` | `(ctx) => string \| null \| undefined` | This palette's own translation hook (core `TranslateCallback`). `ctx = { component, key, template, params, locale }`, `key` = the full `web-command-palette.<elementType>.<name>` key, `params` = the raw values. Asked for every label key this palette's `labels` did not set, before the page-wide `window.components.locale.translateCallback`; `null` / `undefined` = not mine. Changing it re-renders every label. See [Labels](#labels). |
@@ -183,6 +183,27 @@ The palette **closes itself** after `result-select` / `action` (after a brief
 
 All plain JSON (so a server can send them verbatim), except the optional JS-only functions
 (`get*Callback`, `onClick`, `Step.getOptionsCallback`, `Context.searchCallback`).
+
+### Render-callback ctx — `ctx.labels`
+
+Every render / display callback ctx (`PaletteRenderContext`: a command's `get*Callback`s, `Step.getIsVisibleCallback`,
+`getStepOptionsCallback` / `Step.getOptionsCallback`, `renderFeedbackCallback`, `getCustomStylesCallback`) carries
+`labels` — core `createLabelsView`: `ctx.labels.text(key, params)` / `ctx.labels.html(key, params)` run the whole
+chain (instance `labels` → own / page-wide `translateCallback` → page-wide labels → English). It is non-enumerable,
+like `controller` / `element`, so the ctx stays plain JSON.
+
+A change of `labels`, `locale`, `translateCallback` or the page-wide `window.components.locale` re-runs the shown
+callbacks **in place**: the command rows' `get*Callback`s, the feedback line, the custom styles — the open palette
+keeps its mode, query, wizard answers, active row and search results (no provider is called again). The data
+callbacks (`getIsVisibleCallback`, the step options) read the new labels on their next call. The palette is not a
+data-input component (no `disabled` / `readonly`), so there is no `ctx.isReadonly` / `ctx.isDisabled`.
+
+```js
+palette.commands = [{
+  id: 'reload', trigger: '/reload', text: 'Reload',
+  getTextCallback: (ctx) => `${ctx.labels.text('headers.commands')}: reload`,   // re-run when the labels change
+}];
+```
 
 ```ts
 // A command is a core ActionItem<CommandContext> (isToggled / getIsToggledCallback aren't used).
@@ -373,7 +394,7 @@ and a countdown bar — then closes. A wizard reads as the sentence the user bui
 ```js
 palette.renderFeedbackCallback = (ctx) => {
   // ctx = { type: 'action' | 'select', commandId?, commandText?, selections?,
-  //         sentence, result?, scope?, duration } + controller / element / presentation
+  //         sentence, result?, scope?, duration } + controller / element / presentation / labels
   if (ctx.type === 'select') return `Opening <b>${ctx.sentence}</b>…`;   // opt search results in
   if (ctx.commandId === 'reload') return false;                             // skip for this one
   return null;                                                              // the default panel
@@ -387,6 +408,9 @@ replaces the line's text (the ✓, **Done** and the countdown stay):
 - a **Node** (element, fragment) → mounted;
 - **`null` / `undefined`** → the built-in line (a search result has none, so no panel);
 - **`false`** → hidden: no feedback this time, the palette closes right away.
+
+A `labels` / `locale` / `translateCallback` / page-wide locale change while the line shows re-runs the callback in
+place (same line, the countdown keeps running).
 
 ## Right-to-left
 

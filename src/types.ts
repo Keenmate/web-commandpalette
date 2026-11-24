@@ -14,7 +14,7 @@ import type { ActionEventDetail as CoreActionEventDetail, ActionItem } from '@ke
 import type { ComponentContext } from '@keenmate/web-components-core';
 import type { PresentationContext } from '@keenmate/web-components-core';
 import type { SearchBehavior, SearchCallbackContext, SearchEntry, SearchMatch } from '@keenmate/web-components-core/search';
-import type { Labels } from '@keenmate/web-components-core/locale';
+import type { Labels, LabelsView } from '@keenmate/web-components-core/locale';
 
 export type { SearchBehavior, SearchMatch };
 
@@ -77,10 +77,26 @@ export interface CommandPaletteController {
 // side-layer file doesn't import the element module.
 export type PaletteContext = ComponentContext<CommandPaletteController, HTMLElementTagNameMap['web-command-palette']> & PresentationContext;
 
+/**
+ * The ctx of the palette's render / display callbacks (`Command.get*Callback`, `Step.getIsVisibleCallback`, the step
+ * options callbacks, `renderFeedbackCallback`, `getCustomStylesCallback`): {@link PaletteContext} + `labels`. A change
+ * of `labels` / `locale` / `translateCallback` or the page-wide locale re-runs the shown ones in place (the command
+ * rows' `get*Callback`s, the feedback line, the custom styles) — the open palette keeps its mode, query, wizard answers
+ * and active row. Data callbacks (the step options, `getIsVisibleCallback`) get it on their next call.
+ * The palette is not a data-input component (no `disabled` / `readonly`), so there is no `isReadonly` / `isDisabled`.
+ */
+export interface PaletteRenderContext extends PaletteContext {
+  /** The palette's UI strings (core `createLabelsView`): `ctx.labels.text(key, params)` / `ctx.labels.html(key, params)`
+   *  — instance `labels` → own / page-wide `translateCallback` → page-wide labels → English, `{ctx.count}`
+   *  locale-formatted. Non-enumerable (the ctx stays plain JSON). */
+  readonly labels: LabelsView<CommandPaletteLabels>;
+}
+
 // ── commands (action items) ─────────────────────────────────────────────────
 
-/** The surface context of a command: render-time `get*Callback`s and, at activation, the action detail. */
-export interface CommandContext extends PaletteContext {
+/** The surface context of a command: render-time `get*Callback`s (re-run in place when `labels` change) and, at
+ *  activation, the action detail. */
+export interface CommandContext extends PaletteRenderContext {
   /** The wizard answers. Empty at render time and for a command without steps. */
   selections: Selection[];
 }
@@ -127,7 +143,7 @@ export type ActionEventDetail = CoreActionEventDetail<CommandContext, never> & {
 // ── wizard steps ────────────────────────────────────────────────────────────
 
 /** The ctx of `Step.getIsVisibleCallback`. */
-export interface StepContext extends PaletteContext {
+export interface StepContext extends PaletteRenderContext {
   commandId: string;
   stepId: string;
   /** The answers so far. */
@@ -303,8 +319,8 @@ export type SaveUsageCallback = (ctx: PaletteContext & { entry: UsageEntry }) =>
 
 // ── feedback ────────────────────────────────────────────────────────────
 
-/** What `renderFeedbackCallback` gets. */
-export interface FeedbackContext extends PaletteContext {
+/** What `renderFeedbackCallback` gets (re-run in place while the line shows when `labels` change). */
+export interface FeedbackContext extends PaletteRenderContext {
   /** Which effect just fired: a command ran (`action`) or a search result was chosen (`select`). */
   type: 'action' | 'select';
   commandId?: string;

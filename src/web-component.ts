@@ -69,6 +69,7 @@ import {
   type PaletteKeys,
   type LoadUsageCallback,
   type PaletteContext,
+  type PaletteRenderContext,
   type PaletteUsageState,
   type PaletteEventDetail,
   type RenderFeedbackCallback,
@@ -105,7 +106,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'searchCallback', converter: toFunction(), on: 'update', type: '(ctx: SearchContext) => Result[] | Promise<Result[]>',
     description: "Context + global search. `ctx` = core's shared `SearchCallbackContext` (`{ term, signal, entries }`, the same shape as every Keenmate component; `entries` is always empty — the palette has no client-side records behind a search) + `scope` (`'global'` or `{ contextId }`) + `controller` / `element`. Called only for NON-EMPTY terms, debounced; a superseded call's `signal` is aborted and its late result ignored. A context's own `searchCallback` wins for that context." },
   { configKey: 'getStepOptionsCallback', converter: toFunction(), on: 'update', type: '(ctx: StepOptionsContext) => Option[] | Promise<Option[]>',
-    description: 'Options for a command step; `ctx = { commandId, stepId, term, selections, signal }` + `controller` / `element`. A static step is fetched ONCE on entry (term `""`) and filtered client-side; an `isLiveSearch: true` step is called per debounced keystroke. A step with its own `getOptionsCallback` uses that instead.' },
+    description: 'Options for a command step; `ctx = { commandId, stepId, term, selections, signal }` + `controller` / `element` + `labels` (`ctx.labels.text(key, params)`). A static step is fetched ONCE on entry (term `""`) and filtered client-side; an `isLiveSearch: true` step is called per debounced keystroke. A step with its own `getOptionsCallback` uses that instead.' },
   { configKey: 'beforeActionCallback', converter: toFunction(), on: 'none', type: '(detail: ActionEventDetail) => unknown',
     description: 'Runs before a command fires `action`, with the same detail. Return `false` (async OK) to cancel: no `onClick`, no event, nothing recorded; a wizard steps back to its last answer and the palette stays open.' },
   { configKey: 'beforeResultSelectCallback', converter: toFunction(), on: 'none', type: '(ctx: ResultSelectEventDetail) => unknown',
@@ -113,7 +114,7 @@ const INPUTS: readonly InputDef[] = [
   { configKey: 'loadUsageCallback', converter: toFunction(), on: 'update', type: '(ctx: PaletteContext) => UsageEntry[] | Promise<UsageEntry[]>',
     description: 'Per-entry host API for favorites/recents (e.g. per user, from the server): returns the whole list. Set → the palette uses it and `saveUsageCallback` instead of the state store (`storage-key`, `loadStateCallback` / `saveStateCallback`). Called on connect and when this or `storage-key` changes.' },
   { configKey: 'renderFeedbackCallback', converter: toFunction(), on: 'none', type: '(ctx: FeedbackContext) => string | Node | null | false',
-    description: 'Render the text of the one-line feedback shown after a command ran (the ✓, "Done" and countdown stay). `ctx = { type, commandId?, commandText?, selections?, sentence, result?, scope?, duration }` + `controller` / `element`; `type` is `action` or `select`. Read by core `renderSlot`: a string = HTML, a Node (element, fragment) = mounted, `null` / `undefined` = the built-in line, `false` = hidden (no feedback this time, the palette closes right away). Search-result selections (`type: "select"`) have no built-in line, so they get feedback only when this returns content.' },
+    description: 'Render the text of the one-line feedback shown after a command ran (the ✓, "Done" and countdown stay). `ctx = { type, commandId?, commandText?, selections?, sentence, result?, scope?, duration }` + `controller` / `element` + `labels` (`ctx.labels.text(key, params)` / `.html()`); `type` is `action` or `select`. Re-run in place while the line shows when `labels` / `locale` / `translateCallback` / the page-wide locale change. Read by core `renderSlot`: a string = HTML, a Node (element, fragment) = mounted, `null` / `undefined` = the built-in line, `false` = hidden (no feedback this time, the palette closes right away). Search-result selections (`type: "select"`) have no built-in line, so they get feedback only when this returns content.' },
   { configKey: 'renderLoadingCallback', converter: toFunction(), on: 'none', type: '(ctx: LoaderRenderContext) => void | (() => void)',
     description: 'Draw the searching loader yourself (shared loader, core SPEC §12.14). `ctx = { component, context, containerElement, element, label }`; `context` is `search` (a search / step-options request in flight, label = the `messages.searching` text). Fill `containerElement` (already `role="status"` + `aria-label`); optionally return a cleanup. Beats the page-wide `window.components.renderLoadingCallback`; unset = the default `.cp__loader` (`--cp-loader-*` tokens).' },
   { configKey: 'renderIconCallback', converter: toFunction(), on: 'update', type: '(name: string, ctx: IconRenderContext) => string | null | undefined',
@@ -130,8 +131,8 @@ const INPUTS: readonly InputDef[] = [
   // ── Custom CSS (core createCustomStyles, rulebook C-CA-15) ───────────────
   { configKey: 'customStyles', attribute: 'custom-styles', converter: toText({ isNullable: true }), on: 'update', type: 'string | null',
     description: "Extra CSS for this palette's shadow root, after the component CSS and after the page-wide `window.components['web-command-palette'].customStyles`, so it overrides both. `@import`s are also linked once in the document head (fonts work). `getCustomStylesCallback` wins when both are set." },
-  { configKey: 'getCustomStylesCallback', converter: toFunction(), on: 'update', type: '(ctx: PaletteContext) => string | null | undefined',
-    description: 'Computed custom CSS for this palette (`ctx` = `controller` / `element` + the presentation flags); wins over `custom-styles`. Re-run on every build and when this or `custom-styles` changes.' },
+  { configKey: 'getCustomStylesCallback', converter: toFunction(), on: 'update', type: '(ctx: PaletteRenderContext) => string | null | undefined',
+    description: 'Computed custom CSS for this palette (`ctx` = `controller` / `element` + the presentation flags + `labels`); wins over `custom-styles`. Re-run on every build, when this or `custom-styles` changes, and when `labels` / `locale` / `translateCallback` / the page-wide locale change.' },
 
   // ── Attributes ───────────────────────────────────────────────────────────
   { configKey: 'display', attribute: 'display', converter: toEnum(['inline', 'tokens'] as const, { default: ENGINE_DEFAULTS.display }), shouldReflect: true, on: 'update',
@@ -262,6 +263,8 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   #openedFrom: Element | null = null;
   /** Set while the one-line feedback is showing. */
   #feedbackTimer: ReturnType<typeof setTimeout> | null = null;
+  /** The feedback line on screen: what it shows + its callback ctx (re-run in place on a labels change). */
+  #feedback: { done: Done; ctx: FeedbackContext } | null = null;
   /** The closing animation in flight (core `animateOut`); the dialog leaves the DOM when it ends. */
   #closing: AnimateOutHandle | null = null;
   /** The event / row behind the engine call in progress (for the `action` detail). */
@@ -366,6 +369,12 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     return this.withContext(fields) as unknown as T & PaletteContext;
   }
 
+  /** A render ctx (`PaletteRenderContext`): {@link #ctx} + `labels` (non-enumerable, the engine's `labelsView`). */
+  #renderCtx<T extends object>(fields: T): T & PaletteRenderContext {
+    Object.defineProperty(fields, 'labels', { value: this.#engine.labelsView, enumerable: false, configurable: true });
+    return this.#ctx(fields) as T & PaletteRenderContext;
+  }
+
   /** Run an engine call with the event / row that caused it on record (for the `action` detail). */
   #withTrigger(trigger: Trigger, fn: () => void): void {
     const previous = this.#trigger;
@@ -433,7 +442,9 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
       sourceEvent: trigger?.event,
       triggerElement: trigger?.element,
       dataset: {},
-    }) as ActionEventDetail;
+    }) as unknown as ActionEventDetail;
+    // The command ctx's `labels` (CommandContext), non-enumerable like `controller` / `element`.
+    Object.defineProperty(detail, 'labels', { value: this.#engine.labelsView, enumerable: false, configurable: true });
     return runAction({
       detail,
       beforeActionCallback: this.config.beforeActionCallback as BeforeActionCallback | null,
@@ -468,8 +479,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     const duration = (this.config.feedbackDuration as number | undefined) ?? ENGINE_DEFAULTS.feedbackDuration;
     if (duration <= 0) return false;
 
-    const command = done.type === 'action' ? done.command : null;
-    const ctx: FeedbackContext = this.#ctx(
+    const ctx: FeedbackContext = this.#renderCtx(
       done.type === 'select'
         ? { type: 'select' as const, sentence: done.result.title, result: done.result, scope: done.scope, duration }
         : {
@@ -482,17 +492,9 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
           },
     );
 
-    // The hook runs once, up front: `false` (hidden) skips the panel, and a search result has no
+    // The hook runs up front: `false` (hidden) skips the panel, and a search result has no
     // built-in line, so `null` / `undefined` skips it there too (core renderSlot reads the rest).
-    let custom: ReturnType<RenderFeedbackCallback> = null;
-    const cb = this.config.renderFeedbackCallback as RenderFeedbackCallback | null;
-    if (cb) {
-      try {
-        custom = cb(ctx);
-      } catch (err) {
-        this.log.UI.error('renderFeedbackCallback failed', err);
-      }
-    }
+    const custom = this.#runFeedbackCallback(ctx);
     if (custom === false) return false;
     if (custom == null && done.type === 'select') return false;
 
@@ -502,16 +504,8 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     // The countdown bar shows the timer — decorative, so it goes when motion is off (SPEC §12.16);
     // the timer itself keeps `feedback-duration`.
     const body = fillConfirmation(confirm, this.#engine.labels.html('headers.done'), duration, !isMotionOff(this));
-    // Core's one render-callback contract (SPEC §12.35): string = HTML, Node = mounted, null = built-in.
-    renderSlot(body, custom, {
-      renderDefault: (el) => {
-        el.innerHTML = confirmationBodyHtml({
-          trigger: command?.trigger,
-          text: command?.text ?? ctx.sentence,
-          parts: done.type === 'action' ? done.parts : [],
-        });
-      },
-    });
+    this.#fillFeedbackBody(body, custom, done, ctx);
+    this.#feedback = { done, ctx };
     // Shrink from the dialog's current height to the feedback's (min-height)
     // height with a transition, rather than snapping. The phone sheet is full-height
     // anyway — the line just centres in it.
@@ -533,6 +527,56 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     return true;
   }
 
+  /** `renderFeedbackCallback(ctx)`, guarded: a throw is logged and counts as `null` (the built-in line). */
+  #runFeedbackCallback(ctx: FeedbackContext): ReturnType<RenderFeedbackCallback> {
+    const cb = this.config.renderFeedbackCallback as RenderFeedbackCallback | null;
+    if (!cb) return null;
+    try {
+      return cb(ctx);
+    } catch (err) {
+      this.log.UI.error('renderFeedbackCallback failed', err);
+      return null;
+    }
+  }
+
+  /** The feedback line's text: the callback's result through core renderSlot (SPEC §12.35: string = HTML, Node =
+   *  mounted, null = built-in). */
+  #fillFeedbackBody(body: HTMLElement, custom: ReturnType<RenderFeedbackCallback>, done: Done, ctx: FeedbackContext): void {
+    const command = done.type === 'action' ? done.command : null;
+    renderSlot(body, custom === false ? null : custom, {
+      renderDefault: (el) => {
+        el.innerHTML = confirmationBodyHtml({
+          trigger: command?.trigger,
+          text: command?.text ?? ctx.sentence,
+          parts: done.type === 'action' ? done.parts : [],
+        });
+      },
+    });
+  }
+
+  /** The labels changed while the feedback line shows: its heading + `renderFeedbackCallback` re-run in place
+   *  (same line, the countdown keeps running). A `false` / no-content answer now keeps the line as drawn. */
+  #refreshFeedback(): void {
+    const feedback = this.#feedback;
+    if (!feedback || !this.#feedbackTimer) return;
+    const { confirm } = this.#shell;
+    const title = confirm.querySelector<HTMLElement>('.cp__confirm-title');
+    if (title) title.innerHTML = this.#engine.labels.html('headers.done');
+    const body = confirm.querySelector<HTMLElement>('.cp__confirm-body');
+    const custom = this.#runFeedbackCallback(feedback.ctx);
+    if (!body || custom === false || (custom == null && feedback.done.type === 'select')) return;
+    this.#fillFeedbackBody(body, custom, feedback.done, feedback.ctx);
+  }
+
+  /** A value the render callbacks' ctx carries changed (`labels` / `locale` / `translateCallback`, the page-wide
+   *  locale): re-run them in place — the command rows (engine), the feedback line, the custom styles. */
+  #renderContextChanged(): void {
+    this.#applyLabels();
+    this.#customStyles?.refresh();
+    this.#refreshFeedback();
+    this.#renderer.invalidate();
+  }
+
   /** Stop the feedback timer (the line stays drawn until #hideFeedback). */
   #stopFeedback(): void {
     if (!this.#feedbackTimer) return;
@@ -542,6 +586,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
 
   /** Take the one-line feedback down (after the dialog has gone, so it never snaps back mid-close). */
   #hideFeedback(): void {
+    this.#feedback = null;
     if (!this.#shell.root.classList.contains('cp--confirming')) return;
     this.#shell.confirm.hidden = true;
     this.#shell.confirm.replaceChildren();
@@ -671,10 +716,8 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     // search) and the chrome labels below resolve through the engine's resolver.
     const engineOptions = this.#engineOptions(partial);
     if (Object.keys(engineOptions).length) this.#engine.setOptions(engineOptions);
-    if ('labels' in partial || 'translateCallback' in partial || 'locale' in partial) {
-      this.#applyLabels();
-      this.#renderer.invalidate();
-    }
+    // (the engine re-ran the command rows' get*Callbacks in setOptions — `labelsChanged()`)
+    if ('labels' in partial || 'translateCallback' in partial || 'locale' in partial) this.#renderContextChanged();
     if ('renderIconCallback' in partial) this.#renderer.invalidate(); // item icons are drawn into the rows
     if ('size' in partial) this.#applySize();
     if ('customStyles' in partial || 'getCustomStylesCallback' in partial) this.#customStyles?.refresh();
@@ -691,8 +734,8 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   /** The page-wide `window.components.locale` changed (core `/locale`): re-resolve every label and
    *  locale-formatted count in place — the open palette keeps its mode, query and wizard answers. */
   protected override localeChanged(): void {
-    this.#applyLabels();
-    this.#renderer.invalidate();
+    this.#engine.labelsChanged(); // the command rows' get*Callbacks (ctx.labels), in place
+    this.#renderContextChanged();
     this.#render();
   }
 
@@ -748,12 +791,12 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   /** Custom CSS, the canonical core adoption (docs/usage.md "Style injection", rulebook C-CA-15). */
   #applyCustomStyles(): void {
     if (this.#customStyles) return this.#customStyles.refresh();
-    this.#customStyles = createCustomStyles<PaletteContext>(this, this.#shadow, { // writes both layers now
+    this.#customStyles = createCustomStyles<PaletteRenderContext>(this, this.#shadow, { // writes both layers now
       cssClass: 'cp-custom-styles',
-      getContext: () => this.#ctx({}),
+      getContext: () => this.#renderCtx({}),
       getInstanceStyles: () => ({
         css: this.config.customStyles as string | null,
-        callback: this.config.getCustomStylesCallback as CustomStylesCallback<PaletteContext> | null,
+        callback: this.config.getCustomStylesCallback as CustomStylesCallback<PaletteRenderContext> | null,
       }),
     });
   }
@@ -976,7 +1019,7 @@ export interface CommandPaletteConfig {
   saveStateCallback: SaveStateCallback<PaletteUsageState> | null;
   // custom CSS
   customStyles: string | null;
-  getCustomStylesCallback: CustomStylesCallback<PaletteContext> | null;
+  getCustomStylesCallback: CustomStylesCallback<PaletteRenderContext> | null;
   // attributes
   isOpen: boolean;
   display: Display;

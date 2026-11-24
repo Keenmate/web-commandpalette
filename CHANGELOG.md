@@ -10,6 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 No stable 1.0.0 is published, so the break ships as the next release candidate — but
 `^1.0.0-rc02` consumers will pull it: the event, callback and item API below is breaking.
 
+### Added — render callbacks get `ctx.labels` and re-run in place when the labels change (2026-11-24)
+
+- Every render / display callback ctx (new exported type `PaletteRenderContext`: a command's `get*Callback`s,
+  `Step.getIsVisibleCallback`, `getStepOptionsCallback` / `Step.getOptionsCallback`, `renderFeedbackCallback`,
+  `getCustomStylesCallback`) carries `labels` — core `createLabelsView`, `ctx.labels.text(key, params)` /
+  `.html()` — non-enumerable, so the ctx stays plain JSON. `CommandContext`, `StepContext` and `FeedbackContext`
+  extend it.
+- A `labels` / `locale` / `translateCallback` / page-wide locale change re-runs the shown ones in place: the command
+  rows' `get*Callback`s (home screen, `/` list, favorites / recent lists, the commands in global search), the
+  feedback line while it shows, the custom styles. The open palette keeps its mode, query, wizard answers, active
+  row and search results; no provider is called again. New engine method `labelsChanged()`.
+- No `ctx.isReadonly` / `ctx.isDisabled`: the palette is not a data-input component (no `disabled` / `readonly`).
+
 ### Internal — `open()` / `close()` write `isOpen` through core (Q4, 2026-11-23)
 
 - The user-driven open / close sets `setProperties({ isOpen })` instead of hand-writing

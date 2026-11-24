@@ -19,6 +19,7 @@ export type {
   BadgeVariant,
   CommandPaletteController,
   PaletteContext,
+  PaletteRenderContext,
   CommandContext,
   Command,
   Step,
