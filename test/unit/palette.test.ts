@@ -525,6 +525,20 @@ describe('options (C-CA-39)', () => {
       warn.mockRestore();
     }
   });
+
+  it("setOptions' warning goes to the host's instance logger when it hands one over (core A9), not the bundle", () => {
+    const bundleWarn = vi.spyOn(logging.loggers.INIT, 'warn').mockImplementation(() => {});
+    const warn = vi.fn();
+    try {
+      const m = new CommandPaletteEngine({ changed: () => {}, effect: () => undefined, log: () => ({ INIT: { warn } }) });
+      m.setOptions({ bogus: 1 } as never);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0][0]).toContain('"bogus" is not an option');
+      expect(bundleWarn).not.toHaveBeenCalled();
+    } finally {
+      bundleWarn.mockRestore();
+    }
+  });
 });
 
 describe('search rules (core /search)', () => {

@@ -10,6 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 No stable 1.0.0 is published, so the break ships as the next release candidate — but
 `^1.0.0-rc02` consumers will pull it: the event, callback and item API below is breaking.
 
+### Fixed / Internal — audit leftovers (2026-11-24)
+
+- **Fixed:** `ariaLabels.input: ''` now removes the input's `aria-label` (was `aria-label=""`), like every other
+  blanked attribute label.
+- The global-key hand-over picks the next owner from core's live-instance registry (`getInstances`) instead of an
+  own `connected` Set; a deferred, never-built palette is skipped and claims the keys on its first activation.
+- `CommandPaletteEngine.setOptions()`'s unknown-key warning goes through the element's instance logger (new optional
+  host hook `log()`, core's "engine logs through the element's loggers" pattern): it carries the `#id` label and
+  follows `el.disableLogging()`. A standalone engine still warns on `COMMANDPALETTE:INIT`.
+
 ### Internal — `renderFeedbackCallback` runs through core `runSafely` (Q14, 2026-11-24)
 
 - The hand-written try/catch around the synchronous `renderFeedbackCallback` call is core's exported `runSafely`

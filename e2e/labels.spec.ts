@@ -68,10 +68,11 @@ test("'' renders nothing; undefined keeps the English default", async ({ page })
   const p = palette(page);
   await open(page);
   await p.host.evaluate((el) => {
-    (el as unknown as { labels: unknown }).labels = { 'labels.navigate': '', 'messages.noResults': '', 'ariaLabels.dialog': '', 'placeholders.idle': undefined };
+    (el as unknown as { labels: unknown }).labels = { 'labels.navigate': '', 'messages.noResults': '', 'ariaLabels.dialog': '', 'ariaLabels.input': '', 'placeholders.idle': undefined };
   });
   await expect(p.input).toHaveAttribute('placeholder', /Type \/ for commands/);
   await expect(p.container).not.toHaveAttribute('aria-label');
+  await expect(p.input).not.toHaveAttribute('aria-label'); // not aria-label="" (was the one blank-label exception)
   await p.input.fill('/zzz');
   await expect(p.items).toHaveCount(0);
   await expect(p.empty).toHaveCount(0);

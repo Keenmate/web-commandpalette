@@ -31,6 +31,7 @@ import {
   startModalSession,
   runBeforeCallbackEager,
   runSafely,
+  getInstances,
   toBool,
   toEnum,
   toFunction,
@@ -55,7 +56,7 @@ import {
 import { runAction } from '@keenmate/web-components-core/actions';
 import type { TranslateCallback } from '@keenmate/web-components-core/locale';
 import { CommandPaletteEngine, type Effect, type EffectOutcome, type CommandPaletteEngineHost, type CommandPaletteEngineOptions, type TokenView } from './palette';
-import { Renderer, confirmationBodyHtml, createShell, fillConfirmation, ownIcon, type Shell } from './render';
+import { Renderer, confirmationBodyHtml, createShell, fillConfirmation, ownIcon, setOrRemove, type Shell } from './render';
 import { bindGlobalKeys, handleInputKeydown, isSequence, type GlobalKeysHost } from './keyboard';
 import { UsageStore, stateStorePersistence, type UsagePersistence } from './usage';
 import {
@@ -227,9 +228,9 @@ interface Trigger {
 /** Reads the live open state (the `isOpen` row's `getLiveValue`); set by the class's static block. */
 let readIsOpen: (el: CommandPaletteElement) => boolean = () => false;
 
-/** The element that owns the document-level keys (one palette per page). */
+/** The element that owns the document-level keys (one palette per page). The candidates for a hand-over are core's
+ *  live-instance registry (`getInstances`), not an own Set. */
 let keyOwner: CommandPaletteElement | null = null;
-const connected = new Set<CommandPaletteElement>();
 
 export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, CommandPaletteController> {
   protected static override inputs = INPUTS;
@@ -336,6 +337,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
       changed: () => this.#render(),
       effect: (effect) => this.#onEffect(effect),
       error: (message, err) => this.log.DATA.error(message, err),
+      log: () => ({ INIT: this.log.INIT! }),
     };
   }
 
@@ -764,7 +766,6 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   }
 
   protected override connect(): void {
-    connected.add(this);
     if (!keyOwner) {
       keyOwner = this;
       this.#unbindGlobalKeys = bindGlobalKeys(this.#globalKeys);
@@ -780,13 +781,15 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
   }
 
   protected override disconnect(): void {
-    connected.delete(this);
     if (keyOwner === this) {
       this.#unbindGlobalKeys?.();
       this.#unbindGlobalKeys = null;
       keyOwner = null;
-      // Hand the global keys to another connected palette, if any.
-      const next = connected.values().next().value as CommandPaletteElement | undefined;
+      // Hand the global keys to another connected palette that has been activated (core's live instances, in
+      // connection order; a deferred, never-built one claims them on its own first connect()).
+      const next = getInstances(this.localName).find(
+        (el): el is CommandPaletteElement => el !== this && #hasConnected in el && (el as CommandPaletteElement).#hasConnected,
+      );
       if (next) {
         keyOwner = next;
         next.#unbindGlobalKeys = bindGlobalKeys(next.#globalKeys);
@@ -998,12 +1001,6 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     this.open();
     if (this.#engine.usageView !== 'recent') this.#engine.showUsage('recent');
   }
-}
-
-/** `''` (a deliberately empty label) removes the attribute instead of leaving it blank. */
-function setOrRemove(el: Element, name: string, value: string): void {
-  if (value) el.setAttribute(name, value);
-  else el.removeAttribute(name);
 }
 
 /**

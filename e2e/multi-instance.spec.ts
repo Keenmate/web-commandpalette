@@ -33,6 +33,23 @@ test('removing the owner hands Ctrl+K to the second instance', async ({ page }) 
   await expect.poll(async () => (await events(page)).filter((e) => e.name === 'action').map((e) => e.target)).toEqual(['second']);
 });
 
+test('a deferred, never-built palette is skipped by the hand-over; it claims the keys on release', async ({ page }) => {
+  await page.evaluate(() => {
+    const third = document.createElement('web-command-palette');
+    third.id = 'third';
+    third.setAttribute('defer', '');
+    document.body.append(third);
+    document.getElementById('first')!.remove();
+    document.getElementById('second')!.remove();
+  });
+  const third = palette(page, '#third');
+  await page.keyboard.press('Control+k');
+  await expect(third.root).not.toHaveClass(/--active/);
+  await third.host.evaluate((el) => (el as unknown as { release(): void }).release());
+  await page.keyboard.press('Control+k');
+  await expect(third.root).toHaveClass(/--active/);
+});
+
 test('a non-owner still works through its API', async ({ page }) => {
   const second = palette(page, '#second');
   await second.host.evaluate((el) => (el as unknown as { open(): void }).open());

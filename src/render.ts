@@ -101,6 +101,12 @@ export interface RenderContext {
   host: HTMLElement | null;
 }
 
+/** `''` (a deliberately empty label) removes the attribute instead of leaving it blank. */
+export function setOrRemove(el: Element, name: string, value: string): void {
+  if (value) el.setAttribute(name, value);
+  else el.removeAttribute(name);
+}
+
 /**
  * One of the palette's own icons by name (rulebook C-CA-42): `el.icons` / `window.components.icons` / the hooks may
  * replace it; else {@link CP_ICONS} (the masked `--cp-icon-*` glyph).
@@ -374,7 +380,7 @@ export class Renderer {
       try { s.input.setSelectionRange(end, end); } catch { /* not focusable yet */ }
     }
     s.input.placeholder = m.placeholder;
-    s.input.setAttribute('aria-label', labels.text('ariaLabels.input'));
+    setOrRemove(s.input, 'aria-label', labels.text('ariaLabels.input'));
     const ctx = m.contextText;
     s.context.textContent = ctx ?? '';
     s.context.classList.toggle('cp__context--visible', !!ctx);

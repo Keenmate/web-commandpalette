@@ -8,7 +8,7 @@
  * keyboard) and keen `live.ex` (step-back, pagination, global prepend).
  */
 import { resolveActionItem, getShortcutKeycaps, type ResolvedActionItem } from '@keenmate/web-components-core/actions';
-import { createAsyncRunner, type AsyncRunner } from '@keenmate/web-components-core';
+import { createAsyncRunner, type AsyncRunner, type InstanceLogger } from '@keenmate/web-components-core';
 import { createRegexCompiler } from '@keenmate/web-components-core/search';
 import { createLabels, createLabelsView, type LabelsView, type TranslateCallback } from '@keenmate/web-components-core/locale';
 import {
@@ -26,8 +26,6 @@ import { cloneResult, cloneSelections, usageKey, type UsageStore, type UsageTarg
 import { DEFAULT_LABELS, ENGINE_DEFAULTS } from './types';
 import { chordKeycap } from './keyboard';
 import { logging } from './logger';
-
-const initLogger = logging.loggers.INIT;
 import type {
   Command,
   CommandContext,
@@ -161,6 +159,12 @@ export interface CommandPaletteEngineHost {
   effect(effect: Effect): EffectOutcome;
   /** Provider failures (rejected promise / throw). */
   error?(message: string, err: unknown): void;
+  /**
+   * The element's instance loggers (core docs "An engine class logs through the element's loggers"): the engine's
+   * own warnings carry the element's `#id` label and follow `el.disableLogging()`. Read at each message; omitted
+   * (standalone) → the bundle's type loggers (`COMMANDPALETTE:INIT`).
+   */
+  log?(): { readonly INIT: Pick<InstanceLogger, 'warn'> };
 }
 
 export type Effect =
@@ -467,7 +471,7 @@ export class CommandPaletteEngine {
   setOptions(partial: Partial<CommandPaletteEngineOptions>): void {
     const has = (k: keyof CommandPaletteEngineOptions): boolean => k in partial;
     mergeOptions(this.#options, partial, (key) =>
-      initLogger.warn(`CommandPaletteEngine.setOptions(): "${key}" is not an option — ignored`),
+      (this.#host.log?.().INIT ?? logging.loggers.INIT).warn(`CommandPaletteEngine.setOptions(): "${key}" is not an option — ignored`),
     );
     let isApplied = false;
     if (has('commands') || has('contexts') || has('maxRecentCount') || has('maxFavoriteCount') || has('favoriteKey')) {

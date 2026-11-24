@@ -667,6 +667,7 @@ draw();
 | `context?(fields)` | `withContext` | attach your own fields to every callback ctx |
 | `element?()` | the element | your UI's element, read once — a throwing `translateCallback` logs under its logger; omit = `null` |
 | `effect(effect)` / `changed()` / `error?()` | `before*Callback`s, events, close | yours to perform |
+| `log?()` | `() => ({ INIT: this.log.INIT })` | your element's instance loggers — the engine's warnings carry its `#id` label; omit = `COMMANDPALETTE:INIT` |
 
 `engine.usageChanged()` tells the engine the store's entries changed (the store's `onChange`); it is data,
 not a setting.
