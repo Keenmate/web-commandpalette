@@ -59,7 +59,7 @@ export class UsageStore {
   /** (Re)load from persistence. A superseded load's late result is dropped. */
   load(): void {
     const token = ++this.#loadToken;
-    const apply = (list: UsageEntry[] | null | undefined): void => {
+    const setEntries = (list: UsageEntry[] | null | undefined): void => {
       if (token !== this.#loadToken) return;
       this.#entries = new Map((Array.isArray(list) ? list : []).filter(isEntry).map((e) => [e.key, { ...e }]));
       this.#onChange();
@@ -69,15 +69,15 @@ export class UsageStore {
       out = this.#persistence?.load();
     } catch (err) {
       this.#onError(err);
-      return apply([]);
+      return setEntries([]);
     }
     if (out && typeof (out as Promise<unknown>).then === 'function') {
-      (out as Promise<UsageEntry[] | null | undefined>).then(apply, (err) => {
+      (out as Promise<UsageEntry[] | null | undefined>).then(setEntries, (err) => {
         this.#onError(err);
-        apply([]);
+        setEntries([]);
       });
     } else {
-      apply(out as UsageEntry[] | null | undefined);
+      setEntries(out as UsageEntry[] | null | undefined);
     }
   }
 

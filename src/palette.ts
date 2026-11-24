@@ -990,7 +990,7 @@ export class CommandPaletteEngine {
     if (!this.isCommandEnabled(command)) return false;
     if (!command.steps?.length) {
       // Instant: nothing changes until the host accepts (a veto leaves the palette as it was).
-      return this.#finish(
+      return this.#complete(
         { type: 'action', command, selections: [] },
         { kind: 'command', label: command.text, commandId: command.id },
       );
@@ -1004,7 +1004,7 @@ export class CommandPaletteEngine {
     const first = this.#nextShownStep(-1);
     if (first < 0) {
       // Every step is hidden by getIsVisibleCallback — nothing to ask.
-      return this.#finish({ type: 'action', command, selections: [] }, null, () => {
+      return this.#complete({ type: 'action', command, selections: [] }, null, () => {
         if (this.command === command && this.mode !== 'command-step') this.#clearWizard();
       });
     }
@@ -1019,7 +1019,7 @@ export class CommandPaletteEngine {
    * it; runs `onVeto` when it vetoes (`false`, now or later). Returns true — the
    * flow is over either way (a veto has already restored the state).
    */
-  #finish(effect: Effect, target: UsageTarget | null, onVeto?: () => void): boolean {
+  #complete(effect: Effect, target: UsageTarget | null, onVeto?: () => void): boolean {
     const accept = (): void => {
       if (target) this.#record(target);
     };
@@ -1203,7 +1203,7 @@ export class CommandPaletteEngine {
       const command = this.command!;
       const selections = cloneSelections(this.selections);
       const count = selections.length;
-      return this.#finish(
+      return this.#complete(
         { type: 'action', command, selections: cloneSelections(selections) },
         { kind: 'run', label: this.#sentence(), commandId: command.id, selections },
         // Vetoed: step back to the last answer so the user can change it.
@@ -1366,12 +1366,12 @@ export class CommandPaletteEngine {
 
   /**
    * Run a provider through the runner (after `debounceMs`), superseding any request pending or in flight:
-   * only the latest run's answer reaches `apply` (a failure → `apply(null)`, logged through `host.error`).
+   * only the latest run's answer reaches `receive` (a failure → `receive(null)`, logged through `host.error`).
    */
-  #run<T>(call: (signal: AbortSignal) => T | PromiseLike<T>, apply: (value: T | null) => void, debounceMs = 0): void {
+  #run<T>(call: (signal: AbortSignal) => T | PromiseLike<T>, receive: (value: T | null) => void, debounceMs = 0): void {
     const land = (value: T | null): void => {
       this.#onFail = null;
-      apply(value);
+      receive(value);
       this.#changed();
     };
     this.#onFail = () => land(null);
@@ -1499,7 +1499,7 @@ export class CommandPaletteEngine {
         const r = item.ref as Result;
         const scope: Scope = item.scope ?? (this.mode === 'context-search' && this.context ? { contextId: this.context.id } : 'global');
         this.#cancel();
-        return this.#finish({ type: 'select', result: r, scope }, { kind: 'result', label: r.title, result: cloneResult(r), scope });
+        return this.#complete({ type: 'select', result: r, scope }, { kind: 'result', label: r.title, result: cloneResult(r), scope });
       }
       case 'usage':
         return this.#selectUsage(item.ref as UsageEntry);
@@ -1523,7 +1523,7 @@ export class CommandPaletteEngine {
         if (!e.result) return false;
         const scope = e.scope ?? 'global';
         this.#cancel();
-        return this.#finish({ type: 'select', result: cloneResult(e.result), scope }, { kind: 'result', label: e.result.title, result: e.result, scope });
+        return this.#complete({ type: 'select', result: cloneResult(e.result), scope }, { kind: 'result', label: e.result.title, result: e.result, scope });
       }
     }
     return false;
