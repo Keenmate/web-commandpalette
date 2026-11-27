@@ -12,6 +12,8 @@ No stable 1.0.0 is published, so the break ships as the next release candidate �
 
 ### Internal — on core `^1.0.0-rc27`; devkit `^1.0.0-rc15`; internal verbs (2026-11-24 – 11-27)
 
+- `@keenmate/base-css-variables` → `^2.2.0`: without pure-admin the palette now renders at its intended size (the
+  contract's `--base-rem` is 10px, was 1rem); the `--base-rem` allowance in `contract-check.json` is removed.
 - Peer + dev dependency `@keenmate/web-components-core` → `^1.0.0-rc27` (renamed verbs; built-in icons draw without
   base-css-variables). Core rename adopted: `runAction()`'s option `emitAction` → `dispatchAction`. An item icon with
   a built-in name (`icon: 'search'`) now draws core's contract glyph when `--base-icon-<name>` is unset (was
