@@ -455,7 +455,7 @@ export class CommandPaletteElement extends BlissElement<CommandPaletteEvents, Co
     return runAction({
       detail,
       beforeActionCallback: this.config.beforeActionCallback as BeforeActionCallback | null,
-      emitAction: (d) => {
+      dispatchAction: (d) => {
         this.log.INTERACTION.debug('action', d.id, d.selections);
         this.emit('action', d as ActionEventDetail);
       },

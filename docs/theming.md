@@ -177,7 +177,7 @@ chains to the shared `--base-icon-*` glyph where one exists, then to an inline L
 An item icon given by a **built-in name** (`icon: 'search'`, core `BUILT_IN_ICON_NAMES`) goes through core
 `renderIcon`: a `.km-icon` masked from the shared `--base-icon-<name>` token. Load a `:root` theme
 (`@keenmate/base-css-variables`) or set the token on the element (`web-command-palette { --base-icon-search: url(…) }`);
-an unset token draws nothing. Any other class list (`fa-solid fa-folder`) renders an icon-font
+an unset token draws core's contract glyph (core rc27 `ICON_CSS`). Any other class list (`fa-solid fa-folder`) renders an icon-font
 `<i class="cp__icon …">` (`flex: none`, the row's font size) — the font's class rules must reach the shadow root
 through `custom-styles` / the page-wide `customStyles`; or map the name to markup in `renderIconCallback`
 (see [Usage → Icons](usage.md#icons)).

@@ -133,7 +133,7 @@
       "name": "base-icon-",
       "required": false,
       "readBy": "@keenmate/web-components-core",
-      "usage": "Not a variable: the bundle scan sees core renderIcon's `var(--base-icon-${name})` template. An item icon given by name reads --base-icon-<name> (the entries below list the shared contract's names)"
+      "usage": "Not a variable: a prefix entry for core ICON_CSS. An item icon given by a built-in name reads --base-icon-<name> (falls back to core's contract glyph; the entries below list the shared contract's names)"
     },
     {
       "name": "base-icon-add",

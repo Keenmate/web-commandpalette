@@ -434,8 +434,8 @@ the effective direction, also when it changes at runtime.
    before `'<name>'`) → the mapped icon string, read by these same rules
 3. a built-in name (`search`, `check`, `settings`, `delete`, … core `BUILT_IN_ICON_NAMES`) →
    `<span class="km-icon cp__icon cp__icon--NAME">`, a glyph masked from the `--base-icon-<name>` token in
-   `currentColor` — set by a `:root` theme (`@keenmate/base-css-variables`) or on the element; nothing is drawn
-   when the token is unset. No hook sees a built-in name (a map can replace it)
+   `currentColor` — set by a `:root` theme (`@keenmate/base-css-variables`) or on the element; core's contract
+   glyph is drawn when the token is unset. No hook sees a built-in name (a map can replace it)
 4. the palette's own `renderIconCallback(name, ctx)`, then the page-wide `window.components.renderIconCallback`
    → markup (`''` = no icon; `null` / `undefined` = not mine, the next rule decides)
 5. the palette's own icons (below) — its glyphs by name

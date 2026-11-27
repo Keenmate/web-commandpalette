@@ -10,6 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 No stable 1.0.0 is published, so the break ships as the next release candidate — but
 `^1.0.0-rc02` consumers will pull it: the event, callback and item API below is breaking.
 
+### Internal — on core `^1.0.0-rc27`; devkit `^1.0.0-rc15`; internal verbs (2026-11-24 – 11-27)
+
+- Peer + dev dependency `@keenmate/web-components-core` → `^1.0.0-rc27` (renamed verbs; built-in icons draw without
+  base-css-variables). Core rename adopted: `runAction()`'s option `emitAction` → `dispatchAction`. An item icon with
+  a built-in name (`icon: 'search'`) now draws core's contract glyph when `--base-icon-<name>` is unset (was
+  nothing); a page / element `--base-icon-<name>` still wins. No attribute, property or event changes.
+- Private method names follow the rulebook's verbs (D-NC-30 / C-NC-16): `apply*` / `sync*` / `finish*` →
+  `reconcile*` / `write*` / `install*` / `filter*` / `complete*`. No public API change.
+- `@keenmate/web-components-devkit` → `^1.0.0-rc15`: the example pages' accent comes from the devkit registry
+  (`kmwc.theme` removed), `social.png` from `kmwc social-image` (og:image / twitter:image on every example page);
+  `kmwc sync` refreshed the Makefile (image-logs / image-push) and the CLAUDE.md devkit block.
+
 ### Fixed / Internal — audit leftovers (2026-11-24)
 
 - **Fixed:** `ariaLabels.input: ''` now removes the input's `aria-label` (was `aria-label=""`), like every other
