@@ -96,7 +96,7 @@
     "@custom-elements-manifest/analyzer": "^0.11.0",
     "@keenmate/base-css-variables": "^2.0.1",
     "@keenmate/web-components-core": "^1.0.0-rc26",
-    "@keenmate/web-components-devkit": "^1.0.0-rc14",
+    "@keenmate/web-components-devkit": "^1.0.0-rc15",
     "@playwright/test": "^1.60.0",
     "custom-element-jet-brains-integration": "^1.7.0",
     "custom-element-vs-code-integration": "^1.5.0",
@@ -118,10 +118,6 @@
     "ports": {
       "dev": 12400,
       "image": 12410
-    },
-    "theme": {
-      "accentColor": "#667eea",
-      "accentEndColor": "#764ba2"
     },
     "examples": {
       "canonicalOrigin": "https://examples.web-commandpalette.keenmate.dev"
