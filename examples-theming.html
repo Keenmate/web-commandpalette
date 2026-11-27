@@ -221,9 +221,9 @@
     </p>
     <div class="controls">
         <span><code>--base-rem</code>:</span>
-        <label><input type="radio" name="th01-rem" value="8px"> 8px</label>
-        <label><input type="radio" name="th01-rem" value="" checked> 10px (default)</label>
-        <label><input type="radio" name="th01-rem" value="12px"> 12px</label>
+        <label><input type="radio" name="th01-rem" value="8px" data-kmwc-css-variable="--base-rem" data-kmwc-css-target="web-command-palette"> 8px</label>
+        <label><input type="radio" name="th01-rem" value="" checked data-kmwc-css-variable="--base-rem" data-kmwc-css-target="web-command-palette"> 10px (default)</label>
+        <label><input type="radio" name="th01-rem" value="12px" data-kmwc-css-variable="--base-rem" data-kmwc-css-target="web-command-palette"> 12px</label>
     </div>
     <div class="controls">
         <span><code>size</code>:</span>
@@ -398,7 +398,7 @@
         const palettes = [...document.querySelectorAll('web-command-palette')];
         const bind = (name, apply) => document.querySelectorAll(`input[name="${name}"]`).forEach((r) =>
             r.addEventListener('change', (e) => { if (e.target.checked) palettes.forEach((el) => apply(el, e.target.value)); }));
-        bind('th01-rem', (el, v) => (v ? el.style.setProperty('--base-rem', v) : el.style.removeProperty('--base-rem')));
+        // --base-rem: the radios set it on every palette through the devkit (data-kmwc-css-variable).
         bind('th01-size', (el, v) => (v ? el.setAttribute('size', v) : el.removeAttribute('size')));
         bind('th01-presentation', (el, v) => el.setAttribute('presentation', v));
 
